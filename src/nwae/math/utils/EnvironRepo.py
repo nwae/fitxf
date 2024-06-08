@@ -1,13 +1,9 @@
 import logging
 import os
+import re
 
 
 class EnvRepo:
-
-    REPO_DIR_USER = {
-        'mark': r'/usr/local/git/nwae/nwae.math',
-        'docker': r'/app',
-    }
 
     # Relative directory of model download folder
     MODEL_FOLDER_VERSIONS_DIR = '_models/__versions'
@@ -52,7 +48,7 @@ class EnvRepo:
         if self.in_google_colab:
             self.REPO_DIR = '/content/drive/My Drive/colab/poc'
         else:
-            self.REPO_DIR = self.repo_dir if self.user is None else self.REPO_DIR_USER[self.user]
+            self.REPO_DIR = self.repo_dir if self.repo_dir is not None else self.guess_repo_dir()
             self.logger.info('Not in any special environment, using repo dir "' + str(self.REPO_DIR) + '"')
 
         self.logger.info('Set to different environment, REPO_DIR "' + str(self.REPO_DIR))
@@ -82,6 +78,15 @@ class EnvRepo:
         self.NLP_DATASET_PARACRAWL_DIR = self.NLP_DATASET_DIR + r'/text-pairs/paracrawl.eu'
         self.NLP_DATASET_TATOEBA_DIR = self.NLP_DATASET_DIR + r'/text-pairs/tatoeba'
         self.NLP_DATASET_PII_DIR = self.NLP_DATASET_DIR + r'/pii'
+
+    def guess_repo_dir(self):
+        try:
+            repo_dir = os.environ['REPO_DIR']
+        except Exception as ex:
+            self.logger.info('Failed to get repo directory from env var "REPO_DIR", got exception ' + str(ex))
+            repo_dir = re.sub(pattern="/src/.*", repl="", string=os.getcwd())
+            print('Repository directory guessed as "' + str(repo_dir) + '"')
+        return repo_dir
 
 
 if __name__ == '__main__':
