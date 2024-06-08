@@ -2,9 +2,9 @@
 name = "fitxf"
 version = "0.0.1"
 authors = [
-  { name="HH" }
+  { name="HH" },
 ]
-description = "Fit & Predict Utils
+description = "Fit & Predict Utils"
 readme = "README.md"
 requires-python = ">=3.8"
 classifiers = [
