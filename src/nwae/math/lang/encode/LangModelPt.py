@@ -14,49 +14,13 @@ from nwae.math.utils.Logging import Logging
 #
 class LangModelPt(LangModelInterface, LmInterfaceX):
 
-    #
-    # Names that follow HuggingFace convention
-    # Can pre-cache the following models by git pull into your desired directory
-    #   git lfs install
-    #   git clone https://huggingface.co/sentence-transformers/paraphrase-MiniLM-L6-v2
-    #   git clone https://huggingface.co/deepset/sentence_bert
-    #   git clone https://huggingface.co/bert-base-chinese
-    #   git clone https://huggingface.co/monsoon-nlp/hindi-bert
-    #   git clone https://huggingface.co/sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
-    #
-    LM_MINILM_L6_V2 = 'sentence-transformers/paraphrase-MiniLM-L6-v2'
-    LM_SENTENCE_BERT = 'deepset/sentence_bert'
-    LM_BERT_BASE_ZH = 'bert-base-chinese'
-    # Multi-lingual models
-    LM_ST_MULTILINGUAL_MINILM_L12_V2 = 'sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2'
-    LM_INTFL_MULTILINGUAL_E5_SMALL = 'intfloat/multilingual-e5-small'
-    # Best performance for cy (Welsh)
-    LM_BERT_BASE_MULTILINGUAL_UNCASED = 'bert-base-multilingual-uncased'
-    LM_BERT_BASE_MULTILINGUAL_CASED = 'bert-base-multilingual-cased'
-    LM_DISTILBERT_MULTILINGUAL_CASED = 'distilbert-base-multilingual-cased'
-    # Supposed have Welsh/cy, but not the case in our tests
-    LM_XLM_ROBERTA_BASE = 'xlm-roberta-base'
-    LM_XLM_ROBERTA_LARGE = 'xlm-roberta-large'
-    #
-    # Can pre-cache the following models by git pull into your desired directory
-    #   git lfs install
-    #   git clone https://huggingface.co/sentence-transformers/paraphrase-MiniLM-L6-v2
-    #   git clone https://huggingface.co/deepset/sentence_bert
-    #   git clone https://huggingface.co/bert-base-chinese
-    #   git clone https://huggingface.co/monsoon-nlp/hindi-bert
-    #   git clone https://huggingface.co/sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
-    #
-
     DEFAULT_MODEL_MAP = {
-        # This model does much better in Bengali compared to paraphrase multilingual
-        'bn': LM_INTFL_MULTILINGUAL_E5_SMALL,
         # All other languages sink here
-        'multi': LM_ST_MULTILINGUAL_MINILM_L12_V2,
+        'multi': 'sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2',
     }
 
     # Only if we need a different or particular directory name, otherwise will default to the same one as HF
     LM_PATH_INFO = {
-        # LM_INTFL_MULTILINGUAL_E5_SMALL: 'intfloat--multilingual-e5-small',
     }
 
     def __init__(
@@ -215,7 +179,7 @@ if __name__ == '__main__':
 
     lm = LangModelPt(
         lang = 'ko',
-        model_name = LangModelPt.LM_INTFL_MULTILINGUAL_E5_SMALL,
+        model_name = 'intfloat/multilingual-e5-small',
         cache_folder = er.MODELS_PRETRAINED_DIR,
         logger = lgr,
     )
