@@ -227,7 +227,16 @@ class Cluster:
         return final_clusters
 
     # Unlike PCA, cluster algorithm will destroy the concept of the original labels.
-    # Thus we do a mapping back to the original labels using statistics of luster centers.
+    # Thus we do a mapping back to the original labels using statistics of cluster centers.
+    # For example, given the following labels & cluster numbers
+    #      ['a', 'a', 'a', 'b', 'b', 'b', 'c', 'c', 'c'],
+    #      [  0,   0,   1,   0,   1,   1,   0,   2,   2],
+    # Probability map now looks like this
+    #       {
+    #          0: {'a': 0.5,   'b': 0.25,  'c': 0.25},
+    #          1: {'a': 0.333, 'b': 0.666, 'c': 0.0 },
+    #          2: {'a': 0.0,   'b': 0.0,   'c': 1.0 }
+    #       }
     def map_centers_to_original_labels(
             self,
             labels_original: list,

@@ -296,7 +296,7 @@ class FitXformCluster(FitXformInterface):
                 X = X,
                 ref_X = self.cluster_centers,
                 ref_labels = np.array(range(len(self.cluster_centers))),
-                top_k = 3,
+                top_k = top_k,
             )
 
             if self.cluster_no_map_to_userlabel is not None:
@@ -316,8 +316,8 @@ class FitXformCluster(FitXformInterface):
                     'Converted to user labels: ' + str(pred_labels_user) + ' from cluster numbers ' + str(pred_labels)
                 )
             else:
-                self.logger.warning('For clustering prediction, no cluster number map to user labels found')
-                pred_labels_user = pred_labels
+                raise Exception('For clustering prediction, no cluster number map to user labels found')
+                # pred_labels_user = pred_labels
 
             # Cluster transform is just the cluster label
             # return np.array([r[0] for r in pred_labels])

@@ -146,11 +146,11 @@ class Metrics:
 
         # Probability map now looks like this
         #       {
-        #       0: {'a': 0.5, 'b': 0.25, 'c': 0.25},
-        #       1: {'a': 0.3333333333333333, 'b': 0.6666666666666666, 'c': 0.0},
-        #       2: {'a': 0.0, 'b': 0.0, 'c': 1.0}
+        #          0: {'a': 0.5,   'b': 0.25,  'c': 0.25},
+        #          1: {'a': 0.333, 'b': 0.666, 'c': 0.0 },
+        #          2: {'a': 0.0,   'b': 0.0,   'c': 1.0 }
         #       }
-        # So if we cluster #0 means 50% probability is belonging to "a", 25% is "b", 25% is "c"
+        # So cluster #0 means 50% probability belongs to "a", 25% to "b", 25% to "c"
         # Cluster #2 means 33.33% "a", 66.66% "b" and 0% "c"
         # Cluster #3 means 100% sure is "c"
 
