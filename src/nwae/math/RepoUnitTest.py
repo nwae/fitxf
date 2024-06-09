@@ -27,14 +27,14 @@ class RepoUnitTest:
     def __init__(
             self,
     ):
-        self.repository_dir = EnvRepo(repo_dir=os.environ["REPO_DIR"])
+        self.env_repo = EnvRepo(repo_dir=os.environ["REPO_DIR"])
 
-        self.keys_dir = self.repository_dir.REPO_DIR + '/keys'
-        self.regex_exceptions_path = self.repository_dir.CONFIG_UNITTEST_REGEX_EXCEPTIONS_FILEPATH
-        self.presidio_yaml_path = self.repository_dir.CONFIG_UNITTEST_PRESIDIO_YAML_FILEPATH
-        self.presidio_entities_path = self.repository_dir.CONFIG_UNITTEST_PRESIDIO_DEF_ENTITIES_JSON
-        self.lm_cache_folder = self.repository_dir.MODELS_PRETRAINED_DIR
-        self.document_folder = self.repository_dir.REPO_DIR + '/data/sample_docs'
+        self.keys_dir = self.env_repo.REPO_DIR + '/keys'
+        self.regex_exceptions_path = self.env_repo.CONFIG_UNITTEST_REGEX_EXCEPTIONS_FILEPATH
+        self.presidio_yaml_path = self.env_repo.CONFIG_UNITTEST_PRESIDIO_YAML_FILEPATH
+        self.presidio_entities_path = self.env_repo.CONFIG_UNITTEST_PRESIDIO_DEF_ENTITIES_JSON
+        self.lm_cache_folder = self.env_repo.MODELS_PRETRAINED_DIR
+        self.document_folder = self.env_repo.REPO_DIR + '/data/sample_docs'
         self.tmp_dir = os.environ["TEMP_DIR"]
         self.logger = Logging.get_logger_from_env_var()
 
