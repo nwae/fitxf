@@ -26,15 +26,18 @@ class FitXformUnitTest:
         return
 
     def test(self):
-        for f, score_thr in [
-            (FitXformPca(logger=self.logger), 0.9),
-            (FitXformCluster(logger=self.logger), 0.5),
-            (FitXformClusterCosine(logger=self.logger), 0.59),
+        for f, score_thr, ret_full_rec in [
+            (FitXformPca(logger=self.logger), 0.9, False),
+            # TODO Why return full record accuracy different?
+            # (FitXformPca(logger=self.logger), 0.9, True),
+            (FitXformCluster(logger=self.logger), 0.5, False),
+            (FitXformClusterCosine(logger=self.logger), 0.59, False),
         ]:
             self.__test_fit(
                 fitter_name = str(f.__class__),
                 fitter = f,
                 avg_score_threshold = score_thr,
+                ret_full_rec = ret_full_rec,
             )
         return
 
@@ -43,6 +46,7 @@ class FitXformUnitTest:
             fitter_name: str,
             fitter: FitXformInterface,
             avg_score_threshold: float,
+            ret_full_rec: bool,
     ):
         # texts_train = [
         #     "Let's have coffee", "Free for a drink?", "How about Starbucks?",
@@ -104,6 +108,9 @@ class FitXformUnitTest:
         res = fitter.fit_optimal(
             X = emb_train,
             X_labels = labels_train,
+            X_full_records = [
+                {k: v for (k, v) in r.items() if k not in ['embedding']} for r in df_train.to_dict(orient='records')
+            ],
             target_grid_density = 2.,
             measure = 'min',
             min_components = 3,
@@ -128,43 +135,47 @@ class FitXformUnitTest:
         x_dim = emb_train.shape[-1]
         sq_err_per_vect_thr = 0.1 * x_dim
         assert sq_err_per_vect < sq_err_per_vect_thr, \
-            'Estimate back using PCA, per vector sq err ' + str(sq_err_per_vect) \
+            '[' + str(fitter_name) + '] Estimate back using PCA, per vector sq err ' + str(sq_err_per_vect) \
             + '>=' + str(sq_err_per_vect_thr) + ', details: ' + str(diff)
 
         # Check if our manual calculation of the principal component values are correct
         diff = x_transform_check - x_transform
         sq_err_sum = np.sum(diff*diff)
         assert sq_err_sum < 0.000000001, \
-            'Manual calculate PCA component values, sq err ' + str(sq_err_sum) + ', diff ' + str(diff)
+            '[' + str(fitter_name) + '] Manual calculate PCA component values, sq err ' + str(sq_err_sum) \
+            + ', diff ' + str(diff)
 
         for use_grid in (False, True,):
             pred_labels, pred_probs = fitter.predict(
                 X = emb_eval,
                 use_grid = use_grid,
-                return_full_record = False,
+                return_full_record = ret_full_rec,
             )
             print(
-                'Use grid "' + str(use_grid) + '", predicted labels: ' + str(pred_labels)
+                '[' + str(fitter_name) + '] Use grid "' + str(use_grid) + '", predicted labels: ' + str(pred_labels)
             )
             expected_top_labels = df_eval['label'].tolist()
             scores = []
             for i, exp_lbl in enumerate(expected_top_labels):
+                pred_top_label = pred_labels[i][0]['label'] if ret_full_rec else pred_labels[i][0]
+                pred_top_label_2 = pred_labels[i][1]['label'] if ret_full_rec else pred_labels[i][1]
                 # 1.0 for being 1st, 0.5 for appearing 2nd
-                score_i = 1*(pred_labels[i][0] == exp_lbl) + 0.5*(pred_labels[i][1] == exp_lbl)
+                score_i = 1*(pred_top_label == exp_lbl) + 0.5*(pred_top_label_2 == exp_lbl)
                 score_i = min(score_i, 1.0)
                 scores.append(score_i)
                 # Check only top prediction
-                if pred_labels[i][0] != exp_lbl:
+                if pred_top_label != exp_lbl:
                     self.logger.warning(
-                        '#' + str(i) + ' Use grid "' + str(use_grid) + '". Predicted top label ' + str(pred_labels[i])
-                        + ' not expected ' + str(exp_lbl)
+                        '[' + str(fitter_name) + '] #' + str(i) + ' Use grid "' + str(use_grid)
+                        + '". Predicted top label "' + str(pred_top_label) + '" not expected "' + str(exp_lbl) + '"'
                     )
             score_avg = np.mean(np.array(scores))
             self.logger.info(
-                'Use grid "' + str(use_grid) + '". Mean score ' + str(score_avg) + ', scores' + str(scores)
+                '[' + str(fitter_name) + '] Use grid "' + str(use_grid) + '". Mean score '
+                + str(score_avg) + ', scores' + str(scores)
             )
             assert score_avg > avg_score_threshold, \
-                'Use grid "' + str(use_grid) + '". Mean score fail ' + str(score_avg) \
+                '[' + str(fitter_name) + '] Use grid "' + str(use_grid) + '". Mean score fail ' + str(score_avg) \
                 + ' < ' + str(avg_score_threshold) + '. Scores ' + str(scores)
 
         print('ALL TESTS PASSED OK')

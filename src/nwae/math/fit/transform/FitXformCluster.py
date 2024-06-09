@@ -286,6 +286,7 @@ class FitXformCluster(FitXformInterface):
             return_full_record = False,
             use_grid = False,
     ):
+        assert return_full_record == False, 'Full record return not supported for cluster prediction'
         try:
             self.__lock.acquire_mutexes(
                 id = 'predict',
@@ -297,6 +298,7 @@ class FitXformCluster(FitXformInterface):
                 ref_X = self.cluster_centers,
                 ref_labels = np.array(range(len(self.cluster_centers))),
                 top_k = top_k,
+                return_full_record = return_full_record,
             )
 
             if self.cluster_no_map_to_userlabel is not None:

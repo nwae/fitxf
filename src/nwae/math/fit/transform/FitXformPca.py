@@ -223,7 +223,7 @@ class FitXformPca(FitXformInterface):
         self.X = np.array(X)
         self.X_transform = x_reduced
         self.X_labels = np.array(X_labels)
-        self.X_full_records = np.array(X_full_records)
+        self.X_full_records = X_full_records
         self.principal_components = pca.components_
         self.centroid = np.mean(X, axis=0)
 
