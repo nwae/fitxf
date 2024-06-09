@@ -6,4 +6,4 @@ from nwae.math.fit.utils.FitUtilsUnitTest import FitUtils, FitUtilsUt
 from nwae.math.fit.utils.TensorUtils import TensorUtils, TensorUtilsUnitTest
 
 # Algo
-from nwae.math.algo.encoding.Base64 import Base64
+from nwae.math.algo.encoding.Base64 import Base64, Base64UnitTest
