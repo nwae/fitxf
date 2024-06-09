@@ -1,6 +1,7 @@
 import numpy as np
 import logging
 from nwae.math.fit.utils.FitUtils import FitUtils
+from nwae.math.fit.cluster.Metrics import Metrics as ClusterMetrics
 from sklearn.cluster import KMeans, MeanShift, DBSCAN
 import matplotlib.pyplot as mplt
 
@@ -88,6 +89,7 @@ class Cluster:
             self,
             x: np.ndarray,
             n_centers: int,
+            x_labels: list = None,
             km_iters = 100,
     ):
         assert x.ndim == 2
@@ -110,11 +112,25 @@ class Cluster:
             metric = 'euclid',
         )
 
+        if x_labels is not None:
+            cluster_label_to_labelsori = self.map_centers_to_original_labels(
+                labels_original = x_labels,
+                labels_cluster = list(kmeans.labels_),
+            )
+        else:
+            cluster_label_to_labelsori = None
+
+        cluster_numbers = list(kmeans.labels_)
         return {
             'n_centers': n_centers,
-            'kmeans': kmeans,
+            # Group the indexes in same cluster
+            'clusters': [
+                [idx for idx, clbl in enumerate(cluster_numbers) if clbl==i_center]
+                for i_center in range(n_centers)
+            ],
             'cluster_centers': kmeans.cluster_centers_,
-            'cluster_labels': kmeans.labels_,
+            'cluster_labels': cluster_numbers,
+            'cluster_label_to_original_labels': cluster_label_to_labelsori,
             'centers_median': additional_info['centers_median'],
             'inner_radiuses': additional_info['inner_radiuses'],
             'cluster_sizes': additional_info['cluster_sizes'],
@@ -124,6 +140,7 @@ class Cluster:
     def kmeans_optimal(
             self,
             x: np.ndarray,
+            x_labels: list = None,
             km_iters = 100,
             max_clusters = 100,
             min_clusters = 2,
@@ -146,6 +163,7 @@ class Cluster:
         for n_centers in range(min_clusters, min(max_clusters+1, len(x)+1), 1):
             cluster_res = self.kmeans(
                 x = x,
+                x_labels = x_labels,
                 n_centers = n_centers,
                 km_iters = km_iters,
             )
@@ -208,6 +226,19 @@ class Cluster:
             final_clusters = [x for n,x in cluster_sets.items() if (n==max_n)]
         return final_clusters
 
+    # Unlike PCA, cluster algorithm will destroy the concept of the original labels.
+    # Thus we do a mapping back to the original labels using statistics of luster centers.
+    def map_centers_to_original_labels(
+            self,
+            labels_original: list,
+            labels_cluster: list,
+    ):
+        map = ClusterMetrics(logger=self.logger).map_cluster_labels_to_original_labels(
+            point_labels = labels_original,
+            point_cluster_numbers = labels_cluster,
+        )
+        return map
+
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
@@ -221,4 +252,5 @@ if __name__ == '__main__':
     for cluster_info in res:
         print('  Cluster ' + str(cluster_info['n_centers']))
         [print('    ' + str(k) + ': ' + str(v)) for k,v in cluster_info.items()]
+        print('   Cluster map: ' + str())
     exit(0)

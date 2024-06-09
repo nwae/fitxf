@@ -93,6 +93,82 @@ class Metrics:
             'final_purity': aggregated_purity,
         }
 
+    def map_cluster_labels_to_original_labels(
+            self,
+            point_cluster_numbers: list,
+            point_labels: list,
+    ):
+        labels_unique = np.unique(point_labels).tolist()
+        labels_unique.sort()
+        map_index_to_labels = {i: lbl for i, lbl in enumerate(labels_unique)}
+        map_labels_to_index = {v: k for k, v in map_index_to_labels.items()}
+        n_labels_unique = len(labels_unique)
+        n_cno_unique = len(np.unique(point_cluster_numbers))
+
+        self.logger.info('Total unique original labels ' + str(n_labels_unique))
+        df = pd.DataFrame({'label': point_labels, 'cluster_number': point_cluster_numbers})
+        self.logger.info('Label and cluster numbers: ' + str(df))
+        # For example, given the following labels & cluster numbers
+        #      ['a', 'a', 'a', 'b', 'b', 'b', 'c', 'c', 'c'],
+        #      [  0,   0,   1,   0,   1,   1,   0,   2,   2],
+        # We want to extract something like this: point clusters --> labels
+        #      0: ['a', 'a', 'b', 'c']
+        #      1: ['a', 'b', 'b']
+        #      2: ['c', 'c']
+        clusterno_to_labelori = {cno: [] for cno in pd.unique(df['cluster_number'])}
+        # Count instead (how many in each label)
+        #      {0: array([2, 1, 1]), 1: array([1, 2, 0]), 2: array([0, 0, 2])}
+        clusterno_to_labelori_counts = {
+            cno: np.zeros(n_labels_unique, dtype=int) for cno in pd.unique(df['cluster_number'])
+        }
+        # Same as above, but not by label, just globally
+        #       [4. 3. 2.]
+        # Meaning cluster #0 appeared in 4 places, cluster #1 appeared in 3 places, and cluster #2 in 2 places
+        clusterno_to_labelori_counts_global = np.zeros(n_cno_unique)
+        # cluster_freq_all = np.array(cluster_numbers)
+        for i, r in enumerate(df.to_records()):
+            c_no = r['cluster_number']
+            lbl_ori = r['label']
+            clusterno_to_labelori[c_no].append(lbl_ori)
+            clusterno_to_labelori_counts[c_no][map_labels_to_index[lbl_ori]] += 1
+            clusterno_to_labelori_counts_global[c_no] += 1
+        self.logger.info('Cluster no to original labels: ' + str(clusterno_to_labelori))
+        self.logger.info('Cluster no to original labels count: ' + str(clusterno_to_labelori_counts))
+        self.logger.info('Cluster no to original labels count global: ' + str(clusterno_to_labelori_counts_global))
+
+        clusterno_to_labelori_probs = {k: v/v.sum() for k, v in clusterno_to_labelori_counts.items()}
+        self.logger.info('Cluster no to original labels indexes probabilities: ' + str(clusterno_to_labelori_probs))
+
+        # Change to more convenient form
+        for k, np_prob in clusterno_to_labelori_probs.items():
+            clusterno_to_labelori_probs[k] = {map_index_to_labels[i]: prob for i, prob in enumerate(np_prob)}
+        self.logger.info('Cluster no to original labels probabilities: ' + str(clusterno_to_labelori_probs))
+
+        # Probability map now looks like this
+        #       {
+        #       0: {'a': 0.5, 'b': 0.25, 'c': 0.25},
+        #       1: {'a': 0.3333333333333333, 'b': 0.6666666666666666, 'c': 0.0},
+        #       2: {'a': 0.0, 'b': 0.0, 'c': 1.0}
+        #       }
+        # So if we cluster #0 means 50% probability is belonging to "a", 25% is "b", 25% is "c"
+        # Cluster #2 means 33.33% "a", 66.66% "b" and 0% "c"
+        # Cluster #3 means 100% sure is "c"
+
+        # Sort a little for easier reading & easier processing when returning search results to applications
+        # that can easily pick top 1 from index 0
+        clusterno_to_labelori_probs_sorted = {}
+        for cno, label_probs in clusterno_to_labelori_probs.items():
+            df_k = pd.DataFrame({'label': label_probs.keys(), 'prob': label_probs.values()})
+            df_k = df_k.sort_values(
+                by = ['prob'],
+                ascending = False,
+            )
+            clusterno_to_labelori_probs_sorted[cno] = {
+                rec['label']: rec['prob'] for rec in df_k.to_dict(orient='records')
+            }
+
+        return clusterno_to_labelori_probs_sorted
+
 
 if __name__ == '__main__':
     m = Metrics(logger=Logging.get_default_logger(log_level=logging.INFO, propagate=False))
@@ -107,6 +183,11 @@ if __name__ == '__main__':
             ['a', 'a', 'a', 'b', 'b', 'b', 'c', 'c', 'c'],
             [  0,   1,   2,   0,   1,   2,   0,   1,   2],
         ],
+        # Some mixture
+        [
+            ['a', 'a', 'a', 'b', 'b', 'b', 'c', 'c', 'c'],
+            [  0,   0,   1,   0,   1,   1,   0,   2,   2],
+        ],
     ]
     for point_labels, point_cluster_numbers in point_labels_cno:
         purity = m.get_label_cluster_purity(
@@ -114,4 +195,10 @@ if __name__ == '__main__':
             point_labels = point_labels,
         )
         print(purity)
+
+        map_cno_lbl = m.map_cluster_labels_to_original_labels(
+            point_cluster_numbers = point_cluster_numbers,
+            point_labels = point_labels,
+        )
+        print(map_cno_lbl)
     exit(0)

@@ -35,6 +35,26 @@ class FitXformInterface:
         self.logger = logger if logger is not None else logging.getLogger()
         self.tensor_utils = TensorUtils(logger=self.logger)
         self.X_full_records = None
+
+        # Data/labels
+        self.X = None
+        self.X_labels = None
+        self.X_full_records = None
+        self.X_transform = None
+        self.X_transform_check = None
+        # Inverse PCA transform
+        self.X_inverse_transform = None
+        # Create an artificial grid
+        self.X_grid_vectors = None
+        self.X_grid_numbers = None
+        # Measures for us to optimize the number of optimal number of pca components
+        self.grid_density = None
+        self.grid_density_mean = None
+        # same as cluter inertia or if not cluster, is error of distances between point and transform summed up
+        self.distance_error = None
+        self.distance_error_mean = None
+        self.angle_error = None
+        self.angle_error_mean = None
         return
 
     def is_model_ready(self):
@@ -57,7 +77,7 @@ class FitXformInterface:
     ):
         raise Exception('Must be implemented by derived class')
 
-    def fit_X(
+    def fit(
             self,
             X: np.ndarray,
             X_labels = None,
@@ -233,7 +253,7 @@ class UnitTest:
             "Monetary policies", "Interest rates", "Deposit rates",
         ]
         labels = ['d', 'd', 'd', 'x', 'x', 'x', '$', '$', '$']
-        lmo = LmPt(lang='en', cache_folder=EnvRepo(repo_dir=os.environ["REPO_DIR"]).MODELS_PRETRAINED_DIR)
+        lmo = LmPt(lang='en', cache_folder=EnvRepo(repo_dir=os.environ.get("REPO_DIR", None)).MODELS_PRETRAINED_DIR)
 
         embeddings = lmo.encode(text_list=texts, return_tensors='np')
 

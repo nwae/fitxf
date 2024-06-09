@@ -84,11 +84,14 @@ class ClusterCosineUnitTest:
         res = self.cluster_cos.kmeans(
             x = embeddings,
             n_centers = n_unique_labels,
+            x_labels = df['label'].tolist(),
             km_iters = 100,
             init_method = 'random',
         )
         cluster_centers = np.array(res['cluster_centers'])
         point_cluster_numbers = res['cluster_labels']
+        prob_cluster_no_to_labels = res['cluster_label_to_original_labels']
+        self.logger.info('Probs cluster no to labels: ' + str(prob_cluster_no_to_labels))
 
         cluster_metrics = ClusterMetrics(logger=self.logger)
         purity = cluster_metrics.get_label_cluster_purity(
@@ -110,16 +113,33 @@ class ClusterCosineUnitTest:
             ref = cluster_centers,
             return_tensors = 'np',
         )
+        score_total = 0.
         for i, r in enumerate(records):
             c_no = point_cluster_numbers[i]
             r['cluster_number'] = c_no
             r['cluster_predicted_1'] = predicted_clusters[i, 0]
             r['cluster_predicted_2'] = predicted_clusters[i, 1]
+            # Get top few predictions
+            top2_label_prob = {
+                k: p for i, (k, p) in enumerate(prob_cluster_no_to_labels[predicted_clusters[i, 0]].items()) if i<=1
+            }
+            r['pred1_label'] = list(top2_label_prob.keys())[0]
+            r['pred1_prob'] = list(top2_label_prob.values())[0]
+            r['pred2_label'] = list(top2_label_prob.keys())[1]
+            r['pred2_prob'] = list(top2_label_prob.values())[1]
+            score_total += min(1.0, 1*(r['pred1_label']==r['label']) + 0.5*(r['pred2_prob']==r['label']))
+
             c_pr = r['cluster_predicted_1']
             assert c_pr == c_no, \
                 'For record #' + str(i) + ', text "' + str(r['text']) + '", cluster number ' \
                 + str(c_no) + ' != cluster predicted ' + str(c_pr)
 
+        score_avg = score_total / len(records)
+        self.logger.info('Score average = ' + str(score_avg))
+        thr_score = 0.88
+        assert score_avg > thr_score, \
+            'Average score in prediction ' + str(score_avg) + ' < ' + str(thr_score) \
+            + ': ' + str(pd.DataFrame.from_records(records))
         print(pd.DataFrame.from_records(records))
         print('CLUSTER COSINE NLP TEST PASSED')
         return

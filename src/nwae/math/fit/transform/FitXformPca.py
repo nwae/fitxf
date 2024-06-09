@@ -40,22 +40,6 @@ class FitXformPca(FitXformInterface):
         self.n_pca_components = None
         self.centroid = None
         self.principal_components = None
-        # Data/labels
-        self.X = None
-        self.X_labels = None
-        self.X_full_records = None
-        self.X_transform = None
-        self.X_transform_check = None
-        # Inverse PCA transform
-        self.X_inverse_transform = None
-        # Create an artificial grid
-        self.X_grid_vectors = None
-        self.X_grid_numbers = None
-        # Measures for us to optimize the number of optimal number of pca components
-        self.grid_density = None
-        self.grid_density_mean = None
-        self.distance_error = None
-        self.distance_error_mean = None
         return
 
     def is_model_ready(self):
@@ -260,8 +244,9 @@ class FitXformPca(FitXformInterface):
         X_lengths = np.sum((self.X * self.X), axis=-1) ** 0.5
         X_inverse_lengths = np.sum((self.X_inverse_transform * self.X_inverse_transform), axis=-1) ** 0.5
 
+        # Equivalent to cluster "inertia"
         self.distance_error = np.sum((self.X - self.X_inverse_transform) ** 2, axis=-1) ** 0.5
-        self.distance_error_pct = self.distance_error / X_lengths
+        self.distance_error = self.distance_error / X_lengths
         self.distance_error_mean = np.mean(self.distance_error)
 
         self.angle_error = np.sum(self.X * self.X_inverse_transform, axis=-1) / (X_lengths * X_inverse_lengths)

@@ -27,6 +27,7 @@ class ClusterCosine(Cluster):
             self,
             x: np.ndarray,
             n_centers: int,
+            x_labels: list = None,
             km_iters = 100,
             init_method = 'random',
             converge_diff_thr = 0.00001,
@@ -119,16 +120,25 @@ class ClusterCosine(Cluster):
             cluster_labels = np.array(last_cluster_numbers),
             metric = 'cosine',
         )
+        if x_labels is not None:
+            cluster_label_to_labelsori = self.map_centers_to_original_labels(
+                labels_original = x_labels,
+                labels_cluster = last_cluster_numbers,
+            )
+        else:
+            cluster_label_to_labelsori = None
         return {
+            'n_centers': n_centers,
             'clusters': last_clusters,
-            'kmeans': None,
             'cluster_centers': np.array(last_centroids),
             # correspond to the index of the "centroids"
             'cluster_labels': np.array(last_cluster_numbers),
+            'cluster_label_to_original_labels': cluster_label_to_labelsori,
             'centers_median': additional_info['centers_median'],
             'inner_radiuses': additional_info['inner_radiuses'],
             'cluster_sizes': additional_info['cluster_sizes'],
-            'points_inertia': None,
+            # estimate as inner_radiuses
+            'points_inertia': np.mean(additional_info['inner_radiuses']),
         }
 
     def get_cluster_numbers_and_centroids(

@@ -4,6 +4,7 @@ import numpy as np
 from nwae.math.fit.transform.FitXformInterface import FitXformInterface
 from nwae.math.fit.utils.FitUtils import FitUtils
 from nwae.math.fit.cluster.Cluster import Cluster
+from nwae.math.fit.cluster.ClusterCosine import ClusterCosine
 from nwae.math.utils.Lock import Lock
 from nwae.math.utils.EnvironRepo import EnvRepo
 from nwae.math.utils.Logging import Logging
@@ -35,22 +36,6 @@ class FitXformCluster(FitXformInterface):
         self.cluster_inertia = None
         self.cluster_inertia_per_point = None
         self.centers_median_distance = None
-        # Data/labels
-        self.X = None
-        self.X_labels = None
-        self.X_full_records = None
-        self.X_transform = None
-        self.X_transform_check = None
-        # Inverse PCA transform
-        self.X_inverse_transform = None
-        # Create an artificial grid
-        self.X_grid_vectors = None
-        self.X_grid_numbers = None
-        # Measures for us to optimize the number of optimal number of pca components
-        self.grid_density = None
-        self.grid_density_mean = None
-        self.distance_error = None
-        self.distance_error_mean = None
         return
 
     def is_model_ready(self):
@@ -117,6 +102,7 @@ class FitXformCluster(FitXformInterface):
         desired_cluster = self.cluster.kmeans(
             x = X,
             n_centers = n_centers,
+            x_labels = X_labels,
             km_iters = 100,
         )
         self.logger.info('Desired cluster of requested n=' + str(n_centers) + ': ' + str(desired_cluster))
@@ -149,6 +135,7 @@ class FitXformCluster(FitXformInterface):
         )
         res = self.cluster.kmeans_optimal(
             x = X,
+            x_labels = X_labels,
             km_iters = km_iters,
             min_clusters = min_clusters,
             max_clusters = max_clusters,
@@ -178,8 +165,13 @@ class FitXformCluster(FitXformInterface):
         self.cluster_centers = desired_cluster['cluster_centers']
         self.cluster_labels = np.array(desired_cluster['cluster_labels'])
         self.n_cluster = desired_cluster['n_centers']
+        self.cluster_no_map_to_userlabel = desired_cluster["cluster_label_to_original_labels"]
+
         self.cluster_inertia = desired_cluster['points_inertia']
         self.cluster_inertia_per_point = self.cluster_inertia / len(self.X)
+        self.distance_error = self.cluster_inertia_per_point
+        self.distance_error_mean = np.mean(self.distance_error)
+
         self.centers_median_distance = desired_cluster['centers_median']
         self.logger.info(
             'Inertia ' + str(self.cluster_inertia) + ', inertia per point ' + str(self.cluster_inertia_per_point)
@@ -194,6 +186,11 @@ class FitXformCluster(FitXformInterface):
             x_transform = self.X_transform,
         )
 
+        X_lengths = np.sum((self.X * self.X), axis=-1) ** 0.5
+        X_inverse_lengths = np.sum((self.X_inverse_transform * self.X_inverse_transform), axis=-1) ** 0.5
+        self.angle_error = np.sum(self.X * self.X_inverse_transform, axis=-1) / (X_lengths * X_inverse_lengths)
+        self.angle_error_mean = np.mean(self.angle_error)
+
         # Form grid using 1st dimension in increasing order
         x0 = self.cluster_centers[:,0]
         grid_order = np.argsort(x0)
@@ -204,6 +201,11 @@ class FitXformCluster(FitXformInterface):
             grid_lines[i] = ( grid_lines[i] + grid_lines[i+1] ) / 2
         grid_lines[l-1] = 2 * grid_lines[l-1]
         self.logger.info('Grid lines: ' + str(grid_lines))
+
+        # Should be exactly the same with using the fit API to reduce X
+        self.X_transform_check = self.__calc_transform(
+            X = X,
+        )
 
         return self.X_transform
 
@@ -296,10 +298,46 @@ class FitXformCluster(FitXformInterface):
                 ref_labels = np.array(range(len(self.cluster_centers))),
                 top_k = 3,
             )
+
+            if self.cluster_no_map_to_userlabel is not None:
+                pred_labels_user = []
+                # map from cluster numbers to actual user labels
+                for cluster_numbers in pred_labels:
+                    user_labels = []
+                    for cno in cluster_numbers:
+                        # each cluster number is mapped to user labels probabilities, e.g.
+                        #   {'food': 1.0, 'genetics': 0.0, 'medicine': 0.0, 'sports': 0.0, 'tech': 0.0}
+                        tmp = self.cluster_no_map_to_userlabel[cno]
+                        # we just take the top one, e.g. "food"
+                        top_label_tmp = list(tmp.keys())[0]
+                        user_labels.append(top_label_tmp)
+                    pred_labels_user.append(user_labels)
+                self.logger.info(
+                    'Converted to user labels: ' + str(pred_labels_user) + ' from cluster numbers ' + str(pred_labels)
+                )
+            else:
+                self.logger.warning('For clustering prediction, no cluster number map to user labels found')
+                pred_labels_user = pred_labels
+
             # Cluster transform is just the cluster label
-            return np.array([r[0] for r in pred_labels])
+            # return np.array([r[0] for r in pred_labels])
+            return pred_labels_user, pred_probs
         finally:
             self.__lock.release_mutexes(mutexes=[self.__mutex_model])
+
+
+class FitXformClusterCosine(FitXformCluster):
+
+    def __init__(
+            self,
+            logger = None,
+    ):
+        super().__init__(
+            logger = logger,
+        )
+        # Overwrite to use ClusterCosine
+        self.cluster = ClusterCosine(logger=self.logger)
+        return
 
 
 if __name__ == '__main__':
@@ -309,7 +347,7 @@ if __name__ == '__main__':
         "I am busy", "Go away", "Don't disturb me",
         "Monetary policies", "Interest rates", "Deposit rates",
     ]
-    lmo = LmPt(lang='en', cache_folder=EnvRepo(repo_dir=os.environ["REPO_DIR"]).MODELS_PRETRAINED_DIR)
+    lmo = LmPt(lang='en', cache_folder=EnvRepo(repo_dir=os.environ.get("REPO_DIR", None)).MODELS_PRETRAINED_DIR)
 
     embeddings = lmo.encode(text_list=texts, return_tensors='np')
 

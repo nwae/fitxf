@@ -8,7 +8,7 @@ from nwae.math.utils.Env import Env
 # IC Section
 #----------------------------------------------------------------------------------
 # Math
-from nwae.math.fit.transform.FitXformPcaUnitTest import FitXformPcaUnitTest
+from nwae.math.fit.transform.FitXformUnitTest import FitXformUnitTest
 from nwae.math.fit.utils.FitUtilsUnitTest import FitUtilsUt
 from nwae.math.fit.utils.TensorUtils import TensorUtilsUnitTest
 from nwae.math.fit.cluster.ClusterUnitTest import ClusterUnitTest
@@ -52,7 +52,7 @@ class RepoUnitTest:
 
         for cls in [
             # Math
-            FitXformPcaUnitTest, FitUtilsUt, TensorUtilsUnitTest, # HomomorphismUnitTest,
+            FitXformUnitTest, FitUtilsUt, TensorUtilsUnitTest, # HomomorphismUnitTest,
             ClusterUnitTest, ClusterCosineUnitTest,
             # Utils
             LockUnitTest, SingletonUnitTest, StringVarUnitTest,
@@ -86,9 +86,9 @@ class RepoUnitTest:
                 # TODO Uncomment these when we use them
                 # ut.test_nn(epochs=5000, plot_graph=False, tol_dif=0.1)
                 # ut.test_dist()
-            elif cls == FitXformPcaUnitTest:
+            elif cls == FitXformUnitTest:
                 self.logger.info('BEGIN TESTING ' + str(cls))
-                ut = FitXformPcaUnitTest(
+                ut = FitXformUnitTest(
                     lm_cache_folder = self.lm_cache_folder,
                     logger = self.logger,
                 )

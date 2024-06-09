@@ -20,15 +20,16 @@ class ClusterUnitTest:
             estimate_min_max = True,
         )
         n = res[0]['n_centers']
-        ok = res[0]['kmeans']
+        centers = res[0]['cluster_centers']
+        center_lbls = res[0]['cluster_labels']
         obj.logger.debug('Optimal clusters = ' + str(n))
-        obj.logger.debug('Cluster centers = ' + str(ok.cluster_centers_))
-        obj.logger.debug('Cluster labels: ' + str(ok.labels_))
+        obj.logger.debug('Cluster centers = ' + str(centers))
+        obj.logger.debug('Cluster labels: ' + str(center_lbls))
         obj.logger.debug('Cluster sizes: ' + str(res[0]['cluster_sizes']))
 
         for i in range(len(x)):
-            obs = ok.labels_[i]
-            exp = ok.labels_[i-i%3]
+            obs = center_lbls[i]
+            exp = center_lbls[i-i%3]
             assert obs == exp, \
                 'Label for index ' + str(i) + ', x = ' + str(x[i]) + ' observed ' + str(obs) + ', expected ' + str(exp)
         return
@@ -46,10 +47,11 @@ class ClusterUnitTest:
             max_clusters        = len(x),
         )
         n = res[0]['n_centers']
-        ok = res[0]['kmeans']
+        centers = res[0]['cluster_centers']
+        center_lbls = res[0]['cluster_labels']
         obj.logger.debug('Optimal clusters = ' + str(n))
-        obj.logger.debug('Cluster centers = ' + str(ok.cluster_centers_))
-        obj.logger.debug('Cluster labels: ' + str(ok.labels_))
+        obj.logger.debug('Cluster centers = ' + str(centers))
+        obj.logger.debug('Cluster labels: ' + str(center_lbls))
         obj.logger.debug('Cluster sizes: ' + str(res[0]['cluster_sizes']))
         assert n >= 4
 
@@ -63,11 +65,13 @@ class ClusterUnitTest:
             x = x,
             estimate_min_max = True,
         )
+        # TODO Why index 1 and not 0?
         n = res[1]['n_centers']
-        ok = res[1]['kmeans']
+        centers = res[1]['cluster_centers']
+        center_lbls = res[1]['cluster_labels']
         obj.logger.debug('Optimal clusters = ' + str(n))
-        obj.logger.debug('Cluster centers = ' + str(ok.cluster_centers_))
-        obj.logger.debug('Cluster labels: ' + str(ok.labels_))
+        obj.logger.debug('Cluster centers = ' + str(centers))
+        obj.logger.debug('Cluster labels: ' + str(center_lbls))
         obj.logger.debug('Cluster sizes: ' + str(res[1]['cluster_sizes']))
         assert n == 4
 
@@ -80,7 +84,7 @@ class ClusterUnitTest:
 
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
     ut = ClusterUnitTest()
     ut.test()
     exit(0)
