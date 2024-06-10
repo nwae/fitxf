@@ -1,6 +1,7 @@
 import torch
 import logging
 import os
+import re
 from nwae.math.lang.encode.LangModelInterface import LangModelInterface
 from nwae.math.lang.encode.LangModelInterfaceX import LangModelInterfaceX as LmInterfaceX
 from transformers import AutoTokenizer, AutoModel
@@ -54,49 +55,42 @@ class LangModelPt(LangModelInterface, LmInterfaceX):
             + '", cache folder "' + str(self.cache_folder) + '"'
         )
 
-        try:
-            # User may pass in model downloaded path
-            if os.path.isdir(str(self.model_name)):
-                self.model_path = self.model_name
-            # If user passes in only language, we derive the model and path
-            else:
-                self.model_name = self.DEFAULT_MODEL_MAP[self.lang] if self.model_name is None else self.model_name
-                self.model_path = self.cache_folder + '/' + self.LM_PATH_INFO.get(self.model_name, self.model_name)
+        # User may pass in model downloaded path
+        if os.path.isdir(str(self.model_name)):
+            self.model_path = self.model_name
+        # If user passes in only language, we derive the model and path
+        else:
+            self.model_name = self.DEFAULT_MODEL_MAP[self.lang] if self.model_name is None else self.model_name
+            self.model_path = self.cache_folder + '/' + self.LM_PATH_INFO.get(self.model_name, self.model_name)
 
-            assert os.path.isdir(self.model_path), 'Not a directory "' + str(self.model_path) + '"'
-            self.logger.info('Model name "' + str(self.model_name) + '" path "' + str(self.model_path) + '"')
+        assert os.path.isdir(self.model_path), 'Not a directory "' + str(self.model_path) + '"'
+        self.logger.info('Model name "' + str(self.model_name) + '" path "' + str(self.model_path) + '"')
 
-            self.logger.info(
-                'Lang model "' + str(self.model_name) + '" with cache folder "' + str(self.cache_folder)
-                + '", include tokenizer "' + str(self.include_tokenizer)
-                + '", name_or_path "' + str(self.model_path) + '"'
+        self.logger.info(
+            'Lang model "' + str(self.model_name) + '" with cache folder "' + str(self.cache_folder)
+            + '", include tokenizer "' + str(self.include_tokenizer)
+            + '", name_or_path "' + str(self.model_path) + '"'
+        )
+        if self.include_tokenizer:
+            self.tokenizer = AutoTokenizer.from_pretrained(
+                pretrained_model_name_or_path = self.model_path,
+                # cache_folder = self.cache_folder,
             )
-            if self.include_tokenizer:
-                self.tokenizer = AutoTokenizer.from_pretrained(
-                    pretrained_model_name_or_path = self.model_path,
-                    # cache_folder = self.cache_folder,
-                )
-                self.logger.info(
-                    'OK Tokenizer for model "' + str(self.model_path) + '", cache folder "' + str(self.cache_folder) + '"'
-                )
-                self.model = AutoModel.from_pretrained(
-                    # hugging face will know to use the cache folder above, without specifying here it seems
-                    pretrained_model_name_or_path = self.model_path
-                )
-                self.logger.info(
-                    'OK Model "' + str(self.model_path) + '", cache folder "' + str(self.cache_folder) + '"'
-                )
-            else:
-                self.model = SentenceTransformer(
-                    model_name_or_path = self.model_path,
-                    cache_folder = self.cache_folder,
-                )
-        except Exception as ex:
-            errmsg = 'Fail to instantiate language model for lang "' + str(lang)\
-                     + '" model "' + str(self.model_name) + '", path "' + str(self.model_path) \
-                     + '", cache folder "' + str(self.cache_folder) + '": ' + str(ex)
-            self.logger.fatal(errmsg)
-            raise Exception(errmsg)
+            self.logger.info(
+                'OK Tokenizer for model "' + str(self.model_path) + '", cache folder "' + str(self.cache_folder) + '"'
+            )
+            self.model = AutoModel.from_pretrained(
+                # hugging face will know to use the cache folder above, without specifying here it seems
+                pretrained_model_name_or_path = self.model_path
+            )
+            self.logger.info(
+                'OK Model "' + str(self.model_path) + '", cache folder "' + str(self.cache_folder) + '"'
+            )
+        else:
+            self.model = SentenceTransformer(
+                model_name_or_path = self.model_path,
+                cache_folder = self.cache_folder,
+            )
         return
 
     # Mean Pooling - Take attention mask into account for correct averaging
@@ -158,7 +152,7 @@ class LangModelPt(LangModelInterface, LmInterfaceX):
 
 
 if __name__ == '__main__':
-    er = EnvRepo(repo_dir=os.environ['REPO_DIR'])
+    er = EnvRepo(repo_dir=os.environ.get("REPO_DIR", None))
     lgr = Logging.get_default_logger(log_level=logging.INFO, propagate=False)
 
     for lg, txt in (
