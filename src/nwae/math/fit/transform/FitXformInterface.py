@@ -118,6 +118,7 @@ class FitXformInterface:
             X: np.ndarray,
             ref_X: np.ndarray,
             ref_labels: np.ndarray,
+            ref_full_records: list = (),
             top_k = 5,
             similarity_type = 'cosine',
             return_full_record = False,
@@ -143,8 +144,8 @@ class FitXformInterface:
             )
 
         if return_full_record:
-            assert self.X_full_records is not None, 'Cannot return full records'
-            pred_records = [[self.X_full_records[i] for i in np_row] for np_row in result_ordered]
+            assert ref_full_records is not None, 'Cannot return full records'
+            pred_records = [[ref_full_records[i] for i in np_row] for np_row in result_ordered]
             pred_probs_list = m_dot_ordered.tolist()
 
             return [ar[0:min(top_k, len(ar))] for ar in pred_records], \

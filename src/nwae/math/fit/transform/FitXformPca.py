@@ -423,10 +423,16 @@ class FitXformPca(FitXformInterface):
                 # TODO This can be obtained by querying underlying DB, so we don't need to keep in RAM
                 X_subset = self.X_transform[condition]
                 X_labels_subset = self.X_labels[condition]
+                if return_full_record:
+                    assert self.X_full_records is not None, 'Cannot return full records'
+                    full_records_list = np.array(self.X_full_records)[condition].tolist()
+                else:
+                    full_records_list = None
                 # data_records_subset = [r for i, r in enumerate(self.model_compression_data_records) if condition[i]]
             else:
                 X_subset = self.X_transform
                 X_labels_subset = self.X_labels
+                full_records_list = self.X_full_records
 
             #
             # STEP 3: Call __predict()
@@ -435,6 +441,7 @@ class FitXformPca(FitXformInterface):
                 X = X_pca,
                 ref_X = X_subset,
                 ref_labels = X_labels_subset,
+                ref_full_records = full_records_list,
                 top_k = top_k,
                 return_full_record = return_full_record,
             )

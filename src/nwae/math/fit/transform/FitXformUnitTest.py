@@ -28,8 +28,7 @@ class FitXformUnitTest:
     def test(self):
         for f, score_thr, ret_full_rec in [
             (FitXformPca(logger=self.logger), 0.9, False),
-            # TODO Why return full record accuracy different?
-            # (FitXformPca(logger=self.logger), 0.9, True),
+            (FitXformPca(logger=self.logger), 0.9, True),
             (FitXformCluster(logger=self.logger), 0.5, False),
             (FitXformClusterCosine(logger=self.logger), 0.59, False),
         ]:
@@ -150,7 +149,27 @@ class FitXformUnitTest:
                 X = emb_eval,
                 use_grid = use_grid,
                 return_full_record = ret_full_rec,
+                top_k = 2,
             )
+            # pred_labels_full, pred_probs_full = fitter.predict(
+            #     X = emb_eval,
+            #     use_grid = use_grid,
+            #     return_full_record = True,
+            #     top_k = 2,
+            # )
+            # print(pred_labels, pred_probs)
+            # print([[r['label'] for r in row_recs] for row_recs in pred_labels_full], pred_probs_full)
+            # assert pred_labels ==[[r['label'] for r in row_recs] for row_recs in pred_labels_full], \
+            #     '[' + str(fitter_name) + '] Use grid "' + str(use_grid) + \
+            #     '". Predict without full records must be same with prediction with full records:\n' \
+            #     + str(pred_labels) + '\n' + str([[r['label'] for r in row_recs] for row_recs in pred_labels_full])
+            # assert pred_probs == pred_probs_full, \
+            #     '[' + str(fitter_name) + '] Use grid "' + str(use_grid) + '"' + 'Probs also must equal.'
+            #
+            # if ret_full_rec:
+            #     pred_labels = pred_labels_full
+            #     pred_probs = pred_probs_full
+
             print(
                 '[' + str(fitter_name) + '] Use grid "' + str(use_grid) + '", predicted labels: ' + str(pred_labels)
             )
