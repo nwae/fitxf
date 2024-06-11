@@ -84,7 +84,10 @@ class EnvRepo:
             repo_dir = os.environ['REPO_DIR']
         except Exception as ex:
             self.logger.info('Failed to get repo directory from env var "REPO_DIR", got exception ' + str(ex))
-            repo_dir = re.sub(pattern="/src/.*", repl="", string=os.getcwd())
+            cwd = os.getcwd()
+            self.logger.info('Try to guess repo dir from cwd "' + str(cwd) + '"')
+            # Look "/src/" in Linux or "\src\" in Windows
+            repo_dir = re.sub(pattern="(/src/.*)|([\\\\]src[\\\\].*)", repl="", string=cwd)
             print('Repository directory guessed as "' + str(repo_dir) + '"')
         return repo_dir
 
