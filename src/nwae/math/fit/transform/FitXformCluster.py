@@ -131,7 +131,7 @@ class FitXformCluster(FitXformInterface):
         assert target_grid_density > 0, 'Target grid density not valid ' + str(target_grid_density)
         self.logger.info(
             'Start kmeans optimal with X shape ' + str(X.shape) + ', min clusters ' + str(min_clusters)
-            + ', max clusters ' + str(max_clusters)
+            + ', max clusters ' + str(max_clusters) + ', using cluster class "' + str(self.cluster.__class__) + '"'
         )
         res = self.cluster.kmeans_optimal(
             x = X,
@@ -143,7 +143,9 @@ class FitXformCluster(FitXformInterface):
             plot = plot,
         )
         desired_cluster = res[0]
-        self.logger.info('Desired optimal cluster: ' + str(desired_cluster))
+        self.logger.info(
+            'Desired optimal cluster using cluster class "' + str(self.cluster.__class__) + '": ' + str(desired_cluster)
+        )
         return self.__record_cluster(
             desired_cluster = desired_cluster,
             X = X,
