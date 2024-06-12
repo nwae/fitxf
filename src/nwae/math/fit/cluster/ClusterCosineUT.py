@@ -86,7 +86,6 @@ class ClusterCosineUnitTest:
             n_centers = n_unique_labels,
             x_labels = df['label'].tolist(),
             km_iters = 100,
-            init_method = 'random',
         )
         cluster_centers = np.array(res['cluster_centers'])
         point_cluster_numbers = res['cluster_labels']
@@ -189,7 +188,6 @@ class ClusterCosineUnitTest:
                 x = x,
                 n_centers = n,
                 km_iters = 10,
-                init_method = 'random',
             )
             print('++++++++++++++++++++++++++++++++++++++++++')
             print('By kmeans: ' + str(res))

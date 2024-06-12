@@ -28,8 +28,11 @@ class ClusterCosine(Cluster):
             x: np.ndarray,
             n_centers: int,
             x_labels: list = None,
+            # for fine-tuning already trained clusters, thus no need to start all over again
+            # useful for clusters of more than 1,000,000 points for example, where starting
+            # again means another half day of fit training
+            start_centers: np.ndarray = None,
             km_iters = 100,
-            init_method = 'random',
             converge_diff_thr = 0.00001,
     ):
         start_time = self.profiler.start()
@@ -38,20 +41,17 @@ class ClusterCosine(Cluster):
         x_normalized = self.tensor_utils.normalize(x=x, return_tensors='np')
 
         centroid_move_changes = []
-        if init_method == 'random':
+        if start_centers is None:
             # randomly pick n unique points
             last_clusters = []
             last_centroids = np.unique(x_normalized, axis=0)[0:n_centers].tolist()
             last_cluster_numbers = []
         else:
-            res = self.cluster_angle(
-                x = x_normalized,
-                n_clusters = n_centers,
-                max_iter = km_iters,
-            )
-            last_clusters = res['clusters']
-            last_centroids = res['centroids']
-            last_cluster_numbers = res['cluster_numbers']
+            assert start_centers.shape[-1] == x.shape[-1], \
+                'Last dim lengths not equal. Start centers shape ' + str(start_centers.shape) + ', x ' + str(x.shape)
+            assert start_centers.ndim == x.ndim, \
+                'Dimensions not equal, start centers shape ' + str(start_centers.shape) + ', x ' + str(x.shape)
+            last_centroids = start_centers
 
         self.logger.debug('Initial centroids: ' + str(last_centroids))
         for iter in range(km_iters):
@@ -69,28 +69,24 @@ class ClusterCosine(Cluster):
             self.logger.debug('Result/mdot ordered ' + str(result_ordered) + ', ' + str(mdot_ordered))
             self.logger.debug('Cluster numbers: ' + str(x_new_cluster_numbers))
 
-            if x_new_cluster_numbers == last_cluster_numbers:
-                self.logger.info('Convergence reached at iter #' + str(iter))
-                break
-            else:
-                # update new centroids
-                updated_cluster_numbers, updated_centroids = self.get_cluster_numbers_and_centroids(
-                    x = x_normalized,
-                    clusters = x_new_clusters,
-                )
-                # it is easier to do Euclidean distance changes of last centers to updated centers
-                dist_movements = np.sum((np.array(updated_centroids) - np.array(last_centroids)) ** 2, axis=-1) ** 0.5
-                # result_ordered, mdot_ordered = self.tensor_utils.dot_sim(
-                #     x = np.array(updated_centroids),
-                #     ref = np.array(last_centroids),
-                #     return_tensors = 'np',
-                # )
-                avg_dist_movements = np.mean(dist_movements)
+            # update new centroids
+            updated_cluster_numbers, updated_centroids = self.get_cluster_numbers_and_centroids(
+                x = x_normalized,
+                clusters = x_new_clusters,
+            )
+            # it is easier to do Euclidean distance changes of last centers to updated centers
+            dist_movements = np.sum((np.array(updated_centroids) - np.array(last_centroids)) ** 2, axis=-1) ** 0.5
+            # result_ordered, mdot_ordered = self.tensor_utils.dot_sim(
+            #     x = np.array(updated_centroids),
+            #     ref = np.array(last_centroids),
+            #     return_tensors = 'np',
+            # )
+            avg_dist_movements = np.mean(dist_movements)
 
-                centroid_move_changes.append(avg_dist_movements)
-                last_cluster_numbers = x_new_cluster_numbers
-                last_centroids = updated_centroids
-                last_clusters = x_new_clusters
+            centroid_move_changes.append(avg_dist_movements)
+            last_cluster_numbers = x_new_cluster_numbers
+            last_centroids = updated_centroids
+            last_clusters = x_new_clusters
 
             if len(centroid_move_changes) >= 2:
                 move_diff = np.abs(centroid_move_changes[-2] - centroid_move_changes[-1])

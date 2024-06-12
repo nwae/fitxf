@@ -90,7 +90,12 @@ class Cluster:
             x: np.ndarray,
             n_centers: int,
             x_labels: list = None,
+            # for fine-tuning already trained clusters, thus no need to start all over again
+            # useful for clusters of more than 1,000,000 points for example, where starting
+            # again means another half day of fit training
+            start_centers: np.ndarray = None,
             km_iters = 100,
+            converge_diff_thr = 0.00001,
     ):
         assert x.ndim == 2
 

@@ -22,16 +22,40 @@ class ClusterUnitTest:
         n = res[0]['n_centers']
         centers = res[0]['cluster_centers']
         center_lbls = res[0]['cluster_labels']
-        obj.logger.debug('Optimal clusters = ' + str(n))
-        obj.logger.debug('Cluster centers = ' + str(centers))
-        obj.logger.debug('Cluster labels: ' + str(center_lbls))
-        obj.logger.debug('Cluster sizes: ' + str(res[0]['cluster_sizes']))
+
+        assert n == 3, 'Expect 3 centers but got ' + str(n)
 
         for i in range(len(x)):
             obs = center_lbls[i]
             exp = center_lbls[i-i%3]
             assert obs == exp, \
                 'Label for index ' + str(i) + ', x = ' + str(x[i]) + ' observed ' + str(obs) + ', expected ' + str(exp)
+
+        #
+        # Test fine-tuning
+        #
+        # add new point
+        x_add = np.array([[7, 1, 1]])
+        x_new = np.append(x, x_add, axis=0)
+        res = obj.kmeans(
+            x = x_new,
+            n_centers = n,
+            start_centers = centers,
+        )
+        n = res['n_centers']
+        centers = res['cluster_centers']
+        center_lbls = res['cluster_labels']
+
+        # Last added point cluster number must equal 1st one
+        assert center_lbls[-1] == center_lbls[0], \
+            'Last added point should belong to cluster of 1st 3 points but got labels ' + str(center_lbls)
+        # This is same as above, test that original clusters retained
+        for i in range(len(x_new) - 1):
+            obs = center_lbls[i]
+            exp = center_lbls[i-i%3]
+            assert obs == exp, \
+                'Label for index ' + str(i) + ', x = ' + str(x[i]) + ' observed ' + str(obs) + ', expected ' + str(exp)
+
         return
 
     def test_diverge(self):
