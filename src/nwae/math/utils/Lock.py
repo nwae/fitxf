@@ -88,7 +88,7 @@ class Lock:
                         mtx.acquire()
                     # timeout here only to detect race condition, since we are already sure mutex is free
                     res = mtx.acquire(timeout=1)
-                    self.logger.info('Mutex acquired or not = ' + str(res))
+                    self.logger.debug('Mutex acquired or not = ' + str(res))
                     if not res:
                         # continue trying
                         time.sleep(try_sleep_secs)
