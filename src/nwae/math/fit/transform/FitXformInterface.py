@@ -86,6 +86,10 @@ class FitXformInterface:
             # For example, can mean how many clusters, or how many PCA components, or how many to sample
             # in a discrete Fourier transform, etc.
             n_components = 2,
+            # for fine-tuning already trained clusters, thus no need to start all over again
+            # useful for clusters of more than 1,000,000 points for example, where starting
+            # again means another half day of fit training
+            start_centers: np.ndarray = None,
             return_details = False,
     ):
         raise Exception('Must be implemented by derived class')
@@ -224,6 +228,10 @@ class SampleFit(FitXformInterface):
             # For example, can mean how many clusters, or how many PCA components, or how many to sample
             # in a discrete Fourier transform, etc.
             n_components = 2,
+            # for fine-tuning already trained clusters, thus no need to start all over again
+            # useful for clusters of more than 1,000,000 points for example, where starting
+            # again means another half day of fit training
+            start_centers: np.ndarray = None,
             return_details = False,
     ):
         pca = PCA(n_components=n_components)

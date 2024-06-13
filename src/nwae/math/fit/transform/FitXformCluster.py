@@ -93,6 +93,10 @@ class FitXformCluster(FitXformInterface):
             # For example, can mean how many clusters, or how many PCA components, or how many to sample
             # in a discrete Fourier transform, etc.
             n_components = 2,
+            # for fine-tuning already trained clusters, thus no need to start all over again
+            # useful for clusters of more than 1,000,000 points for example, where starting
+            # again means another half day of fit training
+            start_centers: np.ndarray = None,
             return_details = False,
     ):
         n_centers = n_components
@@ -103,6 +107,7 @@ class FitXformCluster(FitXformInterface):
             x = X,
             n_centers = n_centers,
             x_labels = X_labels,
+            start_centers = start_centers,
             km_iters = 100,
         )
         self.logger.info('Desired cluster of requested n=' + str(n_centers) + ': ' + str(desired_cluster))
@@ -261,19 +266,6 @@ class FitXformCluster(FitXformInterface):
         )
         # Cluster transform is just the cluster label
         return np.array([r[0] for r in pred_labels])
-
-    # def __predict_grid_pca(
-    #         self,
-    #         X: np.ndarray,
-    # ):
-    #     # TODO First, determine the grid segments of the texts/embeddings
-    #     x_pca = self.calc_transform(
-    #         X = X,
-    #     )
-    #     grid, grid_numbers = self.__calc_pca_grid(
-    #         x_pca = x_pca,
-    #     )
-    #     return grid, grid_numbers
 
     def __calc_grid(
             self,
