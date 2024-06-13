@@ -208,12 +208,38 @@ class ClusterCosineUnitTest:
         # get first turning point
         cluster_last_turn_point = res[0]
         self.logger.info('Kmeans optimal at first turning point: ' + str(cluster_last_turn_point))
+        optimal_n = cluster_last_turn_point['n_centers']
         optimal_clusters = cluster_last_turn_point['clusters']
         optimal_cluster_labels = cluster_last_turn_point['cluster_labels']
+        optimal_cluster_centers = cluster_last_turn_point['cluster_centers']
         assert len(optimal_clusters) == 3, 'No of optimal clusters ' + str(len(optimal_clusters)) + ' not expected 3'
         for i, j in [(0, 1), (2, 3), (4, 5)]:
             assert optimal_cluster_labels[i] == optimal_cluster_labels[j], \
                 'Points ' + str((i,j)) + ' not in same cluster ' + str(optimal_cluster_labels)
+
+        #
+        # Test fine-tuning
+        #
+        # add new point
+        x_add = np.array([[1.1, 0.2, 0.1], [-2.1, -2.0, -1.9]])
+        x_new = np.append(x, x_add, axis=0)
+        res = self.cluster_cos.kmeans(
+            x = x_new,
+            n_centers = optimal_n,
+            start_centers = optimal_cluster_centers,
+        )
+        new_centers = res['cluster_centers']
+        new_center_lbls = res['cluster_labels']
+
+        # Last added point cluster number must equal 1st one
+        assert new_center_lbls[-2] == new_center_lbls[0], \
+            'Last added point should belong to cluster of 1st 3 points but got labels ' + str(new_center_lbls)
+        assert new_center_lbls[-1] == new_center_lbls[4], \
+            'Last added point should belong to cluster of 1st 3 points but got labels ' + str(new_center_lbls)
+        # This is same as above, test that original clusters retained
+        for i, j in [(0, 1), (2, 3), (4, 5)]:
+            assert new_center_lbls[i] == new_center_lbls[j], \
+                'Points ' + str((i,j)) + ' not in same cluster ' + str(new_center_lbls)
 
         print('Now testing via NLP..')
         self.test_nlp()

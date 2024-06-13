@@ -42,17 +42,16 @@ class ClusterUnitTest:
             n_centers = n,
             start_centers = centers,
         )
-        n = res['n_centers']
-        centers = res['cluster_centers']
-        center_lbls = res['cluster_labels']
+        new_enters = res['cluster_centers']
+        new_center_lbls = res['cluster_labels']
 
         # Last added point cluster number must equal 1st one
-        assert center_lbls[-1] == center_lbls[0], \
-            'Last added point should belong to cluster of 1st 3 points but got labels ' + str(center_lbls)
+        assert new_center_lbls[-1] == new_center_lbls[0], \
+            'Last added point should belong to cluster of 1st 3 points but got labels ' + str(new_center_lbls)
         # This is same as above, test that original clusters retained
         for i in range(len(x_new) - 1):
-            obs = center_lbls[i]
-            exp = center_lbls[i-i%3]
+            obs = new_center_lbls[i]
+            exp = new_center_lbls[i-i%3]
             assert obs == exp, \
                 'Label for index ' + str(i) + ', x = ' + str(x[i]) + ' observed ' + str(obs) + ', expected ' + str(exp)
 

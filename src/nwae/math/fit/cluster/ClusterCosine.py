@@ -35,18 +35,19 @@ class ClusterCosine(Cluster):
             km_iters = 100,
             converge_diff_thr = 0.00001,
     ):
+        assert km_iters > 0
         start_time = self.profiler.start()
 
+        self.logger.info('Start cosine cos clustering x of shape ' + str(x.shape))
         # For cosine similarity, it makes no sense not to normalize first
         x_normalized = self.tensor_utils.normalize(x=x, return_tensors='np')
 
         centroid_move_changes = []
         if start_centers is None:
             # randomly pick n unique points
-            last_clusters = []
             last_centroids = np.unique(x_normalized, axis=0)[0:n_centers].tolist()
-            last_cluster_numbers = []
         else:
+            self.logger.info('Using user provided start centers of shape ' + str(start_centers.shape))
             assert start_centers.shape[-1] == x.shape[-1], \
                 'Last dim lengths not equal. Start centers shape ' + str(start_centers.shape) + ', x ' + str(x.shape)
             assert start_centers.ndim == x.ndim, \
@@ -54,6 +55,8 @@ class ClusterCosine(Cluster):
             last_centroids = start_centers
 
         self.logger.debug('Initial centroids: ' + str(last_centroids))
+        last_cluster_numbers = None
+        last_clusters = None
         for iter in range(km_iters):
             self.logger.info('Starting iteration #' + str(iter+1) + '...')
             # Closest centers for all points
@@ -149,6 +152,7 @@ class ClusterCosine(Cluster):
         centroids = []
         cluster_numbers = np.array([-1]*l)
         for i, clstr in enumerate(clusters):
+            assert len(clstr) > 0, 'Empty cluster at ' + '#' + str(i) + ', cluster ' + str(clstr)
             select = np.array([False]*l)
             for item in clstr:
                 select[item] = True

@@ -1,6 +1,7 @@
 import numpy as np
 import logging
 from nwae.math.fit.utils.FitUtils import FitUtils
+from nwae.math.fit.utils.TensorUtils import TensorUtils
 from nwae.math.fit.cluster.Metrics import Metrics as ClusterMetrics
 from sklearn.cluster import KMeans, MeanShift, DBSCAN
 import matplotlib.pyplot as mplt
@@ -27,6 +28,7 @@ class Cluster:
     ):
         self.logger = logger if logger is not None else logging.getLogger()
         self.fit_utils = FitUtils(logger=self.logger)
+        self.tensor_utils = TensorUtils(logger=self.logger)
         return
 
     def estimate_min_max_clusters(
@@ -126,6 +128,13 @@ class Cluster:
             cluster_label_to_labelsori = None
 
         cluster_numbers = list(kmeans.labels_)
+        #
+        # Приложения должно быть сохранить только "cluster_centers" и "cluster_labels"
+        # Если входиться новые точки, не надо тренировать снова, но только продольжать трейнинг с
+        # этих же "cluster_centers". Такой шаги:
+        #   - вычислить метки кластера новых точек
+        #   - продолжать трейнинг с прошлых центров и их меток кластеров
+        #
         return {
             'n_centers': n_centers,
             # Group the indexes in same cluster
@@ -134,7 +143,13 @@ class Cluster:
                 for i_center in range(n_centers)
             ],
             'cluster_centers': kmeans.cluster_centers_,
+            # e.g. [2, 2, 2, 0, 0, 0, 1, 1, 1] из меток пользавателя ['a', 'a', 'a', 'b', 'b', 'b', 'c', 'c', 'd']
             'cluster_labels': cluster_numbers,
+            # как связываются между новыми метками кластерами и исходными метками пользавателя. e.g. {
+            #    2: {'a': 1.0, 'b': 0.0, 'c': 0.0, 'd': 0.0},
+            #    0: {'b': 1.0, 'a': 0.0, 'c': 0.0, 'd': 0.0},
+            #    1: {'c': 0.6666666666666666, 'd': 0.3333333333333333, 'a': 0.0, 'b': 0.0}
+            # }
             'cluster_label_to_original_labels': cluster_label_to_labelsori,
             'centers_median': additional_info['centers_median'],
             'inner_radiuses': additional_info['inner_radiuses'],
@@ -231,6 +246,21 @@ class Cluster:
             final_clusters = [x for n,x in cluster_sets.items() if (n==max_n)]
         return final_clusters
 
+    def get_cluster_label_for_arbitrary_x(
+            self,
+            x_arbitrary: np.ndarray,
+            cluster_centers: np.ndarray,
+    ):
+        assert x_arbitrary.ndim == cluster_centers.ndim, \
+            'Different ndims ' + str(x_arbitrary.shape) + ', ' + str(cluster_centers.shape)
+        top_pos, _ = self.tensor_utils.dot_sim(
+            x = x_arbitrary,
+            ref = cluster_centers,
+            return_tensors = 'np',
+        )
+        # Just index 0 of every row
+        return top_pos[:, 0]
+
     # Unlike PCA, cluster algorithm will destroy the concept of the original labels.
     # Thus we do a mapping back to the original labels using statistics of cluster centers.
     # For example, given the following labels & cluster numbers
@@ -262,9 +292,31 @@ if __name__ == '__main__':
         [1, 5, 1], [2, 7, 1], [0, 6, 2],
         [1, 1, 5], [2, 1, 8], [0, 2, 6],
     ])
-    res = clstr.kmeans_optimal(x=x, estimate_min_max=True)
+    labels = ['a', 'a', 'a', 'b', 'b', 'b', 'c', 'c', 'd']
+    res = clstr.kmeans_optimal(x=x, x_labels=labels, estimate_min_max=True)
     for cluster_info in res:
         print('  Cluster ' + str(cluster_info['n_centers']))
         [print('    ' + str(k) + ': ' + str(v)) for k,v in cluster_info.items()]
         print('   Cluster map: ' + str())
+
+    n_centers = res[0]['n_centers']
+    c_centers = res[0]['cluster_centers']
+    c_labels = res[0]['cluster_labels']
+    # Fine Tune instead of retrain
+    x_new = np.array([[7, 1, 1], [1, 0, 7]])
+    # calculate label
+    x_new_labels = clstr.get_cluster_label_for_arbitrary_x(
+        x_arbitrary = x_new,
+        cluster_centers = c_centers,
+    )
+    print('New cluster labels ' + str(x_new_labels))
+    res = clstr.kmeans(
+        x = np.append(x, x_new, axis=0),
+        n_centers = n_centers,
+        x_labels = list(c_labels) + list(x_new_labels),
+        start_centers = c_centers,
+    )
+    print('  Cluster ' + str(res['n_centers']))
+    [print('    ' + str(k) + ': ' + str(v)) for k,v in res.items()]
+    print('   Cluster map: ' + str())
     exit(0)
