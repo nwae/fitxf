@@ -147,6 +147,10 @@ class FitXformInterface:
                 return_tensors = 'np',
             )
 
+        self.logger.debug(
+            'Result ordered for top k ' + str(top_k) + ': ' + str(result_ordered) + ', ref length ' + str(len(ref_X))
+        )
+
         if return_full_record:
             assert ref_full_records is not None, 'Cannot return full records'
             pred_records = [[ref_full_records[i] for i in np_row] for np_row in result_ordered]

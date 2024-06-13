@@ -295,6 +295,7 @@ class FitXformCluster(FitXformInterface):
                 top_k = top_k,
                 return_full_record = return_full_record,
             )
+            self.logger.debug('Predicted labels for top k ' + str(top_k) + ': ' + str(pred_labels))
 
             if self.cluster_no_map_to_userlabel is not None:
                 pred_labels_user = []
