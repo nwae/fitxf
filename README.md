@@ -15,13 +15,19 @@ from fitxf import TensorUtils
 ts = TensorUtils()
 x = np.random.rand(5,3)
 y = np.random.rand(10,3)
-ts.dot_sim(x,x,'np')
-ts.dot_sim(y,y,'np')
-matches, dotsim = ts.dot_sim(x,y,'np')
+
+# Cosine similarity
+ts.similarity_cosine(x,x,'np')
+ts.similarity_cosine(y,y,'np')
+matches, dotsim = ts.similarity_cosine(x,y,'np')
+print("matches",matches)
+print("dot similarities",dotsim)
+
+# Euclidean Distance
+matches, dotsim = ts.similarity_distance(x,x,'np')
 print("matches",matches)
 print("dot similarities",dotsim)
 ```
-
 
 ## Fit Transform
 
