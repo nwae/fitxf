@@ -287,7 +287,7 @@ class FitXformCluster(FitXformInterface):
                 mutexes = [self.__mutex_model],
             )
 
-            pred_labels, pred_probs = self.predict_standard(
+            pred_cluster_numbers, pred_probs = self.predict_standard(
                 X = X,
                 ref_X = self.cluster_centers,
                 ref_labels = np.array(range(len(self.cluster_centers))),
@@ -295,23 +295,25 @@ class FitXformCluster(FitXformInterface):
                 top_k = top_k,
                 return_full_record = return_full_record,
             )
-            self.logger.debug('Predicted labels for top k ' + str(top_k) + ': ' + str(pred_labels))
+            self.logger.debug('Predicted clusters for top k ' + str(top_k) + ': ' + str(pred_cluster_numbers))
 
             if self.cluster_no_map_to_userlabel is not None:
-                pred_labels_user = []
+                # Include user label info
+                pred_label_and_clusterno = []
                 # map from cluster numbers to actual user labels
-                for cluster_numbers in pred_labels:
-                    user_labels = []
+                for cluster_numbers in pred_cluster_numbers:
+                    user_labels_cno = []
                     for cno in cluster_numbers:
                         # each cluster number is mapped to user labels probabilities, e.g.
                         #   {'food': 1.0, 'genetics': 0.0, 'medicine': 0.0, 'sports': 0.0, 'tech': 0.0}
                         tmp = self.cluster_no_map_to_userlabel[cno]
                         # we just take the top one, e.g. "food"
                         top_label_tmp = list(tmp.keys())[0]
-                        user_labels.append(top_label_tmp)
-                    pred_labels_user.append(user_labels)
+                        user_labels_cno.append({'cluster_label': cno, 'user_label_estimate': top_label_tmp})
+                    pred_label_and_clusterno.append(user_labels_cno)
                 self.logger.info(
-                    'Converted to user labels: ' + str(pred_labels_user) + ' from cluster numbers ' + str(pred_labels)
+                    'Converted to user labels: ' + str(pred_label_and_clusterno)
+                    + ' from cluster numbers ' + str(pred_cluster_numbers)
                 )
             else:
                 raise Exception('For clustering prediction, no cluster number map to user labels found')
@@ -319,7 +321,7 @@ class FitXformCluster(FitXformInterface):
 
             # Cluster transform is just the cluster label
             # return np.array([r[0] for r in pred_labels])
-            return pred_labels_user, pred_probs
+            return pred_label_and_clusterno, pred_probs
         finally:
             self.__lock.release_mutexes(mutexes=[self.__mutex_model])
 

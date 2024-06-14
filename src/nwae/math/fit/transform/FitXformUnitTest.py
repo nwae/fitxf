@@ -178,6 +178,10 @@ class FitXformUnitTest:
             for i, exp_lbl in enumerate(expected_top_labels):
                 pred_top_label = pred_labels[i][0]['label'] if ret_full_rec else pred_labels[i][0]
                 pred_top_label_2 = pred_labels[i][1]['label'] if ret_full_rec else pred_labels[i][1]
+                if type(fitter) in [FitXformClusterCosine, FitXformCluster]:
+                    # First in tuple is predicted cluster number, take
+                    pred_top_label = pred_top_label['user_label_estimate']
+                    pred_top_label_2 = pred_top_label_2['user_label_estimate']
                 # 1.0 for being 1st, 0.5 for appearing 2nd
                 score_i = 1*(pred_top_label == exp_lbl) + 0.5*(pred_top_label_2 == exp_lbl)
                 score_i = min(score_i, 1.0)
