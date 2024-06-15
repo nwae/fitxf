@@ -167,6 +167,7 @@ class FitXformCluster(FitXformInterface):
         self.X_labels = X_labels
         self.X_full_records = X_full_records
         self.model_centers = desired_cluster['cluster_centers']
+        self.model_principal_components = self.model_centers
         self.cluster_labels = np.array(desired_cluster['cluster_labels'])
         self.model_n_components_or_centers = desired_cluster['n_centers']
         self.model_centroid = np.mean(self.model_centers)

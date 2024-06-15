@@ -133,6 +133,10 @@ class FitXformInterface:
                 x = self.model_centroid,
                 data_type = np.float64,
             )
+            principle_components = self.base64.encode_numpy_array_to_base64_string(
+                x = self.model_principal_components,
+                data_type = np.float64,
+            )
             centers = self.base64.encode_numpy_array_to_base64_string(
                 x = self.model_centers,
                 data_type = np.float64,
@@ -148,6 +152,7 @@ class FitXformInterface:
         else:
             x_tf = self.X_transform
             centroid = self.model_centroid
+            principle_components = self.model_principal_components
             centers = self.model_centers
             grid_vecs = self.X_grid_vectors
             grid_numbers = self.X_grid_numbers
@@ -157,7 +162,7 @@ class FitXformInterface:
             self.KEY_X_LABELS: self.X_labels,
             self.KEY_CENTROID: centroid,
             self.KEY_N_COMPONENTS_OR_CENTERS: self.model_n_components_or_centers,
-            self.KEY_PRINCIPAL_COMPONENTS: self.model_principal_components,
+            self.KEY_PRINCIPAL_COMPONENTS: principle_components,
             self.KEY_CENTERS: centers,
             self.KEY_GRID_VECTORS: grid_vecs,
             self.KEY_GRID_NUMBERS: grid_numbers,

@@ -204,8 +204,11 @@ class FitXformUnitTest:
         #
         # Test fine tune
         #
-        model_json = fitter.model_to_json(numpy_to_base64_str=True)
-        self.logger.info(model_json)
+        model_dict = fitter.model_to_json(numpy_to_base64_str=True)
+        [self.logger.info(str(k) + ': ' + str(v)) for k, v in model_dict.items()]
+
+        fitter.load_model_from_json(model_json=model_dict)
+
 
         print('ALL TESTS PASSED OK')
         return
