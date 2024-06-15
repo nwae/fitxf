@@ -265,21 +265,7 @@ class FitXformPca(FitXformInterface):
 
         self.model_params_ready = True
 
-        return {
-            # PCA transform
-            self.KEY_X_TRANSFORM: self.X_transform,
-            self.KEY_X_TRANSFORM_CHECK: self.X_transform_check,
-            self.KEY_X_LABELS: self.X_labels,
-            self.KEY_X_FULL_RECS: self.X_full_records,
-            # Inverse PCA transform
-            self.KEY_X_INV_TRANSFORM: self.X_inverse_transform,
-            self.KEY_CENTROID: self.model_centroid,
-            self.KEY_N_COMPONENTS_OR_CENTERS: self.model_n_components_or_centers,
-            self.KEY_PRINCIPAL_COMPONENTS: self.model_principal_components,
-            self.KEY_CENTERS: None,
-            self.KEY_GRID_VECTORS: self.X_grid_vectors,
-            self.KEY_GRID_NUMBERS: self.X_grid_numbers,
-        }
+        return self.model_to_json(numpy_to_base64_str=False)
 
     # Recover estimate of original point from PCA compression
     def inverse_transform(

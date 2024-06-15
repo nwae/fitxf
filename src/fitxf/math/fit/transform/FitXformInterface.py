@@ -125,16 +125,26 @@ class FitXformInterface:
             )
             x_tf_check = self.base64.encode_numpy_array_to_base64_string(
                 x = self.X_transform_check,
-                data_type=np.float64,
+                data_type = np.float64,
             )
             x_inv_tf = self.base64.encode_numpy_array_to_base64_string(
                 x = self.X_inverse_transform,
-                data_type=np.float64,
+                data_type = np.float64,
+            )
+            centroid = self.base64.encode_numpy_array_to_base64_string(
+                x = self.model_centroid,
+                data_type = np.float64,
+            )
+            centers = self.base64.encode_numpy_array_to_base64_string(
+                x = self.model_centers,
+                data_type = np.float64,
             )
         else:
             x_tf = self.X_transform
             x_tf_check = self.X_transform_check
             x_inv_tf = self.X_inverse_transform
+            centroid = self.model_centroid
+            centers = self.model_centers
 
         return {
             self.KEY_X_TRANSFORM: x_tf,
@@ -143,10 +153,10 @@ class FitXformInterface:
             self.KEY_X_FULL_RECS: self.X_full_records,
             # Inverse PCA transform
             self.KEY_X_INV_TRANSFORM: x_inv_tf,
-            self.KEY_CENTROID: np.mean(self.cluster_centers),
-            self.KEY_N_COMPONENTS_OR_CENTERS: self.n_cluster,
-            self.KEY_PRINCIPAL_COMPONENTS: None,
-            self.KEY_CENTERS: self.cluster_centers,
+            self.KEY_CENTROID: centroid,
+            self.KEY_N_COMPONENTS_OR_CENTERS: self.model_n_components_or_centers,
+            self.KEY_PRINCIPAL_COMPONENTS: self.model_principal_components,
+            self.KEY_CENTERS: centers,
             self.KEY_GRID_VECTORS: self.X_grid_vectors,
             self.KEY_GRID_NUMBERS: self.X_grid_numbers,
         }

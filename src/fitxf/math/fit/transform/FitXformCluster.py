@@ -30,8 +30,6 @@ class FitXformCluster(FitXformInterface):
 
         # Model parameters
         self.model_params_ready = False
-        self.n_cluster = None
-        self.cluster_centers = None
         self.cluster_labels = None
         self.cluster_inertia = None
         self.cluster_inertia_per_point = None
@@ -168,9 +166,10 @@ class FitXformCluster(FitXformInterface):
         self.X = np.array(X)
         self.X_labels = np.array(X_labels)
         self.X_full_records = X_full_records
-        self.cluster_centers = desired_cluster['cluster_centers']
+        self.model_centers = desired_cluster['cluster_centers']
         self.cluster_labels = np.array(desired_cluster['cluster_labels'])
-        self.n_cluster = desired_cluster['n_centers']
+        self.model_n_components_or_centers = desired_cluster['n_centers']
+        self.model_centroid = np.mean(self.model_centers)
         self.cluster_no_map_to_userlabel = desired_cluster["cluster_label_to_original_labels"]
 
         self.cluster_inertia = desired_cluster['points_inertia']
@@ -198,7 +197,7 @@ class FitXformCluster(FitXformInterface):
         self.angle_error_mean = np.mean(self.angle_error)
 
         # Form grid using 1st dimension in increasing order
-        x0 = self.cluster_centers[:,0]
+        x0 = self.model_centers[:,0]
         grid_order = np.argsort(x0)
         self.logger.info('Grid order: ' + str(grid_order))
         grid_lines = x0[grid_order]
@@ -213,20 +212,7 @@ class FitXformCluster(FitXformInterface):
             X = X,
         )
 
-        return {
-            self.KEY_X_TRANSFORM: self.X_transform,
-            self.KEY_X_TRANSFORM_CHECK: self.X_transform_check,
-            self.KEY_X_LABELS: self.X_labels,
-            self.KEY_X_FULL_RECS: self.X_full_records,
-            # Inverse PCA transform
-            self.KEY_X_INV_TRANSFORM: self.X_inverse_transform,
-            self.KEY_CENTROID: np.mean(self.cluster_centers),
-            self.KEY_N_COMPONENTS_OR_CENTERS: self.n_cluster,
-            self.KEY_PRINCIPAL_COMPONENTS: None,
-            self.KEY_CENTERS: self.cluster_centers,
-            self.KEY_GRID_VECTORS: self.X_grid_vectors,
-            self.KEY_GRID_NUMBERS: self.X_grid_numbers,
-        }
+        return self.model_to_json(numpy_to_base64_str=False)
 
     # Recover estimate of original point from PCA compression
     def inverse_transform(
@@ -249,7 +235,7 @@ class FitXformCluster(FitXformInterface):
             x_transform: np.ndarray,
     ):
         # Transform is just the cluster label (or cluster center index)
-        x_estimated = self.cluster_centers[x_transform]
+        x_estimated = self.model_centers[x_transform]
         return x_estimated
 
     # Get PCA values of arbitrary points
@@ -272,8 +258,8 @@ class FitXformCluster(FitXformInterface):
     ):
         pred_labels, pred_probs = self.predict_standard(
             X = X,
-            ref_X = self.cluster_centers,
-            ref_labels = np.array(range(len(self.cluster_centers))),
+            ref_X = self.model_centers,
+            ref_labels = np.array(range(len(self.model_centers))),
             top_k = 3,
         )
         # Cluster transform is just the cluster label
@@ -301,8 +287,8 @@ class FitXformCluster(FitXformInterface):
 
             pred_cluster_numbers, pred_probs = self.predict_standard(
                 X = X,
-                ref_X = self.cluster_centers,
-                ref_labels = np.array(range(len(self.cluster_centers))),
+                ref_X = self.model_centers,
+                ref_labels = np.array(range(len(self.model_centers))),
                 ref_full_records = self.X_full_records,
                 top_k = top_k,
                 return_full_record = return_full_record,
