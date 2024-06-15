@@ -38,9 +38,6 @@ class FitXformPca(FitXformInterface):
 
         # Model parameters
         self.model_params_ready = False
-        self.n_pca_components = None
-        self.centroid = None
-        self.principal_components = None
         return
 
     def is_model_ready(self):
@@ -228,15 +225,15 @@ class FitXformPca(FitXformInterface):
         self.model_params_ready = False
 
         # Keep model parameters
-        self.n_pca_components = n_components
+        self.model_n_components_or_centers = n_components
         self.X = np.array(X)
         self.X_transform = x_reduced
         self.X_labels = np.array(X_labels)
         self.X_full_records = X_full_records
-        self.principal_components = pca.components_
-        self.centroid = np.mean(X, axis=0)
+        self.model_principal_components = pca.components_
+        self.model_centroid = np.mean(X, axis=0)
 
-        self.__check_consistency(principal_components=self.principal_components)
+        self.__check_consistency(principal_components=self.model_principal_components)
 
         # Estimate back from principal components
         self.X_inverse_transform = self.__inverse_transform(
@@ -276,9 +273,9 @@ class FitXformPca(FitXformInterface):
             self.KEY_X_FULL_RECS: self.X_full_records,
             # Inverse PCA transform
             self.KEY_X_INV_TRANSFORM: self.X_inverse_transform,
-            self.KEY_CENTROID: self.centroid,
-            self.KEY_N_COMPONENTS_OR_CENTERS: self.n_pca_components,
-            self.KEY_PRINCIPAL_COMPONENTS: self.principal_components,
+            self.KEY_CENTROID: self.model_centroid,
+            self.KEY_N_COMPONENTS_OR_CENTERS: self.model_n_components_or_centers,
+            self.KEY_PRINCIPAL_COMPONENTS: self.model_principal_components,
             self.KEY_CENTERS: None,
             self.KEY_GRID_VECTORS: self.X_grid_vectors,
             self.KEY_GRID_NUMBERS: self.X_grid_numbers,
@@ -304,15 +301,15 @@ class FitXformPca(FitXformInterface):
             self,
             x_transform: np.ndarray,
     ):
-        self.__check_consistency(principal_components=self.principal_components)
+        self.__check_consistency(principal_components=self.model_principal_components)
         if x_transform.ndim == 1:
             x_transform = x_transform.reshape((1, x_transform.shape[0]))
-        x_estimated = np.zeros(shape=(len(x_transform), self.centroid.shape[-1]))
-        x_estimated += self.centroid
+        x_estimated = np.zeros(shape=(len(x_transform), self.model_centroid.shape[-1]))
+        x_estimated += self.model_centroid
         # TODO how to not use loop?
         for i in range(len(x_estimated)):
-            for k in range(len(self.principal_components)):
-                x_estimated[i] += x_transform[i][k] * self.principal_components[k]
+            for k in range(len(self.model_principal_components)):
+                x_estimated[i] += x_transform[i][k] * self.model_principal_components[k]
         return x_estimated
 
     # Get PCA values of arbitrary points
@@ -333,20 +330,20 @@ class FitXformPca(FitXformInterface):
             self,
             X: np.ndarray,
     ):
-        self.__check_consistency(principal_components=self.principal_components)
-        assert X.shape[-1] == self.centroid.shape[0], (
-                'Inconsistent shapes X ' + str(X.shape) + ', centroid ' + str(self.centroid.shape))
-        X_remainder = X - self.centroid
-        pca_coef = np.zeros(shape=(len(X), len(self.principal_components)))
-        for k in range(len(self.principal_components)):
+        self.__check_consistency(principal_components=self.model_principal_components)
+        assert X.shape[-1] == self.model_centroid.shape[0], (
+                'Inconsistent shapes X ' + str(X.shape) + ', centroid ' + str(self.model_centroid.shape))
+        X_remainder = X - self.model_centroid
+        pca_coef = np.zeros(shape=(len(X), len(self.model_principal_components)))
+        for k in range(len(self.model_principal_components)):
             if k > 0:
                 pca_coef_1 = pca_coef[:, k - 1]
                 pca_coef_1 = pca_coef_1.reshape((len(pca_coef_1), 1))
                 # print('X_remainder', X_remainder)
                 # print('pca coef k-1', pca_coef_1)
                 # print('pca components k-1', pca_components[k-1])
-                X_remainder = X_remainder - pca_coef_1 * self.principal_components[k - 1]
-            pca_coef[:, k] = np.matmul(X_remainder, self.principal_components[k].transpose())
+                X_remainder = X_remainder - pca_coef_1 * self.model_principal_components[k - 1]
+            pca_coef[:, k] = np.matmul(X_remainder, self.model_principal_components[k].transpose())
             # print(k, pca_coef)
         return pca_coef
 
@@ -367,9 +364,9 @@ class FitXformPca(FitXformInterface):
             self,
             x_pca: np.ndarray,
     ):
-        grids = np.zeros(shape=(len(x_pca), self.n_pca_components))
+        grids = np.zeros(shape=(len(x_pca), self.model_n_components_or_centers))
         grid_numbers = np.zeros(len(x_pca))
-        for i in range(self.n_pca_components):
+        for i in range(self.model_n_components_or_centers):
             # Build +/- binary for each pca component. For example if we have 2 rows, with 3 PCA components
             # [
             #   [  1.2, -9.5, 0.8 ],
@@ -385,7 +382,7 @@ class FitXformPca(FitXformInterface):
             # in a few grids.
             grids[:,i] = 1 * (x_pca[:,i] >= 0)
             # big endian
-            grid_numbers += (2**(self.n_pca_components-i-1)) * grids[:,i]
+            grid_numbers += (2**(self.model_n_components_or_centers-i-1)) * grids[:,i]
         return grids, grid_numbers
 
     def predict(

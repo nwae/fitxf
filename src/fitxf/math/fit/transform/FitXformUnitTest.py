@@ -30,7 +30,7 @@ class FitXformUnitTest:
             (FitXformPca(logger=self.logger), 0.9, False),
             (FitXformPca(logger=self.logger), 0.9, True),
             (FitXformCluster(logger=self.logger), 0.5, False),
-            #(FitXformClusterCosine(logger=self.logger), 0.59, False),
+            (FitXformClusterCosine(logger=self.logger), 0.59, False),
         ]:
             self.__test_fit(
                 fitter_name = str(f.__class__),

@@ -3,6 +3,7 @@ import os
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from fitxf.math.algo.encoding.Base64 import Base64
 from fitxf.math.fit.utils.FitUtils import FitUtils
 from sklearn.decomposition import PCA
 from fitxf.math.fit.utils.TensorUtils import TensorUtils
@@ -47,12 +48,14 @@ class FitXformInterface:
     ):
         self.logger = logger if logger is not None else logging.getLogger()
         self.tensor_utils = TensorUtils(logger=self.logger)
-        self.X_full_records = None
+        self.base64 = Base64(logger=self.logger)
 
-        # Data/labels
+        # Source Data/labels
         self.X = None
         self.X_labels = None
         self.X_full_records = None
+
+        # Derived transforms
         self.X_transform = None
         self.X_transform_check = None
         # Inverse PCA transform
@@ -63,6 +66,11 @@ class FitXformInterface:
         # Measures for us to optimize the number of optimal number of pca components
         self.grid_density = None
         self.grid_density_mean = None
+        # Other model dependent values
+        self.model_n_components_or_centers = None
+        self.model_principal_components = None
+        self.model_centers = None
+        self.model_centroid = None
         # same as cluter inertia or if not cluster, is error of distances between point and transform summed up
         self.distance_error = None
         self.distance_error_mean = None
@@ -105,6 +113,54 @@ class FitXformInterface:
             start_centers: np.ndarray = None,
     ) -> dict:
         raise Exception('Must be implemented by derived class')
+
+    def model_to_json(
+            self,
+            numpy_to_base64_str = False,
+    ):
+        if numpy_to_base64_str:
+            x_tf = self.base64.encode_numpy_array_to_base64_string(
+                x = self.X_transform,
+                data_type = np.float64,
+            )
+            x_tf_check = self.base64.encode_numpy_array_to_base64_string(
+                x = self.X_transform_check,
+                data_type=np.float64,
+            )
+            x_inv_tf = self.base64.encode_numpy_array_to_base64_string(
+                x = self.X_inverse_transform,
+                data_type=np.float64,
+            )
+        else:
+            x_tf = self.X_transform
+            x_tf_check = self.X_transform_check
+            x_inv_tf = self.X_inverse_transform
+
+        return {
+            self.KEY_X_TRANSFORM: x_tf,
+            self.KEY_X_TRANSFORM_CHECK: x_tf_check,
+            self.KEY_X_LABELS: self.X_labels,
+            self.KEY_X_FULL_RECS: self.X_full_records,
+            # Inverse PCA transform
+            self.KEY_X_INV_TRANSFORM: x_inv_tf,
+            self.KEY_CENTROID: np.mean(self.cluster_centers),
+            self.KEY_N_COMPONENTS_OR_CENTERS: self.n_cluster,
+            self.KEY_PRINCIPAL_COMPONENTS: None,
+            self.KEY_CENTERS: self.cluster_centers,
+            self.KEY_GRID_VECTORS: self.X_grid_vectors,
+            self.KEY_GRID_NUMBERS: self.X_grid_numbers,
+        }
+
+    def load_model_from_json(self):
+        return
+
+    def fine_tune(
+            self,
+            X_new: np.ndarray,
+            n_components,
+    ):
+        # Check if n changed
+        return
 
     # Recover estimate of original point from PCA compression
     def inverse_transform(
