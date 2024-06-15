@@ -49,6 +49,7 @@ Auto clustering into optimal n clusters, via heuristic manner
 In this case, there will be multiple turning points, and we
 may take an earlier turning point or later turning points
 
+Optimal cluster by Euclidean Distance
 ```
 from fitxf import Cluster
 x = np.array([
@@ -61,6 +62,13 @@ obj.kmeans_optimal(
     x = x,
     estimate_min_max = True,
 )
+```
+
+Optimal cluster by cosine distance
+```
+from fitxf import ClusterCosine
+x = np.random.rand(20,3)
+ClusterCosine().kmeans_optimal(x=x)
 ```
 
 ## Fit Transform
