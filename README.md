@@ -50,6 +50,7 @@ In this case, there will be multiple turning points, and we
 may take an earlier turning point or later turning points
 
 ```
+from fitxf import Cluster
 x = np.array([
     [5, 1, 1], [8, 2, 1], [6, 0, 2],
     [1, 5, 1], [2, 7, 1], [0, 6, 2],
