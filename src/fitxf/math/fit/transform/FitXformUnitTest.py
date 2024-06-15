@@ -87,8 +87,8 @@ class FitXformUnitTest:
 
         try:
             raise Exception('Force to use pre-calculated embeddings.')
-            emb_train = get_lm().encode(text_list=texts_train, return_tensors='np')
-            emb_eval = get_lm().encode(text_list=texts_test, return_tensors='np')
+            # emb_train = get_lm().encode(text_list=texts_train, return_tensors='np')
+            # emb_eval = get_lm().encode(text_list=texts_test, return_tensors='np')
         except Exception as ex:
             self.logger.info('Failed to calculate embeddings: ' + str(ex) + ', using precalculated embeddings instead.')
             emb_train = np.array([
