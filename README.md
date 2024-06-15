@@ -102,6 +102,6 @@ pca.fit_optimal(X=x, X_labels=user_labels)
 cls = FitXformCluster()
 cls.fit_optimal(X=x, X_labels=user_labels)
 
-pca.predict(X=x)
-cls.predict(X=x)
+pca.predict(X=x+np.random.rand(9,3))
+cls.predict(X=x+np.random.rand(9,3))
 ```
