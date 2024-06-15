@@ -144,3 +144,8 @@ new = FitXformPca()
 new.load_model_from_json(model_json=json.loads(model_save))
 new.predict(X=x+np.random.rand(9,3))
 ```
+
+### Fine Tuning
+
+After saving models & loading back, to fine tune with new
+points,
