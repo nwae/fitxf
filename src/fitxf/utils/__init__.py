@@ -1,7 +1,8 @@
-from nwae.math.utils.Env import Env
-from nwae.math.utils.EnvironRepo import EnvRepo
-from nwae.math.utils.Logging import Logging
-from nwae.math.utils.Lock import Lock
-from nwae.math.utils.Singleton import Singleton, SingletonMemoryMgmt, SingletonUnitTest
-from nwae.math.utils.LockF import LockFile, LoadTestLockFile
-from nwae.math.utils.ObjPers import ObjectPersistence
+from fitxf.math.utils.Env import Env
+from fitxf.math.utils.EnvironRepo import EnvRepo
+from fitxf.math.utils.Logging import Logging
+from fitxf.math.utils.Lock import Lock
+from fitxf.math.utils.Singleton import Singleton, SingletonMemoryMgmt, SingletonUnitTest
+from fitxf.math.utils.LockF import LockFile, LoadTestLockFile
+from fitxf.math.utils.ObjPers import ObjectPersistence
+from fitxf.math.utils.Profile import Profiling
