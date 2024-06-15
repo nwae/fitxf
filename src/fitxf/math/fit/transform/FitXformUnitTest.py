@@ -204,11 +204,19 @@ class FitXformUnitTest:
         #
         # Test fine tune
         #
+        # Test that saving model to json and loading back has no error
+        centers_before = np.array(fitter.model_centers)
+        pca_before = fitter.model_principal_components.copy()
         model_dict = fitter.model_to_json(numpy_to_base64_str=True)
         [self.logger.info(str(k) + ': ' + str(v)) for k, v in model_dict.items()]
-
         fitter.load_model_from_json(model_json=model_dict)
 
+        assert fitter.model_centers.shape == centers_before.shape, \
+            'Shape before ' + str(centers_before.shape) + ' but after ' + str(fitter.model_centers.shape)
+        diff = np.sum( (fitter.model_centers - centers_before) ** 2 )
+        assert diff < 0.0000000001, \
+                'Centers after and before different, before\n' + str(centers_before) \
+                + ', after\n' + str(fitter.model_centers)
 
         print('ALL TESTS PASSED OK')
         return

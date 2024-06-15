@@ -125,27 +125,27 @@ class FitXformInterface:
             numpy_to_base64_str = False,
     ):
         if numpy_to_base64_str:
-            x_tf = self.base64.encode_numpy_array_to_base64_string(
+            x_tf = self.base64.encode_numpy_array_to_base64_string_multidim(
                 x = self.X_transform,
                 data_type = np.float64,
             )
-            centroid = self.base64.encode_numpy_array_to_base64_string(
+            centroid = self.base64.encode_numpy_array_to_base64_string_multidim(
                 x = self.model_centroid,
                 data_type = np.float64,
             )
-            principle_components = self.base64.encode_numpy_array_to_base64_string(
+            principle_components = self.base64.encode_numpy_array_to_base64_string_multidim(
                 x = self.model_principal_components,
                 data_type = np.float64,
             )
-            centers = self.base64.encode_numpy_array_to_base64_string(
+            centers = self.base64.encode_numpy_array_to_base64_string_multidim(
                 x = self.model_centers,
                 data_type = np.float64,
             )
-            grid_vecs = self.base64.encode_numpy_array_to_base64_string(
+            grid_vecs = self.base64.encode_numpy_array_to_base64_string_multidim(
                 x = self.X_grid_vectors,
                 data_type = np.int64,
             )
-            grid_numbers = self.base64.encode_numpy_array_to_base64_string(
+            grid_numbers = self.base64.encode_numpy_array_to_base64_string_multidim(
                 x = self.X_grid_numbers,
                 data_type = np.int64,
             )
@@ -172,30 +172,30 @@ class FitXformInterface:
             self,
             model_json,
     ):
-        self.X_transform = self.base64.decode_base64_string_to_numpy_array(
-            s64 = model_json[self.KEY_X_TRANSFORM],
+        self.X_transform = self.base64.decode_base64_string_to_numpy_array_multidim(
+            string = model_json[self.KEY_X_TRANSFORM],
             data_type = np.float64,
         )
         self.X_labels = model_json[self.KEY_X_LABELS]
-        self.model_centroid = self.base64.decode_base64_string_to_numpy_array(
-            s64 = model_json[self.KEY_CENTROID],
+        self.model_centroid = self.base64.decode_base64_string_to_numpy_array_multidim(
+            string = model_json[self.KEY_CENTROID],
             data_type = np.float64,
         )
         self.model_n_components_or_centers = model_json[self.KEY_N_COMPONENTS_OR_CENTERS]
-        self.model_principal_components = self.base64.decode_base64_string_to_numpy_array(
-            s64 = model_json[self.KEY_PRINCIPAL_COMPONENTS],
+        self.model_principal_components = self.base64.decode_base64_string_to_numpy_array_multidim(
+            string = model_json[self.KEY_PRINCIPAL_COMPONENTS],
             data_type = np.float64,
         )
-        self.model_centers = self.base64.decode_base64_string_to_numpy_array(
-            s64 = model_json[self.KEY_CENTERS],
+        self.model_centers = self.base64.decode_base64_string_to_numpy_array_multidim(
+            string = model_json[self.KEY_CENTERS],
             data_type = np.float64,
         )
-        self.X_grid_vectors = self.base64.decode_base64_string_to_numpy_array(
-            s64 = model_json[self.KEY_GRID_VECTORS],
+        self.X_grid_vectors = self.base64.decode_base64_string_to_numpy_array_multidim(
+            string = model_json[self.KEY_GRID_VECTORS],
             data_type = np.int64,
         )
-        self.X_grid_numbers = self.base64.decode_base64_string_to_numpy_array(
-            s64 = model_json[self.KEY_GRID_NUMBERS],
+        self.X_grid_numbers = self.base64.decode_base64_string_to_numpy_array_multidim(
+            string = model_json[self.KEY_GRID_NUMBERS],
             data_type = np.int64,
         )
         return

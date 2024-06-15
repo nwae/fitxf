@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import logging
+import json
 import numpy as np
 from base64 import b64encode, b64decode
 from fitxf.utils import Logging
@@ -53,6 +54,27 @@ class Base64:
                 break
 
         return zero_mod3 & is_b64_charset
+
+    def encode_numpy_array_to_base64_string_multidim(
+            self,
+            x: np.ndarray,
+            # can be string like 'float64', or numpy dtype such as np.float64
+            data_type = np.float64,
+    ) -> str:
+        x_shape = x.shape
+        b64_str_flattenned = self.encode_numpy_array_to_base64_string(x=x, data_type=data_type)
+        return json.dumps({'shape': list(x_shape), 'b64_str': b64_str_flattenned})
+
+    def decode_base64_string_to_numpy_array_multidim(
+            self,
+            string: str,
+            data_type = np.float64,
+    ) -> np.ndarray:
+        data = json.loads(string)
+        x_shape = data['shape']
+        b64_str_flattenned = data['b64_str']
+        x_flattenned = self.decode_base64_string_to_numpy_array(s64=b64_str_flattenned, data_type=data_type)
+        return x_flattenned.reshape(x_shape)
 
     # Warning: Encoding numpy array to bytes will flatten it to 1-dimensional
     def encode_numpy_array_to_base64_string(
@@ -132,8 +154,33 @@ class Base64UnitTest():
                 'Original object <<' + str(x) + '>> encoded to <<' + str(e_str)
                 + '>>, decoded back as <<' + str(d_np) + '>>'
             )
-            assert e_str == expected_b64_str, 'Encoded b64 "' + str(e_str) + '" not "' + str(expected_b64_str) + '"'
-            assert np.sum((d_np - x.flatten()) ** 2) < 0.0000000001, 'Decoded b64 "' + str(d_np) + '" not "' + str(x) + '"'
+            assert e_str == expected_b64_str, \
+                'Encoded b64 "' + str(e_str) + '" not "' + str(expected_b64_str) + '"'
+            assert np.sum((d_np - x.flatten()) ** 2) < 0.0000000001, \
+                'Decoded b64 "' + str(d_np) + '" not "' + str(x) + '"'
+
+        # Test multidim
+        np_tests = (
+            (
+                np.array([1.23, 4.55, 7.43, 555.42]),
+                {'shape': [4], 'b64_str': 'rkfhehSu8z8zMzMzMzMSQLgehetRuB1Aj8L1KFxbgUA='},
+            ),
+            (
+                np.array([[1.23, 4.55], [7.43, 555.42]]),
+                {'shape': [2,2], 'b64_str': 'rkfhehSu8z8zMzMzMzMSQLgehetRuB1Aj8L1KFxbgUA='}
+            ),
+        )
+        for x, expected_b64_json in np_tests:
+            e_str = b64.encode_numpy_array_to_base64_string_multidim(x=x, data_type=x.dtype)
+            d_np = b64.decode_base64_string_to_numpy_array_multidim(string=e_str, data_type=x.dtype)
+            self.logger.info(
+                'Original object <<' + str(x) + '>> encoded to <<' + str(e_str)
+                + '>>, decoded back as <<' + str(d_np) + '>>'
+            )
+            assert json.loads(e_str) == expected_b64_json, \
+                'Encoded b64 json "' + str(e_str) + '" not "' + str(expected_b64_json) + '"'
+            assert np.sum((d_np - x) ** 2) < 0.0000000001, \
+                'Decoded b64 "' + str(d_np) + '" not "' + str(x) + '"'
 
         print('B64 TESTS PASSED OK')
         return
