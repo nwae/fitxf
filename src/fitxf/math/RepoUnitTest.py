@@ -7,6 +7,7 @@ from fitxf.utils import Logging, Profiling, EnvRepo, Env
 # IC Section
 #----------------------------------------------------------------------------------
 # Math
+from fitxf.math.fit.transform.FitXformInterface import FitXformInterfaceUnitTest
 from fitxf.math.fit.transform.FitXformUnitTest import FitXformUnitTest
 from fitxf.math.fit.utils.FitUtilsUnitTest import FitUtilsUt
 from fitxf.math.fit.utils.TensorUtils import TensorUtilsUnitTest
@@ -51,7 +52,7 @@ class RepoUnitTest:
 
         for cls in [
             # Math
-            FitXformUnitTest, FitUtilsUt, TensorUtilsUnitTest, # HomomorphismUnitTest,
+            FitXformInterfaceUnitTest, FitXformUnitTest, FitUtilsUt, TensorUtilsUnitTest, # HomomorphismUnitTest,
             ClusterUnitTest, ClusterCosineUnitTest,
             # Utils
             LockUnitTest, SingletonUnitTest, StringVarUnitTest,

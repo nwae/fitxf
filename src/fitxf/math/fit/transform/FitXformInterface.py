@@ -337,7 +337,7 @@ class SampleFit(FitXformInterface):
             # again means another half day of fit training
             start_centers: np.ndarray = None,
             return_details = False,
-    ):
+    ) -> dict:
         pca = PCA(n_components=n_components)
 
         # Create copy, don't use same ref from input X
@@ -347,16 +347,20 @@ class SampleFit(FitXformInterface):
         self.X_full_records = X_full_records
         self.principal_components = pca.components_
         self.centroid = np.mean(X, axis=0)
-        return self.X_transform
+        return {
+            self.KEY_X_TRANSFORM: self.X_transform,
+            self.KEY_PRINCIPAL_COMPONENTS: self.principal_components,
+            self.KEY_N_COMPONENTS_OR_CENTERS: n_components,
+        }
 
 
-class UnitTest:
+class FitXformInterfaceUnitTest:
 
     def __init__(self, logger=None):
         self.logger = logger if logger is not None else logging.getLogger()
         return
 
-    def test(self, plot_chart):
+    def test(self, plot_chart=False):
         from fitxf.math.lang.encode.LangModelPt import LangModelPt as LmPt
         ft = SampleFit(logger=self.logger)
 
@@ -370,13 +374,14 @@ class UnitTest:
 
         embeddings = lmo.encode(text_list=texts, return_tensors='np')
 
-        x_compressed = ft.fit(X=embeddings)
+        res = ft.fit(X=embeddings)
+        x_compressed = res[ft.KEY_X_TRANSFORM]
 
         small_random_values = (np.random.random(size=x_compressed.shape) - 0.5) / 100
         pred_labels, pred_probs = ft.predict_standard(
             X = x_compressed + small_random_values,
             ref_X = x_compressed,
-            ref_labels = np.array(labels),
+            ref_labels = labels,
         )
         prd_labels_top = [r[0] for r in pred_labels]
         assert prd_labels_top == labels, 'Predicted top labels not expected ' + str(zip(prd_labels_top, labels))
@@ -394,7 +399,7 @@ class UnitTest:
 
 
 if __name__ == '__main__':
-    UnitTest(logger=Logging.get_default_logger(log_level=logging.INFO, propagate=False)).test(
+    FitXformInterfaceUnitTest(logger=Logging.get_default_logger(log_level=logging.INFO, propagate=False)).test(
         plot_chart = True,
     )
     exit(0)
