@@ -29,7 +29,7 @@ class FitXformUnitTest:
         for F, score_thr, ret_full_rec in [
             (FitXformPca, 0.9, False),
             (FitXformPca, 0.9, True),
-            (FitXformCluster, 0.5, False),
+            (FitXformCluster, 0.59, False),
             (FitXformClusterCosine, 0.59, False),
         ]:
             self.__test_fit(
