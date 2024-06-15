@@ -1,6 +1,7 @@
 import logging
 import math
 import os
+import json
 import numpy as np
 import pandas as pd
 from sklearn.decomposition import PCA
@@ -427,9 +428,13 @@ class FitXformPca(FitXformInterface):
     def model_to_json(
             self,
             numpy_to_base64_str = False,
+            dump_to_json_str = False,
     ):
         base_model_json = super().model_to_json(numpy_to_base64_str=numpy_to_base64_str)
-        return base_model_json
+        if dump_to_json_str:
+            return json.dumps(base_model_json)
+        else:
+            return base_model_json
 
     def load_model_from_json(
             self,

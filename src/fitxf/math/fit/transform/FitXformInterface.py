@@ -1,5 +1,6 @@
 import logging
 import os
+import json
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -123,6 +124,7 @@ class FitXformInterface:
     def model_to_json(
             self,
             numpy_to_base64_str = False,
+            dump_to_json_str = False,
     ):
         if numpy_to_base64_str:
             x_tf = self.base64.encode_numpy_array_to_base64_string_multidim(
@@ -157,7 +159,7 @@ class FitXformInterface:
             grid_vecs = self.X_grid_vectors
             grid_numbers = self.X_grid_numbers
 
-        return {
+        model_json = {
             self.KEY_X_TRANSFORM: x_tf,
             self.KEY_X_LABELS: self.X_labels,
             self.KEY_CENTROID: centroid,
@@ -167,6 +169,10 @@ class FitXformInterface:
             self.KEY_GRID_VECTORS: grid_vecs,
             self.KEY_GRID_NUMBERS: grid_numbers,
         }
+        if dump_to_json_str:
+            return json.dumps(model_json)
+        else:
+            return model_json
 
     def load_model_from_json(
             self,

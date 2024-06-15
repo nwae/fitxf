@@ -84,6 +84,7 @@ Convenient wrapper
 - fine tune
 
 
+Sample code for basic training to transform data -
 ```
 from fitxf import FitXformPca, FitXformCluster
 import numpy as np
@@ -104,4 +105,15 @@ cls.fit_optimal(X=x, X_labels=user_labels)
 
 pca.predict(X=x+np.random.rand(9,3))
 cls.predict(X=x+np.random.rand(9,3))
+```
+
+Sample code to save and load model -
+```
+import json
+model_save = cls.model_to_json(numpy_to_base64_str=True)
+# Save this dict somewhere, e.g. json string
+model_save_json = json.dumps(model_save)
+
+# Load back into new instance
+
 ```

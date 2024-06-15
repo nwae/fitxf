@@ -1,5 +1,7 @@
 import logging
 import os
+import ast
+import json
 import numpy as np
 from fitxf.math.fit.transform.FitXformInterface import FitXformInterface
 from fitxf.math.fit.utils.FitUtils import FitUtils
@@ -318,18 +320,25 @@ class FitXformCluster(FitXformInterface):
     def model_to_json(
             self,
             numpy_to_base64_str = False,
+            dump_to_json_str = False,
     ):
         base_model_json = super().model_to_json(numpy_to_base64_str=numpy_to_base64_str)
         # Add more info
-        base_model_json[self.KEY_CLUSTERNO_TO_USERLABELS_INFO] = self.cluster_no_map_to_userlabel
-        return base_model_json
-
+        # Keep dictionary as string, because json cannot dump or load np.int32, and that problem is hard
+        # to trace where the int32 comes from, so keep the whole dict as string and load back later by literal_eval
+        base_model_json[self.KEY_CLUSTERNO_TO_USERLABELS_INFO] = str(self.cluster_no_map_to_userlabel)
+        if dump_to_json_str:
+            # retain UTF-8 if any
+            return json.dumps(base_model_json, ensure_ascii=False)
+        else:
+            return base_model_json
     def load_model_from_json(
             self,
             model_json,
     ):
         super().load_model_from_json(model_json=model_json)
-        self.cluster_no_map_to_userlabel = model_json[self.KEY_CLUSTERNO_TO_USERLABELS_INFO]
+        # Load back dict using literal_eval, to avoid int32 json problems
+        self.cluster_no_map_to_userlabel = ast.literal_eval(model_json[self.KEY_CLUSTERNO_TO_USERLABELS_INFO])
         return
 
 

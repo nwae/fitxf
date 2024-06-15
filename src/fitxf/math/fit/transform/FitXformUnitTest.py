@@ -1,5 +1,6 @@
 import logging
 import os
+import json
 from io import StringIO
 import numpy as np
 import pandas as pd
@@ -217,7 +218,8 @@ class FitXformUnitTest:
         #
         centers_before = np.array(fitter_old.model_centers)
         pca_before = np.array(fitter_old.model_principal_components)
-        model_dict = fitter_old.model_to_json(numpy_to_base64_str=True)
+        model_dict_jsondump = fitter_old.model_to_json(numpy_to_base64_str=True, dump_to_json_str=True)
+        model_dict = json.loads(model_dict_jsondump)
         [self.logger.info(str(k) + ': ' + str(v)) for k, v in model_dict.items()]
 
         def get_fitter() -> FitXformInterface:
