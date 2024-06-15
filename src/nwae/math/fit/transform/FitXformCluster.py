@@ -63,7 +63,7 @@ class FitXformCluster(FitXformInterface):
             # Model dependent interpretation, or ignore if not relevant for specific model
             min_components = 2,
             max_components = 100,
-    ):
+    ) -> dict:
         try:
             self.__lock.acquire_mutexes(
                 id = 'fit_optimal',
@@ -97,8 +97,7 @@ class FitXformCluster(FitXformInterface):
             # useful for clusters of more than 1,000,000 points for example, where starting
             # again means another half day of fit training
             start_centers: np.ndarray = None,
-            return_details = False,
-    ):
+    ) -> dict:
         n_centers = n_components
         self.logger.info(
             'Start kmeans optimal with X shape ' + str(X.shape) + ', n clusters ' + str(n_centers)
@@ -132,7 +131,7 @@ class FitXformCluster(FitXformInterface):
             # by default if 25% of the clusters are single point clusters, we quit
             thr_single_clusters = 0.25,
             plot = False,
-    ):
+    ) -> dict:
         assert target_grid_density > 0, 'Target grid density not valid ' + str(target_grid_density)
         self.logger.info(
             'Start kmeans optimal with X shape ' + str(X.shape) + ', min clusters ' + str(min_clusters)
@@ -375,8 +374,9 @@ if __name__ == '__main__':
     )
 
     x = np.array([[1,2,3], [3,2,1], [-1,-2,-2], [-3,-4,-2]])
-    x_ = fitter.fit(X=x, X_labels=['+', '+', '-', '-'], n_components=2)
-    print('Clusters:', x_)
+    res = fitter.fit(X=x, X_labels=['+', '+', '-', '-'], n_components=2)
+    print('Cluster info:')
+    [print(k,v) for k,v in res.items()]
     print('Fit arbitrary:', fitter.predict(X=np.array([[9,9,8], [-55,-33,-55]]), use_grid=False))
     print('Fit arbitrary:', fitter.predict(X=np.array([[9,9,8], [-55,-33,-55]]), use_grid=True))
 

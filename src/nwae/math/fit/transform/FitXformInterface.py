@@ -85,7 +85,7 @@ class FitXformInterface:
             # Model dependent interpretation, or ignore if not relevant for specific model
             min_components = 1,
             max_components = 99999,
-    ):
+    ) -> dict:
         raise Exception('Must be implemented by derived class')
 
     def fit(
@@ -101,8 +101,7 @@ class FitXformInterface:
             # useful for clusters of more than 1,000,000 points for example, where starting
             # again means another half day of fit training
             start_centers: np.ndarray = None,
-            return_details = False,
-    ):
+    ) -> dict:
         raise Exception('Must be implemented by derived class')
 
     # Recover estimate of original point from PCA compression

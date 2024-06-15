@@ -72,7 +72,7 @@ class FitXformPca(FitXformInterface):
             # Model dependent interpretation, or ignore if not relevant for specific model
             min_components = 1,
             max_components = 99999,
-    ):
+    ) -> dict:
         try:
             self.__lock.acquire_mutexes(
                 id = 'fit_optimal',
@@ -102,7 +102,7 @@ class FitXformPca(FitXformInterface):
             # Model dependent interpretation, or ignore if not relevant for specific model
             min_components = 1,
             max_components = 99999,
-    ):
+    ) -> dict:
         assert target_grid_density > 0, 'Target grid density not valid ' + str(target_grid_density)
         x_dim = X.shape[-1]
         n_high = min(int(x_dim - 1), len(X)- 1)
@@ -119,7 +119,6 @@ class FitXformPca(FitXformInterface):
                 X_labels = X_labels,
                 X_full_records = X_full_records,
                 n_components = n,
-                return_details = True,
             )
             self.logger.info(
                 'Fit PCA n=' + str(n) + ' returned keys ' + str(pca_fit.keys())
@@ -192,8 +191,7 @@ class FitXformPca(FitXformInterface):
             # useful for clusters of more than 1,000,000 points for example, where starting
             # again means another half day of fit training
             start_centers: np.ndarray = None,
-            return_details = False,
-    ):
+    ) -> dict:
         try:
             self.__lock.acquire_mutexes(
                 id = 'fit',
@@ -204,7 +202,6 @@ class FitXformPca(FitXformInterface):
                 X_labels = X_labels,
                 X_full_records = X_full_records,
                 n_components = n_components,
-                return_details = return_details,
             )
         finally:
             self.__lock.release_mutexes(mutexes=[self.__mutex_model])
@@ -218,7 +215,6 @@ class FitXformPca(FitXformInterface):
             # For example, can mean how many clusters, or how many PCA components, or how many to sample
             # in a discrete Fourier transform, etc.
             n_components = 2,
-            return_details = False,
     ):
         assert type(X) is np.ndarray, 'Wrong type X "' + str(type(X)) + '"'
         if X_labels is None:
@@ -272,22 +268,19 @@ class FitXformPca(FitXformInterface):
 
         self.model_params_ready = True
 
-        if return_details:
-            return {
-                # PCA transform
-                self.KEY_X_TRANSFORM: self.X_transform,
-                self.KEY_X_TRANSFORM_CHECK: self.X_transform_check,
-                self.KEY_X_LABELS: self.X_labels,
-                self.KEY_X_FULL_RECS: self.X_full_records,
-                # Inverse PCA transform
-                self.KEY_X_INV_TRANSFORM: self.X_inverse_transform,
-                self.KEY_CENTROID: self.centroid,
-                self.KEY_N_PRINCIPAL_COMPONENTS: self.principal_components,
-                self.KEY_GRID_VECTORS: self.X_grid_vectors,
-                self.KEY_GRID_NUMBERS: self.X_grid_numbers,
-            }
-        else:
-            return self.X_transform
+        return {
+            # PCA transform
+            self.KEY_X_TRANSFORM: self.X_transform,
+            self.KEY_X_TRANSFORM_CHECK: self.X_transform_check,
+            self.KEY_X_LABELS: self.X_labels,
+            self.KEY_X_FULL_RECS: self.X_full_records,
+            # Inverse PCA transform
+            self.KEY_X_INV_TRANSFORM: self.X_inverse_transform,
+            self.KEY_CENTROID: self.centroid,
+            self.KEY_N_PRINCIPAL_COMPONENTS: self.principal_components,
+            self.KEY_GRID_VECTORS: self.X_grid_vectors,
+            self.KEY_GRID_NUMBERS: self.X_grid_numbers,
+        }
 
     # Recover estimate of original point from PCA compression
     def inverse_transform(
