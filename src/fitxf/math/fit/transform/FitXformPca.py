@@ -424,6 +424,20 @@ class FitXformPca(FitXformInterface):
         finally:
             self.__lock.release_mutexes(mutexes=[self.__mutex_model])
 
+    def model_to_json(
+            self,
+            numpy_to_base64_str = False,
+    ):
+        base_model_json = super().model_to_json(numpy_to_base64_str=numpy_to_base64_str)
+        return base_model_json
+
+    def load_model_from_json(
+            self,
+            model_json,
+    ):
+        super().load_model_from_json(model_json=model_json)
+        return
+
 
 if __name__ == '__main__':
     from fitxf.math.lang.encode.LangModelPt import LangModelPt as LmPt
