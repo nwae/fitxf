@@ -69,6 +69,9 @@ class FitXformUnitTest:
 
         texts_train, labels_train = df_train['text'].tolist(), df_train['label'].tolist()
         texts_eval, labels_eval = df_eval['text'].tolist(), df_eval['label'].tolist()
+        full_recs_train = [
+            {k: v for (k, v) in r.items() if k not in ['embedding']} for r in df_train.to_dict(orient='records')
+        ]
 
         def get_lm() -> LmPt:
             return LmPt.get_singleton(
@@ -100,22 +103,12 @@ class FitXformUnitTest:
         res = fitter.fit_optimal(
             X = emb_train,
             X_labels = labels_train,
-            X_full_records = [
-                {k: v for (k, v) in r.items() if k not in ['embedding']} for r in df_train.to_dict(orient='records')
-            ],
+            X_full_records = full_recs_train,
             target_grid_density = 2.,
             measure = 'min',
             min_components = 3,
             max_components = 3,
         )
-        self.logger.info('Fitter "' + str(fitter_name) + '" fit result keys ' + str(res.keys()))
-        self.logger.info('grid numbers' + str(fitter.X_grid_numbers))
-        self.logger.info('distance error' + str(fitter.distance_error))
-        self.logger.info('distance error mean' + str(fitter.distance_error_mean))
-        self.logger.info('angle error' + str(fitter.angle_error))
-        self.logger.info('angle error mean' + str(fitter.angle_error_mean))
-        self.logger.info('grid density' + str(fitter.grid_density))
-        self.logger.info('grid density mean' + str(fitter.grid_density_mean))
 
         self.__test_predictions(
             fitter_name = fitter_name,
@@ -126,10 +119,21 @@ class FitXformUnitTest:
             avg_score_threshold = avg_score_threshold,
             expected_top_labels = labels_eval,
         )
-        self.__test_save_load_model(
+        fitter_new_loaded = self.__test_save_load_model(
             fitter_old = fitter,
             FitterClassType = FitterClassType,
         )
+        self.__test_predictions(
+            fitter_name = fitter_name,
+            fitter = fitter_new_loaded,
+            emb_train = emb_train,
+            emb_eval = emb_eval,
+            # we no longer have full records
+            ret_full_rec = False,
+            avg_score_threshold = avg_score_threshold,
+            expected_top_labels = labels_eval,
+        )
+        print('ALL TESTS PASSED OK')
         return
 
     def __test_predictions(
@@ -213,7 +217,10 @@ class FitXformUnitTest:
         model_dict = fitter_old.model_to_json(numpy_to_base64_str=True)
         [self.logger.info(str(k) + ': ' + str(v)) for k, v in model_dict.items()]
 
-        fitter_new = FitterClassType(logger=self.logger)
+        def get_fitter() -> FitXformInterface:
+            return FitterClassType(logger=self.logger)
+
+        fitter_new = get_fitter()
         fitter_new.load_model_from_json(model_json=model_dict)
 
         assert fitter_new.model_centers.shape == centers_before.shape, \
@@ -229,9 +236,7 @@ class FitXformUnitTest:
         assert diff < 0.0000000001, \
                 'Principle components after and before different, before\n' + str(pca_before) \
                 + ', after\n' + str(fitter_new.model_principal_components)
-
-        print('ALL TESTS PASSED OK')
-        return
+        return fitter_new
 
 
 if __name__ == '__main__':

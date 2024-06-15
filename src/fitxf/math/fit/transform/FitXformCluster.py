@@ -12,6 +12,8 @@ from fitxf.math.utils.Logging import Logging
 
 class FitXformCluster(FitXformInterface):
 
+    KEY_CLUSTERNO_TO_USERLABELS_INFO = 'clusterno_to_userlabels_info'
+
     def __init__(
             self,
             logger = None,
@@ -202,7 +204,7 @@ class FitXformCluster(FitXformInterface):
 
         return self.model_to_json(numpy_to_base64_str=False)
 
-    # Recover estimate of original point from PCA compression
+    # Inverse transform is just the cluster center
     def inverse_transform(
             self,
             X: np.ndarray,
@@ -223,7 +225,9 @@ class FitXformCluster(FitXformInterface):
             x_transform: np.ndarray,
     ) -> np.ndarray:
         # Transform is just the cluster label (or cluster center index)
-        x_estimated = self.model_centers[x_transform]
+        # Make sure is int type to index into model centers
+        x_transform_inttype = x_transform.astype(dtype=np.int64)
+        x_estimated = self.model_centers[x_transform_inttype]
         return x_estimated
 
     # Get PCA values of arbitrary points
@@ -310,6 +314,23 @@ class FitXformCluster(FitXformInterface):
             return pred_label_and_clusterno, pred_probs
         finally:
             self.__lock.release_mutexes(mutexes=[self.__mutex_model])
+
+    def model_to_json(
+            self,
+            numpy_to_base64_str = False,
+    ):
+        base_model_json = super().model_to_json(numpy_to_base64_str=numpy_to_base64_str)
+        # Add more info
+        base_model_json[self.KEY_CLUSTERNO_TO_USERLABELS_INFO] = self.cluster_no_map_to_userlabel
+        return base_model_json
+
+    def load_model_from_json(
+            self,
+            model_json,
+    ):
+        super().load_model_from_json(model_json=model_json)
+        self.cluster_no_map_to_userlabel = model_json[self.KEY_CLUSTERNO_TO_USERLABELS_INFO]
+        return
 
 
 class FitXformClusterCosine(FitXformCluster):
