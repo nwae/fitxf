@@ -396,7 +396,7 @@ class FitXformPca(FitXformInterface):
                     condition = condition | (self.X_grid_numbers == gn)
                 # TODO This can be obtained by querying underlying DB, so we don't need to keep in RAM
                 X_subset = self.X_transform[condition]
-                X_labels_subset = np.array(self.X_labels)[condition].tolist()
+                labels_subset = np.array(self.X_labels)[condition].tolist()
                 if return_full_record:
                     assert self.X_full_records is not None, 'Cannot return full records'
                     full_records_list = np.array(self.X_full_records)[condition].tolist()
@@ -405,7 +405,7 @@ class FitXformPca(FitXformInterface):
                 # data_records_subset = [r for i, r in enumerate(self.model_compression_data_records) if condition[i]]
             else:
                 X_subset = self.X_transform
-                X_labels_subset = self.X_labels
+                labels_subset = self.X_labels
                 full_records_list = self.X_full_records
 
             #
@@ -414,7 +414,7 @@ class FitXformPca(FitXformInterface):
             pred_labels_or_records, pred_probs = self.predict_standard(
                 X = X_pca,
                 ref_X = X_subset,
-                ref_labels = X_labels_subset,
+                ref_labels = labels_subset,
                 ref_full_records = full_records_list,
                 top_k = top_k,
                 return_full_record = return_full_record,

@@ -254,7 +254,7 @@ class FitXformCluster(FitXformInterface):
         pred_labels, pred_probs = self.predict_standard(
             X = X,
             ref_X = self.model_centers,
-            ref_labels = np.array(range(len(self.model_centers))),
+            ref_labels = list(range(len(self.model_centers))),
             top_k = 3,
         )
         # Cluster transform is just the cluster label
