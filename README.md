@@ -90,6 +90,11 @@ user_labels = [
     'b', 'b', 'b',
     'c', 'c', 'c',
 ]
-FitXformPca().fit_optimal(X=x, X_labels=user_labels)
-FitXformCluster().fit_optimal(X=x, X_labels=user_labels)
+pca = FitXformPca()
+pca.fit_optimal(X=x, X_labels=user_labels)
+cls = FitXformCluster()
+cls.fit_optimal(X=x, X_labels=user_labels)
+
+pca.predict(X=x)
+cls.predict(X=x)
 ```
