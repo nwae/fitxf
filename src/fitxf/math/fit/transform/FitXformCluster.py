@@ -164,7 +164,7 @@ class FitXformCluster(FitXformInterface):
     ):
         # Copy over original data
         self.X = np.array(X)
-        self.X_labels = np.array(X_labels)
+        self.X_labels = X_labels
         self.X_full_records = X_full_records
         self.model_centers = desired_cluster['cluster_centers']
         self.cluster_labels = np.array(desired_cluster['cluster_labels'])

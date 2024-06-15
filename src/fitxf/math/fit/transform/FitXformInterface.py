@@ -216,7 +216,7 @@ class FitXformInterface:
             self,
             X: np.ndarray,
             ref_X: np.ndarray,
-            ref_labels: np.ndarray,
+            ref_labels: list,
             ref_full_records: list = (),
             top_k = 5,
             similarity_type = 'cosine',
@@ -254,7 +254,7 @@ class FitXformInterface:
             return [ar[0:min(top_k, len(ar))] for ar in pred_records], \
                 [ar[0:min(top_k, len(ar))] for ar in pred_probs_list]
         else:
-            pred_labels = ref_labels[result_ordered].tolist()
+            pred_labels = np.array(ref_labels)[result_ordered].tolist()
             pred_probs_list = m_dot_ordered.tolist()
 
             return [ar[0:min(top_k, len(ar))] for ar in pred_labels], \

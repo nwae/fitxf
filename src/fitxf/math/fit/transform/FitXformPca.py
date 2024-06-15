@@ -215,7 +215,7 @@ class FitXformPca(FitXformInterface):
     ):
         assert type(X) is np.ndarray, 'Wrong type X "' + str(type(X)) + '"'
         if X_labels is None:
-            X_labels = np.array(range(len(X)))
+            X_labels = list(range(len(X)))
         pca = PCA(n_components=n_components)
 
         # apply principal component analysis to the embeddings table
@@ -228,7 +228,7 @@ class FitXformPca(FitXformInterface):
         self.model_n_components_or_centers = n_components
         self.X = np.array(X)
         self.X_transform = x_reduced
-        self.X_labels = np.array(X_labels)
+        self.X_labels = X_labels
         self.X_full_records = X_full_records
         self.model_principal_components = pca.components_
         self.model_centroid = np.mean(X, axis=0)
@@ -396,7 +396,7 @@ class FitXformPca(FitXformInterface):
                     condition = condition | (self.X_grid_numbers == gn)
                 # TODO This can be obtained by querying underlying DB, so we don't need to keep in RAM
                 X_subset = self.X_transform[condition]
-                X_labels_subset = self.X_labels[condition]
+                X_labels_subset = np.array(self.X_labels)[condition].tolist()
                 if return_full_record:
                     assert self.X_full_records is not None, 'Cannot return full records'
                     full_records_list = np.array(self.X_full_records)[condition].tolist()
