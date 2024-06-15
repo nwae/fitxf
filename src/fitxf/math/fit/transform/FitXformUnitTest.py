@@ -119,10 +119,12 @@ class FitXformUnitTest:
             avg_score_threshold = avg_score_threshold,
             expected_top_labels = labels_eval,
         )
+        # now load a new instance by saving json and reloading
         fitter_new_loaded = self.__test_save_load_model(
             fitter_old = fitter,
             FitterClassType = FitterClassType,
         )
+        # do the same test on this new object
         self.__test_predictions(
             fitter_name = fitter_name,
             fitter = fitter_new_loaded,
