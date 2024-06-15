@@ -1,14 +1,21 @@
 # fitxf
 
-Library for fit transforms and searches.
+Just a simple math utility library
+
+- Basic math that don't exist in numpy as a single function call
+- Simple math for optimal clusters that can't seem to find in numpy
+  or sklearn
+- Simple wrappers to simplify tensor transforms or compression
+  via clustering or PCA, and allow to do searches using transformed
+  data
 
 ```
 pip install fitxf
 ```
 
-## Basic Utilities
+## Basic Math
 
-Cosine or dot similarity
+Cosine or dot similarity between multi-dim vectors
 ```
 import numpy as np
 from fitxf import TensorUtils
