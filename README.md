@@ -110,6 +110,29 @@ pca.predict(X=x+np.random.rand(9,3))
 cls.predict(X=x+np.random.rand(9,3))
 ```
 
+From above code same you will see the original X of 3 dimensions
+were reduced to 2.
+```
+X now reduced to
+ [[ 3.31282121 -0.0595825 ]
+ [ 5.50813438  0.41970015]
+ [ 4.04773021 -1.54803569]
+ [-1.35557188  3.11843837]
+ [-1.16795985  4.47103187]
+ [-2.95485944  3.21899561]
+ [-1.77834736 -2.52015183]
+ [-2.23431234 -4.68080139]
+ [-3.37763491 -2.41959458]]
+```
+
+whereas for clustering
+```
+X now reduced to
+ [2 2 2 0 0 0 1 1 1]
+```
+where each point in 3 dimensions is represented by only a scalar
+center label.
+
 Sample code to save and load model -
 ```
 import json
