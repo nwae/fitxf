@@ -201,6 +201,12 @@ class FitXformUnitTest:
                 '[' + str(fitter_name) + '] Use grid "' + str(use_grid) + '". Mean score fail ' + str(score_avg) \
                 + ' < ' + str(avg_score_threshold) + '. Scores ' + str(scores)
 
+        #
+        # Test fine tune
+        #
+        model_json = fitter.model_to_json(numpy_to_base64_str=True)
+        self.logger.info(model_json)
+
         print('ALL TESTS PASSED OK')
         return
 

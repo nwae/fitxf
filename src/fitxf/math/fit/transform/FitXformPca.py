@@ -232,6 +232,7 @@ class FitXformPca(FitXformInterface):
         self.X_full_records = X_full_records
         self.model_principal_components = pca.components_
         self.model_centroid = np.mean(X, axis=0)
+        self.model_centers = self.model_centroid.reshape([1]+list(self.model_centroid.shape))
 
         self.__check_consistency(principal_components=self.model_principal_components)
 

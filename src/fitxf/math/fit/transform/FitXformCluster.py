@@ -196,16 +196,8 @@ class FitXformCluster(FitXformInterface):
         self.angle_error = np.sum(self.X * self.X_inverse_transform, axis=-1) / (X_lengths * X_inverse_lengths)
         self.angle_error_mean = np.mean(self.angle_error)
 
-        # Form grid using 1st dimension in increasing order
-        x0 = self.model_centers[:,0]
-        grid_order = np.argsort(x0)
-        self.logger.info('Grid order: ' + str(grid_order))
-        grid_lines = x0[grid_order]
-        l = len(grid_lines)
-        for i in range(l-1):
-            grid_lines[i] = ( grid_lines[i] + grid_lines[i+1] ) / 2
-        grid_lines[l-1] = 2 * grid_lines[l-1]
-        self.logger.info('Grid lines: ' + str(grid_lines))
+        self.X_grid_vectors = self.model_centers
+        self.X_grid_numbers = self.cluster_labels
 
         return self.model_to_json(numpy_to_base64_str=False)
 
