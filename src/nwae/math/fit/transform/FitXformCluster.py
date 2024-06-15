@@ -214,7 +214,18 @@ class FitXformCluster(FitXformInterface):
             X = X,
         )
 
-        return self.X_transform
+        return {
+            self.KEY_X_TRANSFORM: self.X_transform,
+            self.KEY_X_TRANSFORM_CHECK: self.X_transform_check,
+            self.KEY_X_LABELS: self.X_labels,
+            self.KEY_X_FULL_RECS: self.X_full_records,
+            # Inverse PCA transform
+            self.KEY_X_INV_TRANSFORM: self.X_inverse_transform,
+            self.KEY_CENTROID: self.cluster_centers,
+            self.KEY_N_PRINCIPAL_COMPONENTS: self.n_cluster,
+            self.KEY_GRID_VECTORS: self.X_grid_vectors,
+            self.KEY_GRID_NUMBERS: self.X_grid_numbers,
+        }
 
     # Recover estimate of original point from PCA compression
     def inverse_transform(

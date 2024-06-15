@@ -28,6 +28,17 @@ from nwae.math.utils.Logging import Logging
 #
 class FitXformInterface:
 
+    KEY_X_TRANSFORM = 'X_transform'
+    KEY_X_TRANSFORM_CHECK = 'X_transform_check'
+    KEY_X_LABELS = 'X_labels'
+    KEY_X_FULL_RECS = 'X_full_records'
+    # Inverse PCA/Cluster transform
+    KEY_X_INV_TRANSFORM = 'X_inverse_transform'
+    KEY_CENTROID = 'centroid'
+    KEY_N_PRINCIPAL_COMPONENTS = 'principal_components'
+    KEY_GRID_VECTORS = 'grid_vectors'
+    KEY_GRID_NUMBERS = 'grid_numbers'
+
     def __init__(
             self,
             logger = None,

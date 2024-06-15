@@ -77,3 +77,21 @@ ClusterCosine().kmeans_optimal(x=x)
 
 ## Fit Transform
 
+```
+from fitxf import FitXformPca, FitXformCluster
+x = np.array([
+    [5, 1, 1], [8, 2, 1], [6, 0, 2],
+    [1, 5, 1], [2, 7, 1], [0, 6, 2],
+    [1, 1, 5], [2, 1, 8], [0, 2, 6],
+])
+user_labels = [
+    'a', 'a', 'a',
+    'b', 'b', 'b',
+    'c', 'c', 'c',
+]
+FitXformPca().fit_optimal(
+    X = x,
+    X_labels = user_labels,
+)
+
+```

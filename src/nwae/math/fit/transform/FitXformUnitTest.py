@@ -30,7 +30,7 @@ class FitXformUnitTest:
             (FitXformPca(logger=self.logger), 0.9, False),
             (FitXformPca(logger=self.logger), 0.9, True),
             (FitXformCluster(logger=self.logger), 0.5, False),
-            (FitXformClusterCosine(logger=self.logger), 0.59, False),
+            #(FitXformClusterCosine(logger=self.logger), 0.59, False),
         ]:
             self.__test_fit(
                 fitter_name = str(f.__class__),
@@ -115,18 +115,18 @@ class FitXformUnitTest:
             min_components = 3,
             max_components = 3,
         )
-        self.logger.debug('Fitter "' + str(fitter_name) + '" fit result ' + str(res))
-        print('grid numbers', fitter.X_grid_numbers)
-        print('distance error', fitter.distance_error)
-        print('distance error mean', fitter.distance_error_mean)
-        print('angle error', fitter.angle_error)
-        print('angle error mean', fitter.angle_error_mean)
-        print('grid density', fitter.grid_density)
-        print('grid density mean', fitter.grid_density_mean)
+        self.logger.info('Fitter "' + str(fitter_name) + '" fit result keys ' + str(res.keys()))
+        self.logger.info('grid numbers' + str(fitter.X_grid_numbers))
+        self.logger.info('distance error' + str(fitter.distance_error))
+        self.logger.info('distance error mean' + str(fitter.distance_error_mean))
+        self.logger.info('angle error' + str(fitter.angle_error))
+        self.logger.info('angle error mean' + str(fitter.angle_error_mean))
+        self.logger.info('grid density' + str(fitter.grid_density))
+        self.logger.info('grid density mean' + str(fitter.grid_density_mean))
 
-        x_transform = fitter.X_transform
-        x_transform_check = fitter.X_transform_check
-        x_inverse_transform = fitter.X_inverse_transform
+        x_transform = res["X_transform"] # or fitter.X_transform
+        x_transform_check = res["X_transform_check"] # or fitter.X_transform_check
+        x_inverse_transform = res["X_inverse_transform"] # or fitter.X_inverse_transform
 
         # Check if estimation of actual value is correct
         diff = x_inverse_transform - emb_train

@@ -1,5 +1,6 @@
 import logging
 import math
+import os
 import numpy as np
 import pandas as pd
 from sklearn.decomposition import PCA
@@ -110,13 +111,18 @@ class FitXformPca(FitXformInterface):
         n_low = max(1, min_components)
         n = n_low + math.ceil((n_high - n_low) / 2)
 
+        pca_fit_optimal = None
         while True:
             self.logger.info('Fit PCA with n pca components = ' + str(n))
-            res = self.__fit(
+            pca_fit = self.__fit(
                 X = X,
                 X_labels = X_labels,
                 X_full_records = X_full_records,
                 n_components = n,
+                return_details = True,
+            )
+            self.logger.info(
+                'Fit PCA n=' + str(n) + ' returned keys ' + str(pca_fit.keys())
             )
             measure_value = self.grid_density_mean
             if measure_value == 'median':
@@ -146,7 +152,8 @@ class FitXformPca(FitXformInterface):
                             + ', final grid density "' + str(measure) + '"=' + str(measure_value)
                             # + ', details: ' + str(self.grid_density)
                         )
-                        return res
+                        pca_fit_optimal = pca_fit
+                        break
             else:
                 n_high = n
                 n_high_condition_satisfied = False
@@ -167,8 +174,10 @@ class FitXformPca(FitXformInterface):
                             + ', final grid density "' + str(measure) + '"=' + str(measure_value)
                             + ', details: ' + str(self.grid_density)
                         )
-                        return res
+                        pca_fit_optimal = pca_fit_optimal
+                        break
                 continue
+        return pca_fit_optimal
 
     def fit(
             self,
@@ -266,16 +275,16 @@ class FitXformPca(FitXformInterface):
         if return_details:
             return {
                 # PCA transform
-                'X_transform': self.X_transform,
-                'X_transform_check': self.X_transform_check,
-                'X_labels': self.X_labels,
-                'X_full_records': self.X_full_records,
+                self.KEY_X_TRANSFORM: self.X_transform,
+                self.KEY_X_TRANSFORM_CHECK: self.X_transform_check,
+                self.KEY_X_LABELS: self.X_labels,
+                self.KEY_X_FULL_RECS: self.X_full_records,
                 # Inverse PCA transform
-                'X_inverse_transform': self.X_inverse_transform,
-                'centroid': self.centroid,
-                'principal_components': self.principal_components,
-                'grid_vectors': self.X_grid_vectors,
-                'grid_numbers': self.X_grid_numbers,
+                self.KEY_X_INV_TRANSFORM: self.X_inverse_transform,
+                self.KEY_CENTROID: self.centroid,
+                self.KEY_N_PRINCIPAL_COMPONENTS: self.principal_components,
+                self.KEY_GRID_VECTORS: self.X_grid_vectors,
+                self.KEY_GRID_NUMBERS: self.X_grid_numbers,
             }
         else:
             return self.X_transform
@@ -461,16 +470,17 @@ if __name__ == '__main__':
         "I am busy", "Go away", "Don't disturb me",
         "Monetary policies", "Interest rates", "Deposit rates",
     ]
-    lmo = LmPt(lang='en', cache_folder=EnvRepo(repo_dir=os.environ["REPO_DIR"]).MODELS_PRETRAINED_DIR)
+    lmo = LmPt(lang='en', cache_folder=EnvRepo(repo_dir=os.environ.get("REPO_DIR", None)).MODELS_PRETRAINED_DIR)
 
     embeddings = lmo.encode(text_list=texts, return_tensors='np')
 
     # use the function create_pca_plot to
     fitter = FitXformPca(logger=Logging.get_default_logger(log_level=logging.INFO, propagate=False))
-    x_compressed = fitter.fit_optimal(X=embeddings)
+    pca_fit_optimal = fitter.fit_optimal(X=embeddings)
+    x_fit = pca_fit_optimal['X_transform']
 
     fitter.create_scatter_plot2d(
-        x_transform = x_compressed,
+        x_transform = x_fit,
         labels_list = texts,
         show = True,
     )
