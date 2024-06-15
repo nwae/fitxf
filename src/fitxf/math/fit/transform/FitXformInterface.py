@@ -30,11 +30,8 @@ from fitxf.math.utils.Logging import Logging
 class FitXformInterface:
 
     KEY_X_TRANSFORM = 'X_transform'
-    KEY_X_TRANSFORM_CHECK = 'X_transform_check'
     KEY_X_LABELS = 'X_labels'
     KEY_X_FULL_RECS = 'X_full_records'
-    # Inverse PCA/Cluster transform
-    KEY_X_INV_TRANSFORM = 'X_inverse_transform'
     KEY_CENTROID = 'centroid'
     KEY_N_COMPONENTS_OR_CENTERS = 'n'
     KEY_PRINCIPAL_COMPONENTS = 'principal_components'
@@ -57,9 +54,6 @@ class FitXformInterface:
 
         # Derived transforms
         self.X_transform = None
-        self.X_transform_check = None
-        # Inverse PCA transform
-        self.X_inverse_transform = None
         # Create an artificial grid
         self.X_grid_vectors = None
         self.X_grid_numbers = None
@@ -114,6 +108,18 @@ class FitXformInterface:
     ) -> dict:
         raise Exception('Must be implemented by derived class')
 
+    def transform(
+            self,
+            X: np.ndarray,
+    ) -> np.ndarray:
+        raise Exception('Must be implemented by derived class')
+
+    def inverse_transform(
+            self,
+            X: np.ndarray,
+    ) -> np.ndarray:
+        raise Exception('Must be implemented by derived class')
+
     def model_to_json(
             self,
             numpy_to_base64_str = False,
@@ -121,14 +127,6 @@ class FitXformInterface:
         if numpy_to_base64_str:
             x_tf = self.base64.encode_numpy_array_to_base64_string(
                 x = self.X_transform,
-                data_type = np.float64,
-            )
-            x_tf_check = self.base64.encode_numpy_array_to_base64_string(
-                x = self.X_transform_check,
-                data_type = np.float64,
-            )
-            x_inv_tf = self.base64.encode_numpy_array_to_base64_string(
-                x = self.X_inverse_transform,
                 data_type = np.float64,
             )
             centroid = self.base64.encode_numpy_array_to_base64_string(
@@ -149,8 +147,6 @@ class FitXformInterface:
             )
         else:
             x_tf = self.X_transform
-            x_tf_check = self.X_transform_check
-            x_inv_tf = self.X_inverse_transform
             centroid = self.model_centroid
             centers = self.model_centers
             grid_vecs = self.X_grid_vectors
@@ -158,11 +154,7 @@ class FitXformInterface:
 
         return {
             self.KEY_X_TRANSFORM: x_tf,
-            self.KEY_X_TRANSFORM_CHECK: x_tf_check,
             self.KEY_X_LABELS: self.X_labels,
-            self.KEY_X_FULL_RECS: self.X_full_records,
-            # Inverse PCA transform
-            self.KEY_X_INV_TRANSFORM: x_inv_tf,
             self.KEY_CENTROID: centroid,
             self.KEY_N_COMPONENTS_OR_CENTERS: self.model_n_components_or_centers,
             self.KEY_PRINCIPAL_COMPONENTS: self.model_principal_components,
@@ -171,7 +163,36 @@ class FitXformInterface:
             self.KEY_GRID_NUMBERS: grid_numbers,
         }
 
-    def load_model_from_json(self):
+    def load_model_from_json(
+            self,
+            model_json,
+    ):
+        self.X_transform = self.base64.decode_base64_string_to_numpy_array(
+            s64 = model_json[self.KEY_X_TRANSFORM],
+            data_type = np.float64,
+        )
+        self.X_labels = model_json[self.KEY_X_LABELS]
+        self.model_centroid = self.base64.decode_base64_string_to_numpy_array(
+            s64 = model_json[self.KEY_CENTROID],
+            data_type = np.float64,
+        )
+        self.model_n_components_or_centers = model_json[self.KEY_N_COMPONENTS_OR_CENTERS]
+        self.model_principal_components = self.base64.decode_base64_string_to_numpy_array(
+            s64 = model_json[self.KEY_PRINCIPAL_COMPONENTS],
+            data_type = np.float64,
+        )
+        self.model_centers = self.base64.decode_base64_string_to_numpy_array(
+            s64 = model_json[self.KEY_CENTERS],
+            data_type = np.float64,
+        )
+        self.X_grid_vectors = self.base64.decode_base64_string_to_numpy_array(
+            s64 = model_json[self.KEY_GRID_VECTORS],
+            data_type = np.int64,
+        )
+        self.X_grid_numbers = self.base64.decode_base64_string_to_numpy_array(
+            s64 = model_json[self.KEY_GRID_NUMBERS],
+            data_type = np.int64,
+        )
         return
 
     def fine_tune(
@@ -181,20 +202,6 @@ class FitXformInterface:
     ):
         # Check if n changed
         return
-
-    # Recover estimate of original point from PCA compression
-    def inverse_transform(
-            self,
-            x_transform: np.ndarray,
-    ):
-        raise Exception('Must be implemented by derived class')
-
-    # Get PCA values of arbitrary points
-    def calc_transform(
-            self,
-            X: np.ndarray,
-    ):
-        raise Exception('Must be implemented by derived class')
 
     def predict(
             self,

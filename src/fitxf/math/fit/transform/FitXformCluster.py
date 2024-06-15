@@ -183,7 +183,7 @@ class FitXformCluster(FitXformInterface):
             + ', centers median distance ' + str(self.centers_median_distance)
         )
 
-        self.X_transform = self.__calc_transform(
+        self.X_transform = self.__transform(
             X = self.X,
         )
         self.logger.info('X transform: ' + str(self.X_transform))
@@ -207,25 +207,20 @@ class FitXformCluster(FitXformInterface):
         grid_lines[l-1] = 2 * grid_lines[l-1]
         self.logger.info('Grid lines: ' + str(grid_lines))
 
-        # Should be exactly the same with using the fit API to reduce X
-        self.X_transform_check = self.__calc_transform(
-            X = X,
-        )
-
         return self.model_to_json(numpy_to_base64_str=False)
 
     # Recover estimate of original point from PCA compression
     def inverse_transform(
             self,
-            x_transform: np.ndarray,
-    ):
+            X: np.ndarray,
+    ) -> np.ndarray:
         try:
             self.__lock.acquire_mutexes(
                 id = 'inverse_transform',
                 mutexes = [self.__mutex_model],
             )
             return self.__inverse_transform(
-                x_transform = x_transform,
+                x_transform = X,
             )
         finally:
             self.__lock.release_mutexes(mutexes=[self.__mutex_model])
@@ -233,29 +228,29 @@ class FitXformCluster(FitXformInterface):
     def __inverse_transform(
             self,
             x_transform: np.ndarray,
-    ):
+    ) -> np.ndarray:
         # Transform is just the cluster label (or cluster center index)
         x_estimated = self.model_centers[x_transform]
         return x_estimated
 
     # Get PCA values of arbitrary points
-    def calc_transform(
+    def transform(
             self,
             X: np.ndarray,
-    ):
+    ) -> np.ndarray:
         try:
             self.__lock.acquire_mutexes(
-                id = 'calc_transform',
+                id = 'transform',
                 mutexes = [self.__mutex_model],
             )
-            return self.__calc_transform(X=X)
+            return self.__transform(X=X)
         finally:
             self.__lock.release_mutexes(mutexes=[self.__mutex_model])
 
-    def __calc_transform(
+    def __transform(
             self,
             X: np.ndarray,
-    ):
+    ) -> np.ndarray:
         pred_labels, pred_probs = self.predict_standard(
             X = X,
             ref_X = self.model_centers,

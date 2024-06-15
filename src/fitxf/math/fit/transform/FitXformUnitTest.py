@@ -125,8 +125,8 @@ class FitXformUnitTest:
         self.logger.info('grid density mean' + str(fitter.grid_density_mean))
 
         x_transform = res["X_transform"] # or fitter.X_transform
-        x_transform_check = res["X_transform_check"] # or fitter.X_transform_check
-        x_inverse_transform = res["X_inverse_transform"] # or fitter.X_inverse_transform
+        x_transform_check = fitter.transform(X=emb_train)
+        x_inverse_transform = fitter.inverse_transform(X=x_transform)
 
         # Check if estimation of actual value is correct
         diff = x_inverse_transform - emb_train

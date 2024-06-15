@@ -239,10 +239,6 @@ class FitXformPca(FitXformInterface):
         self.X_inverse_transform = self.__inverse_transform(
             x_transform = self.X_transform,
         )
-        # Should be exactly the same with using the fit API to reduce X
-        self.X_transform_check = self.__calc_transform(
-            X = X,
-        )
         self.X_grid_vectors, self.X_grid_numbers = self.__calc_pca_grid(
             x_pca = self.X_transform,
         )
@@ -270,15 +266,15 @@ class FitXformPca(FitXformInterface):
     # Recover estimate of original point from PCA compression
     def inverse_transform(
             self,
-            x_transform: np.ndarray,
-    ):
+            X: np.ndarray,
+    ) -> np.ndarray:
         try:
             self.__lock.acquire_mutexes(
                 id = 'inverse_transform',
                 mutexes = [self.__mutex_model],
             )
             return self.__inverse_transform(
-                x_transform = x_transform,
+                x_transform = X,
             )
         finally:
             self.__lock.release_mutexes(mutexes=[self.__mutex_model])
@@ -286,7 +282,7 @@ class FitXformPca(FitXformInterface):
     def __inverse_transform(
             self,
             x_transform: np.ndarray,
-    ):
+    ) -> np.ndarray:
         self.__check_consistency(principal_components=self.model_principal_components)
         if x_transform.ndim == 1:
             x_transform = x_transform.reshape((1, x_transform.shape[0]))
@@ -299,23 +295,23 @@ class FitXformPca(FitXformInterface):
         return x_estimated
 
     # Get PCA values of arbitrary points
-    def calc_transform(
+    def transform(
             self,
             X: np.ndarray,
-    ):
+    ) -> np.ndarray:
         try:
             self.__lock.acquire_mutexes(
-                id = 'calc_transform',
+                id = 'transform',
                 mutexes = [self.__mutex_model],
             )
-            return self.__calc_transform(X=X)
+            return self.__transform(X=X)
         finally:
             self.__lock.release_mutexes(mutexes=[self.__mutex_model])
 
-    def __calc_transform(
+    def __transform(
             self,
             X: np.ndarray,
-    ):
+    ) -> np.ndarray:
         self.__check_consistency(principal_components=self.model_principal_components)
         assert X.shape[-1] == self.model_centroid.shape[0], (
                 'Inconsistent shapes X ' + str(X.shape) + ', centroid ' + str(self.model_centroid.shape))
@@ -332,19 +328,6 @@ class FitXformPca(FitXformInterface):
             pca_coef[:, k] = np.matmul(X_remainder, self.model_principal_components[k].transpose())
             # print(k, pca_coef)
         return pca_coef
-
-    # def __predict_grid_pca(
-    #         self,
-    #         X: np.ndarray,
-    # ):
-    #     # TODO First, determine the grid segments of the texts/embeddings
-    #     x_pca = self.calc_transform(
-    #         X = X,
-    #     )
-    #     grid, grid_numbers = self.__calc_pca_grid(
-    #         x_pca = x_pca,
-    #     )
-    #     return grid, grid_numbers
 
     def __calc_pca_grid(
             self,
@@ -391,7 +374,7 @@ class FitXformPca(FitXformInterface):
             #       of transforming the input vector.
             #
 
-            X_pca = self.__calc_transform(
+            X_pca = self.__transform(
                 X = X,
             )
 
