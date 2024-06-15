@@ -27,10 +27,10 @@ class FitXformUnitTest:
 
     def test(self):
         for F, score_thr, ret_full_rec in [
-            (FitXformPca, 0.9, False),
-            (FitXformPca, 0.9, True),
-            (FitXformCluster, 0.59, False),
-            (FitXformClusterCosine, 0.59, False),
+            (FitXformPca, 0.95, False),
+            (FitXformPca, 0.95, True),
+            (FitXformCluster, 0.95, False),
+            (FitXformClusterCosine, 0.95, False),
         ]:
             self.__test_fit(
                 fitter_name = str(F.__class__),
@@ -107,7 +107,8 @@ class FitXformUnitTest:
             target_grid_density = 2.,
             measure = 'min',
             min_components = 3,
-            max_components = 3,
+            # estimate n centers at most 2x number of unique labels
+            max_components = len(np.unique(labels_train)) * 2,
         )
 
         self.__test_predictions(
@@ -199,11 +200,11 @@ class FitXformUnitTest:
                     )
             score_avg = np.mean(np.array(scores))
             self.logger.info(
-                '[' + str(fitter_name) + '] Use grid "' + str(use_grid) + '". Mean score '
+                '[' + str(fitter.__class__) + '] Use grid "' + str(use_grid) + '". Mean score '
                 + str(score_avg) + ', scores' + str(scores)
             )
             assert score_avg > avg_score_threshold, \
-                '[' + str(fitter_name) + '] Use grid "' + str(use_grid) + '". Mean score fail ' + str(score_avg) \
+                '[' + str(fitter.__class__) + '] Use grid "' + str(use_grid) + '". Mean score fail ' + str(score_avg) \
                 + ' < ' + str(avg_score_threshold) + '. Scores ' + str(scores)
 
     def __test_save_load_model(
