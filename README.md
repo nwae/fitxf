@@ -77,6 +77,13 @@ ClusterCosine().kmeans_optimal(x=x)
 
 ## Fit Transform
 
+Convenient wrapper
+- fit a set of vectors into compressed PCA, clusters, etc.
+- predict via cosine similarity, Euclidean distance of arbitrary
+  vectors
+- fine tune
+
+
 ```
 from fitxf import FitXformPca, FitXformCluster
 import numpy as np
