@@ -5,8 +5,8 @@ import matplotlib.pyplot as mplt
 from torch.utils.data import TensorDataset, DataLoader, RandomSampler
 from sklearn.model_selection import train_test_split
 from sklearn.cluster import KMeans
-from nwae.math.fit.utils.TensorUtils import TensorUtils
-from nwae.math.utils.Profile import Profiling
+from fitxf.math.fit.utils.TensorUtils import TensorUtils
+from fitxf.math.utils.Profile import Profiling
 
 
 class FitUtils:

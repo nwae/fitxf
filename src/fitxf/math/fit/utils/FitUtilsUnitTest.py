@@ -2,8 +2,8 @@ import math
 import logging
 import torch
 import numpy as np
-from nwae.math.fit.utils.FitUtils import FitUtils
-from nwae.math.utils.Logging import Logging
+from fitxf.math.fit.utils.FitUtils import FitUtils
+from fitxf.math.utils.Logging import Logging
 from torch.utils.data import DataLoader, RandomSampler
 
 
