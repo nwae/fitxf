@@ -110,10 +110,11 @@ cls.predict(X=x+np.random.rand(9,3))
 Sample code to save and load model -
 ```
 import json
-model_save = cls.model_to_json(numpy_to_base64_str=True)
-# Save this dict somewhere, e.g. json string
-model_save_json = json.dumps(model_save)
+# Save this json string somewhere
+model_save = pca.model_to_json(numpy_to_base64_str=True, dump_to_json_str=True)
 
 # Load back into new instance
-
+new = FitXformPca()
+new.load_model_from_json(model_json=json.loads(model_save))
+new.predict(X=x+np.random.rand(9,3))
 ```

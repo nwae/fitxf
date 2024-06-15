@@ -430,7 +430,10 @@ class FitXformPca(FitXformInterface):
             numpy_to_base64_str = False,
             dump_to_json_str = False,
     ):
-        base_model_json = super().model_to_json(numpy_to_base64_str=numpy_to_base64_str)
+        base_model_json = super().model_to_json(
+            numpy_to_base64_str = numpy_to_base64_str,
+            dump_to_json_str = False,
+        )
         if dump_to_json_str:
             return json.dumps(base_model_json)
         else:
