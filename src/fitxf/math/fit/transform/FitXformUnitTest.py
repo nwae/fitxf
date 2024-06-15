@@ -202,7 +202,7 @@ class FitXformUnitTest:
                 + ' < ' + str(avg_score_threshold) + '. Scores ' + str(scores)
 
         #
-        # Test fine tune
+        # Test model saving to json and reloading is ok
         #
         # Test that saving model to json and loading back has no error
         centers_before = np.array(fitter.model_centers)
