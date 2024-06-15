@@ -277,7 +277,9 @@ class FitXformPca(FitXformInterface):
             # Inverse PCA transform
             self.KEY_X_INV_TRANSFORM: self.X_inverse_transform,
             self.KEY_CENTROID: self.centroid,
-            self.KEY_N_PRINCIPAL_COMPONENTS: self.principal_components,
+            self.KEY_N_COMPONENTS_OR_CENTERS: self.n_pca_components,
+            self.KEY_PRINCIPAL_COMPONENTS: self.principal_components,
+            self.KEY_CENTERS: None,
             self.KEY_GRID_VECTORS: self.X_grid_vectors,
             self.KEY_GRID_NUMBERS: self.X_grid_numbers,
         }

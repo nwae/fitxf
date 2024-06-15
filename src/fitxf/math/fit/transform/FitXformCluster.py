@@ -220,8 +220,10 @@ class FitXformCluster(FitXformInterface):
             self.KEY_X_FULL_RECS: self.X_full_records,
             # Inverse PCA transform
             self.KEY_X_INV_TRANSFORM: self.X_inverse_transform,
-            self.KEY_CENTROID: self.cluster_centers,
-            self.KEY_N_PRINCIPAL_COMPONENTS: self.n_cluster,
+            self.KEY_CENTROID: np.mean(self.cluster_centers),
+            self.KEY_N_COMPONENTS_OR_CENTERS: self.n_cluster,
+            self.KEY_PRINCIPAL_COMPONENTS: None,
+            self.KEY_CENTERS: self.cluster_centers,
             self.KEY_GRID_VECTORS: self.X_grid_vectors,
             self.KEY_GRID_NUMBERS: self.X_grid_numbers,
         }

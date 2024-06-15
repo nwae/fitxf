@@ -35,7 +35,9 @@ class FitXformInterface:
     # Inverse PCA/Cluster transform
     KEY_X_INV_TRANSFORM = 'X_inverse_transform'
     KEY_CENTROID = 'centroid'
-    KEY_N_PRINCIPAL_COMPONENTS = 'principal_components'
+    KEY_N_COMPONENTS_OR_CENTERS = 'n'
+    KEY_PRINCIPAL_COMPONENTS = 'principal_components'
+    KEY_CENTERS = 'centers'
     KEY_GRID_VECTORS = 'grid_vectors'
     KEY_GRID_NUMBERS = 'grid_numbers'
 
