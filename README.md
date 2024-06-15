@@ -16,15 +16,12 @@ ts = TensorUtils()
 x = np.random.rand(5,3)
 y = np.random.rand(10,3)
 
-# Cosine similarity
-ts.similarity_cosine(x,x,'np')
-ts.similarity_cosine(y,y,'np')
-matches, dotsim = ts.similarity_cosine(x,y,'np')
-print("matches",matches)
-print("dot similarities",dotsim)
-
-# Euclidean Distance
-matches, dotsim = ts.similarity_distance(x,x,'np')
+# Cosine similarity, find closest matches of each vector in x
+# with all vectors in ref
+# For Euclidean distance, just replace with "similarity_distance"
+ts.similarity_cosine(x=x, ref=x, return_tensors='np')
+ts.similarity_cosine(x=y, ref=y, return_tensors='np')
+matches, dotsim = ts.similarity_cosine(x=x, ref=y, return_tensors='np')
 print("matches",matches)
 print("dot similarities",dotsim)
 ```
