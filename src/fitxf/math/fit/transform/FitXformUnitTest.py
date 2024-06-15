@@ -26,15 +26,15 @@ class FitXformUnitTest:
         return
 
     def test(self):
-        for f, score_thr, ret_full_rec in [
-            (FitXformPca(logger=self.logger), 0.9, False),
-            (FitXformPca(logger=self.logger), 0.9, True),
-            (FitXformCluster(logger=self.logger), 0.5, False),
-            (FitXformClusterCosine(logger=self.logger), 0.59, False),
+        for F, score_thr, ret_full_rec in [
+            (FitXformPca, 0.9, False),
+            (FitXformPca, 0.9, True),
+            (FitXformCluster, 0.5, False),
+            (FitXformClusterCosine, 0.59, False),
         ]:
             self.__test_fit(
-                fitter_name = str(f.__class__),
-                fitter = f,
+                fitter_name = str(F.__class__),
+                FitterClassType = F,
                 avg_score_threshold = score_thr,
                 ret_full_rec = ret_full_rec,
             )
@@ -43,18 +43,11 @@ class FitXformUnitTest:
     def __test_fit(
             self,
             fitter_name: str,
-            fitter: FitXformInterface,
+            FitterClassType: type(FitXformInterface),
             avg_score_threshold: float,
             ret_full_rec: bool,
     ):
-        # texts_train = [
-        #     "Let's have coffee", "Free for a drink?", "How about Starbucks?",
-        #     "I am busy", "Go away", "Don't disturb me",
-        #     "Monetary policies", "Interest rates", "Deposit rates",
-        # ]
-        # labels_train = ['drink', 'drink', 'drink', 'busy', 'busy', 'busy', 'finance', 'finance', 'finance']
-        # texts_test = ["How about a cup of coffee?", "Not now", "Financial policies"]
-
+        fitter = FitterClassType(logger=self.logger)
         def get_data(
                 s,
         ):
@@ -124,7 +117,32 @@ class FitXformUnitTest:
         self.logger.info('grid density' + str(fitter.grid_density))
         self.logger.info('grid density mean' + str(fitter.grid_density_mean))
 
-        x_transform = res["X_transform"] # or fitter.X_transform
+        self.__test_predictions(
+            fitter_name = fitter_name,
+            fitter = fitter,
+            emb_train = emb_train,
+            emb_eval = emb_eval,
+            ret_full_rec = ret_full_rec,
+            avg_score_threshold = avg_score_threshold,
+            expected_top_labels = labels_eval,
+        )
+        self.__test_save_load_model(
+            fitter_old = fitter,
+            FitterClassType = FitterClassType,
+        )
+        return
+
+    def __test_predictions(
+            self,
+            fitter_name: str,
+            fitter: FitXformInterface,
+            emb_train: np.ndarray,
+            emb_eval: np.ndarray,
+            ret_full_rec: bool,
+            avg_score_threshold: float,
+            expected_top_labels: list,
+    ):
+        x_transform = fitter.X_transform
         x_transform_check = fitter.transform(X=emb_train)
         x_inverse_transform = fitter.inverse_transform(X=x_transform)
 
@@ -151,29 +169,10 @@ class FitXformUnitTest:
                 return_full_record = ret_full_rec,
                 top_k = 2,
             )
-            # pred_labels_full, pred_probs_full = fitter.predict(
-            #     X = emb_eval,
-            #     use_grid = use_grid,
-            #     return_full_record = True,
-            #     top_k = 2,
-            # )
-            # print(pred_labels, pred_probs)
-            # print([[r['label'] for r in row_recs] for row_recs in pred_labels_full], pred_probs_full)
-            # assert pred_labels ==[[r['label'] for r in row_recs] for row_recs in pred_labels_full], \
-            #     '[' + str(fitter_name) + '] Use grid "' + str(use_grid) + \
-            #     '". Predict without full records must be same with prediction with full records:\n' \
-            #     + str(pred_labels) + '\n' + str([[r['label'] for r in row_recs] for row_recs in pred_labels_full])
-            # assert pred_probs == pred_probs_full, \
-            #     '[' + str(fitter_name) + '] Use grid "' + str(use_grid) + '"' + 'Probs also must equal.'
-            #
-            # if ret_full_rec:
-            #     pred_labels = pred_labels_full
-            #     pred_probs = pred_probs_full
 
             print(
                 '[' + str(fitter_name) + '] Use grid "' + str(use_grid) + '", predicted labels: ' + str(pred_labels)
             )
-            expected_top_labels = df_eval['label'].tolist()
             scores = []
             for i, exp_lbl in enumerate(expected_top_labels):
                 pred_top_label = pred_labels[i][0]['label'] if ret_full_rec else pred_labels[i][0]
@@ -201,29 +200,35 @@ class FitXformUnitTest:
                 '[' + str(fitter_name) + '] Use grid "' + str(use_grid) + '". Mean score fail ' + str(score_avg) \
                 + ' < ' + str(avg_score_threshold) + '. Scores ' + str(scores)
 
+    def __test_save_load_model(
+            self,
+            fitter_old: FitXformInterface,
+            FitterClassType: type(FitXformInterface),
+    ):
         #
         # Test model saving to json and reloading is ok
         #
-        # Test that saving model to json and loading back has no error
-        centers_before = np.array(fitter.model_centers)
-        pca_before = np.array(fitter.model_principal_components)
-        model_dict = fitter.model_to_json(numpy_to_base64_str=True)
+        centers_before = np.array(fitter_old.model_centers)
+        pca_before = np.array(fitter_old.model_principal_components)
+        model_dict = fitter_old.model_to_json(numpy_to_base64_str=True)
         [self.logger.info(str(k) + ': ' + str(v)) for k, v in model_dict.items()]
-        fitter.load_model_from_json(model_json=model_dict)
 
-        assert fitter.model_centers.shape == centers_before.shape, \
-            'Shape before ' + str(centers_before.shape) + ' but after ' + str(fitter.model_centers.shape)
-        assert fitter.model_principal_components.shape == pca_before.shape, \
-            'Shape before ' + str(pca_before.shape) + ' but after ' + str(fitter.model_principal_components.shape)
+        fitter_new = FitterClassType(logger=self.logger)
+        fitter_new.load_model_from_json(model_json=model_dict)
 
-        diff = np.sum( (fitter.model_centers - centers_before) ** 2 )
+        assert fitter_new.model_centers.shape == centers_before.shape, \
+            'Shape before ' + str(centers_before.shape) + ' but after ' + str(fitter_new.model_centers.shape)
+        assert fitter_new.model_principal_components.shape == pca_before.shape, \
+            'Shape before ' + str(pca_before.shape) + ' but after ' + str(fitter_new.model_principal_components.shape)
+
+        diff = np.sum( (fitter_new.model_centers - centers_before) ** 2 )
         assert diff < 0.0000000001, \
                 'Centers after and before different, before\n' + str(centers_before) \
-                + ', after\n' + str(fitter.model_centers)
-        diff = np.sum( (fitter.model_principal_components - pca_before) ** 2 )
+                + ', after\n' + str(fitter_new.model_centers)
+        diff = np.sum( (fitter_new.model_principal_components - pca_before) ** 2 )
         assert diff < 0.0000000001, \
                 'Principle components after and before different, before\n' + str(pca_before) \
-                + ', after\n' + str(fitter.model_principal_components)
+                + ', after\n' + str(fitter_new.model_principal_components)
 
         print('ALL TESTS PASSED OK')
         return
