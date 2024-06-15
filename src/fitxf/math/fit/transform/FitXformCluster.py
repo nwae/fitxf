@@ -283,7 +283,7 @@ class FitXformCluster(FitXformInterface):
             pred_cluster_numbers, pred_probs = self.predict_standard(
                 X = X,
                 ref_X = self.model_centers,
-                ref_labels = np.array(range(len(self.model_centers))),
+                ref_labels = list(range(len(self.model_centers))),
                 ref_full_records = self.X_full_records,
                 top_k = top_k,
                 return_full_record = return_full_record,
