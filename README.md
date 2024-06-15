@@ -99,9 +99,12 @@ user_labels = [
     'c', 'c', 'c',
 ]
 pca = FitXformPca()
-pca.fit_optimal(X=x, X_labels=user_labels)
+res_fit_pca = pca.fit_optimal(X=x, X_labels=user_labels)
+print('X now reduced to\n',res_fit_pca['X_transform'])
+
 cls = FitXformCluster()
-cls.fit_optimal(X=x, X_labels=user_labels)
+res_fit_cls = cls.fit_optimal(X=x, X_labels=user_labels)
+print('X now reduced to\n',res_fit_cls['X_transform'])
 
 pca.predict(X=x+np.random.rand(9,3))
 cls.predict(X=x+np.random.rand(9,3))
