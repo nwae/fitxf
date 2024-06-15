@@ -1,7 +1,6 @@
 import torch
 import logging
 import os
-import re
 from nwae.math.lang.encode.LangModelInterface import LangModelInterface
 from nwae.math.lang.encode.LangModelInterfaceX import LangModelInterfaceX as LmInterfaceX
 from transformers import AutoTokenizer, AutoModel
@@ -18,10 +17,6 @@ class LangModelPt(LangModelInterface, LmInterfaceX):
     DEFAULT_MODEL_MAP = {
         # All other languages sink here
         'multi': 'sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2',
-    }
-
-    # Only if we need a different or particular directory name, otherwise will default to the same one as HF
-    LM_PATH_INFO = {
     }
 
     def __init__(
@@ -61,7 +56,7 @@ class LangModelPt(LangModelInterface, LmInterfaceX):
         # If user passes in only language, we derive the model and path
         else:
             self.model_name = self.DEFAULT_MODEL_MAP[self.lang] if self.model_name is None else self.model_name
-            self.model_path = self.cache_folder + '/' + self.LM_PATH_INFO.get(self.model_name, self.model_name)
+            self.model_path = self.cache_folder + '/' + self.model_name
 
         assert os.path.isdir(self.model_path), 'Not a directory "' + str(self.model_path) + '"'
         self.logger.info('Model name "' + str(self.model_name) + '" path "' + str(self.model_path) + '"')
