@@ -139,12 +139,22 @@ class FitXformInterface:
                 x = self.model_centers,
                 data_type = np.float64,
             )
+            grid_vecs = self.base64.encode_numpy_array_to_base64_string(
+                x = self.X_grid_vectors,
+                data_type = np.int64,
+            )
+            grid_numbers = self.base64.encode_numpy_array_to_base64_string(
+                x = self.X_grid_numbers,
+                data_type = np.int64,
+            )
         else:
             x_tf = self.X_transform
             x_tf_check = self.X_transform_check
             x_inv_tf = self.X_inverse_transform
             centroid = self.model_centroid
             centers = self.model_centers
+            grid_vecs = self.X_grid_vectors
+            grid_numbers = self.X_grid_numbers
 
         return {
             self.KEY_X_TRANSFORM: x_tf,
@@ -157,8 +167,8 @@ class FitXformInterface:
             self.KEY_N_COMPONENTS_OR_CENTERS: self.model_n_components_or_centers,
             self.KEY_PRINCIPAL_COMPONENTS: self.model_principal_components,
             self.KEY_CENTERS: centers,
-            self.KEY_GRID_VECTORS: self.X_grid_vectors,
-            self.KEY_GRID_NUMBERS: self.X_grid_numbers,
+            self.KEY_GRID_VECTORS: grid_vecs,
+            self.KEY_GRID_NUMBERS: grid_numbers,
         }
 
     def load_model_from_json(self):
