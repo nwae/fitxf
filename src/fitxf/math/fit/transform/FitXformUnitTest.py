@@ -48,7 +48,9 @@ class FitXformUnitTest:
             avg_score_threshold: float,
             ret_full_rec: bool,
     ):
-        fitter = FitterClassType(logger=self.logger)
+        def get_fitter_object() -> FitXformInterface:
+            return FitterClassType(logger=self.logger)
+        fitter = get_fitter_object()
         def get_data(
                 s,
         ):
@@ -73,6 +75,9 @@ class FitXformUnitTest:
         full_recs_train = [
             {k: v for (k, v) in r.items() if k not in ['embedding']} for r in df_train.to_dict(orient='records')
         ]
+        full_recs_eval = [
+            {k: v for (k, v) in r.items() if k not in ['embedding']} for r in df_eval.to_dict(orient='records')
+        ]
 
         def get_lm() -> LmPt:
             return LmPt.get_singleton(
@@ -96,6 +101,15 @@ class FitXformUnitTest:
                 self.base64.decode_base64_string_to_numpy_array(s64=s, data_type=np.float64)
                 for s in df_eval['embedding'].tolist()
             ])
+            # Remove some points, and add additional points for fine-tuning
+            n_remove = 3
+            emb_fine_tune = emb_train[:-n_remove]
+            emb_fine_tune = np.append(emb_fine_tune, emb_eval, axis=0)
+            labels_fine_tune = labels_train[:-n_remove]
+            labels_fine_tune += labels_eval
+            full_recs_fine_tune = full_recs_train[:-n_remove]
+            full_recs_fine_tune += full_recs_eval
+
         # x = np.array([
         #     [1, 1, 1, 1], [2, 2, 2, 2],
         #     [2, 1.5, -1, 0.3], [1, 2, -2, 1],
@@ -113,7 +127,6 @@ class FitXformUnitTest:
         )
 
         self.__test_predictions(
-            fitter_name = fitter_name,
             fitter = fitter,
             emb_train = emb_train,
             emb_eval = emb_eval,
@@ -128,7 +141,6 @@ class FitXformUnitTest:
         )
         # do the same test on this new object, to make sure it works just like the original
         self.__test_predictions(
-            fitter_name = fitter_name,
             fitter = fitter_new_loaded,
             emb_train = emb_train,
             emb_eval = emb_eval,
@@ -138,13 +150,19 @@ class FitXformUnitTest:
             expected_top_labels = labels_eval,
         )
         # now test fine tuning
+        self.test_fine_tune(
+            fitter = fitter,
+            X = emb_fine_tune,
+            X_labels = labels_fine_tune,
+            X_full_records = full_recs_fine_tune,
+            n_components = fitter.model_n_components_or_centers,
+        )
 
         print('ALL TESTS PASSED OK')
         return
 
     def __test_predictions(
             self,
-            fitter_name: str,
             fitter: FitXformInterface,
             emb_train: np.ndarray,
             emb_eval: np.ndarray,
@@ -162,14 +180,14 @@ class FitXformUnitTest:
         x_dim = emb_train.shape[-1]
         sq_err_per_vect_thr = 0.1 * x_dim
         assert sq_err_per_vect < sq_err_per_vect_thr, \
-            '[' + str(fitter_name) + '] Estimate back using PCA, per vector sq err ' + str(sq_err_per_vect) \
+            '[' + str(fitter.__class__) + '] Estimate back using PCA, per vector sq err ' + str(sq_err_per_vect) \
             + '>=' + str(sq_err_per_vect_thr) + ', details: ' + str(diff)
 
         # Check if our manual calculation of the principal component values are correct
         diff = x_transform_check - x_transform
         sq_err_sum = np.sum(diff*diff)
         assert sq_err_sum < 0.000000001, \
-            '[' + str(fitter_name) + '] Manual calculate PCA component values, sq err ' + str(sq_err_sum) \
+            '[' + str(fitter.__class__) + '] Manual calculate PCA component values, sq err ' + str(sq_err_sum) \
             + ', diff ' + str(diff)
 
         for use_grid in (False, True,):
@@ -180,8 +198,9 @@ class FitXformUnitTest:
                 top_k = 2,
             )
 
-            print(
-                '[' + str(fitter_name) + '] Use grid "' + str(use_grid) + '", predicted labels: ' + str(pred_labels)
+            self.logger.info(
+                '[' + str(fitter.__class__) + '] Use grid "' + str(use_grid)
+                + '", predicted labels: ' + str(pred_labels)
             )
             scores = []
             for i, exp_lbl in enumerate(expected_top_labels):
@@ -198,7 +217,7 @@ class FitXformUnitTest:
                 # Check only top prediction
                 if pred_top_label != exp_lbl:
                     self.logger.warning(
-                        '[' + str(fitter_name) + '] #' + str(i) + ' Use grid "' + str(use_grid)
+                        '[' + str(fitter.__class__) + '] #' + str(i) + ' Use grid "' + str(use_grid)
                         + '". Predicted top label "' + str(pred_top_label) + '" not expected "' + str(exp_lbl) + '"'
                     )
             score_avg = np.mean(np.array(scores))
@@ -249,7 +268,18 @@ class FitXformUnitTest:
             self,
             fitter: FitXformInterface,
             X: np.ndarray,
+            X_labels: list,
+            X_full_records: list,
+            n_components: int,
     ):
+        res = fitter.fine_tune(
+            X = X,
+            X_labels = X_labels,
+            X_full_records = X_full_records,
+            n_components = n_components,
+        )
+        self.logger.info('Result of fine tune..')
+        [self.logger.info(str(k) + ':' + str(v)) for k, v in res.items()]
         return
 
 

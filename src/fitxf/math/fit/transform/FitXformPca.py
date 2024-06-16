@@ -226,6 +226,7 @@ class FitXformPca(FitXformInterface):
         self.model_params_ready = False
 
         # Keep model parameters
+        self.model_train_total_iterations = None
         self.model_n_components_or_centers = n_components
         self.X = np.array(X)
         self.X_transform = x_reduced

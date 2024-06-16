@@ -103,7 +103,7 @@ class Cluster:
 
         kmeans = KMeans(
             n_clusters = n_centers,
-            init = 'k-means++',
+            init = 'k-means++' if start_centers is None else start_centers,
             max_iter = km_iters,
             n_init = 10,
             random_state = 0
@@ -136,6 +136,7 @@ class Cluster:
         #   - продолжать трейнинг с прошлых центров и их меток кластеров
         #
         return {
+            'total_iterations': kmeans.n_iter_,
             'n_centers': n_centers,
             # Group the indexes in same cluster
             'clusters': [

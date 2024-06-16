@@ -170,6 +170,7 @@ class FitXformCluster(FitXformInterface):
         self.X = np.array(X)
         self.X_labels = X_labels
         self.X_full_records = X_full_records
+        self.model_train_total_iterations = desired_cluster.get('total_iterations', None)
         self.model_centers = desired_cluster['cluster_centers']
         self.model_principal_components = self.model_centers
         self.cluster_labels = np.array(desired_cluster['cluster_labels'])

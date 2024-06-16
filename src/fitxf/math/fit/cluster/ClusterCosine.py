@@ -57,6 +57,7 @@ class ClusterCosine(Cluster):
         self.logger.debug('Initial centroids: ' + str(last_centroids))
         last_cluster_numbers = None
         last_clusters = None
+        total_iters = 0
         for iter in range(km_iters):
             self.logger.info('Starting iteration #' + str(iter+1) + '...')
             # Closest centers for all points
@@ -103,6 +104,7 @@ class ClusterCosine(Cluster):
                 converge_cond = False
 
             self.logger.info('Done iteration #' + str(iter+1) + ', converged = ' + str(converge_cond))
+            total_iters = iter
             if converge_cond:
                 break
 
@@ -127,6 +129,7 @@ class ClusterCosine(Cluster):
         else:
             cluster_label_to_labelsori = None
         return {
+            'total_iterations': total_iters,
             'n_centers': n_centers,
             'clusters': last_clusters,
             'cluster_centers': np.array(last_centroids),

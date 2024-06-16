@@ -34,6 +34,7 @@ class FitXformInterface:
     KEY_X_LABELS = 'X_labels'
     KEY_X_FULL_RECS = 'X_full_records'
     KEY_CENTROID = 'centroid'
+    KEY_N_ITERATIONS = 'n_iter'
     KEY_N_COMPONENTS_OR_CENTERS = 'n'
     KEY_PRINCIPAL_COMPONENTS = 'principal_components'
     KEY_CENTERS = 'centers'
@@ -62,6 +63,7 @@ class FitXformInterface:
         self.grid_density = None
         self.grid_density_mean = None
         # Other model dependent values
+        self.model_train_total_iterations = None
         self.model_n_components_or_centers = None
         self.model_principal_components = None
         self.model_centers = None
@@ -194,6 +196,7 @@ class FitXformInterface:
             self.KEY_X_TRANSFORM: x_tf,
             self.KEY_X_LABELS: self.X_labels,
             self.KEY_CENTROID: centroid,
+            self.KEY_N_ITERATIONS: self.model_train_total_iterations,
             self.KEY_N_COMPONENTS_OR_CENTERS: self.model_n_components_or_centers,
             self.KEY_PRINCIPAL_COMPONENTS: principle_components,
             self.KEY_CENTERS: centers,
