@@ -19,9 +19,11 @@ class ClusterUnitTest:
             x = x,
             estimate_min_max = True,
         )
+        n_iters = res[0]['total_iterations']
         n = res[0]['n_centers']
         centers = res[0]['cluster_centers']
         center_lbls = res[0]['cluster_labels']
+        self.logger.info('Total iterations from full train = ' + str(n_iters))
 
         assert n == 3, 'Expect 3 centers but got ' + str(n)
 
@@ -34,6 +36,20 @@ class ClusterUnitTest:
         #
         # Test fine-tuning
         #
+        res = obj.kmeans(
+            x = x,
+            n_centers = n,
+            start_centers = centers,
+        )
+        n_iters = res['total_iterations']
+        new_centers = res['cluster_centers']
+        new_center_lbls = res['cluster_labels']
+        self.logger.info('Total iterations from fine tuning SAME DATA = ' + str(n_iters))
+        assert n_iters == 1, 'Fine tuning same data should have only 1 iteration but got ' + str(n_iters)
+        diff_centers = np.sum( (new_centers - centers)**2 )
+        assert diff_centers < 0.0000000001, \
+            'Fine tuning same data should not change centers:\n' + str(centers) + '\nbut changed to:\n' + str(new_centers)
+
         # add new point
         x_add = np.array([[7, 1, 1]])
         x_new = np.append(x, x_add, axis=0)
@@ -42,8 +58,10 @@ class ClusterUnitTest:
             n_centers = n,
             start_centers = centers,
         )
+        n_iters = res['total_iterations']
         new_enters = res['cluster_centers']
         new_center_lbls = res['cluster_labels']
+        self.logger.info('Total iterations from fine tuning with new data = ' + str(n_iters))
 
         # Last added point cluster number must equal 1st one
         assert new_center_lbls[-1] == new_center_lbls[0], \
