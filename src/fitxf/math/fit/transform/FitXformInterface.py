@@ -127,15 +127,17 @@ class FitXformInterface:
                 start_centers = self.model_centers
             else:
                 start_centers = self.model_centers[:n_add]
+            start_centers_shape = start_centers.shape
         else:
             # set as nothing to add to additional model (which does not exist)
             n_add = 0
             # if None means will train from scratch
             start_centers = None,
+            start_centers_shape = None
 
         self.logger.info(
             'Start fine tuning by additional ' + str(n_add) + ' centers, shape of start centers '
-            + str(start_centers.shape) + '.'
+            + str(start_centers_shape) + '.'
         )
         # Check if n changed
         res = self.fit(
