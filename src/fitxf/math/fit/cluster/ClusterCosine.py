@@ -77,7 +77,6 @@ class ClusterCosine(Cluster):
             updated_cluster_numbers, updated_centroids = self.get_cluster_numbers_and_centroids(
                 x = x_normalized,
                 clusters = x_new_clusters,
-                previous_centers = last_centroids,
             )
             if np.array(updated_centroids).shape == np.array(last_centroids).shape:
                 # it is easier to do Euclidean distance changes of last centers to updated centers
@@ -151,8 +150,6 @@ class ClusterCosine(Cluster):
             x,
             # list of clusters by x indexes e.g. [[0,1], [2,3], [4]]
             clusters: list,
-            # for logging purposes only
-            previous_centers: np.ndarray = None,
     ):
         l = len(x)
         centroids = []
@@ -162,8 +159,7 @@ class ClusterCosine(Cluster):
             # It can happen that no points are in cluster i, when for example user provided the start centers
             # during iteration, thus we must simply pick another suitable random point
             if len(clstr) == 0:
-                centr = None if previous_centers is None else previous_centers[i]
-                self.logger.warning('No points attached to cluster i=' + str(i) + ': ' + str(centr))
+                self.logger.warning('No points attached to cluster i=' + str(i))
             else:
                 select = np.array([False]*l)
                 for item in clstr:
