@@ -161,14 +161,17 @@ class ClusterCosine(Cluster):
             if len(clstr) == 0:
                 # simply assign a random center
                 center = np.mean(x, axis=0)
+                centroids.append(center.tolist())
+                # no need to do this
+                # cluster_numbers[np.array(clstr)] = i
             else:
                 select = np.array([False]*l)
                 for item in clstr:
                     select[item] = True
                 center = x[select].mean(axis=0)
+                centroids.append(center.tolist())
+                cluster_numbers[np.array(clstr)] = i
 
-            centroids.append(center.tolist())
-            cluster_numbers[np.array(clstr)] = i
         return cluster_numbers, centroids
 
     def cluster_angle(
