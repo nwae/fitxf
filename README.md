@@ -1,13 +1,13 @@
 # fitxf
 
-Just a simple math utility library
+Simple math utility library
 
-- Basic math that don't exist in numpy as a single function call
-- Simple math for optimal clusters that can't seem to find in numpy
-  or sklearn
-- Simple wrappers to simplify tensor transforms or compression
-  via clustering or PCA, and allow to do searches using transformed
-  data
+- Basic math that don't exist in numpy as single function call
+- Simple math for optimal clusters not in sklearn
+- Simple transform wrappers to simplify tensor transforms or
+  compression via clustering (Euclid distance or cosine) or PCA
+- allow to do searches using transformed data
+- allow to save/load transform model to/from string & fine-tuning
 
 ```
 pip install fitxf
