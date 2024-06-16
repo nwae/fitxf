@@ -147,5 +147,21 @@ new.predict(X=x+np.random.rand(9,3))
 
 ### Fine Tuning
 
+Test fine tune with same centers and data
+
+```
+cls = FitXformCluster()
+res_fit_cls = cls.fit_optimal(X=x, X_labels=user_labels)
+centers = res_fit_cls["cluster_centers"]
+
+res = fitter.fine_tune(
+   X = x,
+   X_labels = user_labels,
+   n_components = 3,
+   start_centers = centers,
+)
+print(res["total_iterations"])
+```
+
 After saving models & loading back, to fine tune with new
-points,
+points.
