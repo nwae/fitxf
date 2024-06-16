@@ -145,22 +145,6 @@ if __name__ == '__main__':
     er = EnvRepo(repo_dir=os.environ.get("REPO_DIR", None))
     lgr = Logging.get_default_logger(log_level=logging.INFO, propagate=False)
 
-    for lg, txt in (
-            ['en', 'Sentence to embedding'],
-            ['cy', 'Dyfalwch fy iaith'],
-            ['hi', 'मेरी भाषा का अनुमान लगाओ'],
-            ['bn', 'আমি রুটি ভালোবাসি'],
-            ['zh', '猜猜我的语言'],
-    ):
-        lm_1 = LangModelPt(
-            lang = lg,
-            cache_folder = er.MODELS_PRETRAINED_DIR,
-            include_tokenizer = True,
-            logger = lgr,
-        )
-        vec_1 = lm_1.encode(text_list=[txt])
-        print(lg, lm_1.model_name, lm_1.model_path, txt)
-
     lm = LangModelPt(
         lang = 'ko',
         model_name = 'intfloat/multilingual-e5-small',
