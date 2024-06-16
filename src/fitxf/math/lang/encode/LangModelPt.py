@@ -2,7 +2,6 @@ import torch
 import logging
 import os
 from fitxf.math.lang.encode.LangModelInterface import LangModelInterface
-from fitxf.math.lang.encode.LangModelInterfaceX import LangModelInterfaceX as LmInterfaceX
 from transformers import AutoTokenizer, AutoModel
 from sentence_transformers import SentenceTransformer
 from fitxf.math.utils.EnvironRepo import EnvRepo
@@ -12,7 +11,7 @@ from fitxf.math.utils.Logging import Logging
 #
 # Leader Board: https://huggingface.co/spaces/mteb/leaderboard
 #
-class LangModelPt(LangModelInterface, LmInterfaceX):
+class LangModelPt(LangModelInterface):
 
     DEFAULT_MODEL_MAP = {
         # All other languages sink here
@@ -34,10 +33,6 @@ class LangModelPt(LangModelInterface, LmInterfaceX):
             model_name = model_name,
             include_tokenizer = include_tokenizer,
             params_other = params_other,
-            logger = logger,
-        )
-        LmInterfaceX.__init__(
-            self = self,
             logger = logger,
         )
 
