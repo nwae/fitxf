@@ -133,6 +133,9 @@ X now reduced to
 where each point in 3 dimensions is represented by only a scalar
 center label.
 
+
+### Save Model to String & Load Back
+
 Sample code to save and load model -
 ```
 import json
@@ -146,6 +149,9 @@ new.predict(X=x+np.random.rand(9,3))
 ```
 
 ### Fine Tuning
+
+After saving models & loading back, one can fine tune with new
+points.
 
 Test fine tune with same centers and data
 
@@ -165,6 +171,3 @@ print('Expect 1 iteration, got ', res["n_iter"])
 print('old centers',centers)
 print('new centers',res['centers'])
 ```
-
-After saving models & loading back, to fine tune with new
-points.
