@@ -132,7 +132,7 @@ class FitXformInterface:
             # set as nothing to add to additional model (which does not exist)
             n_add = 0
             # if None means will train from scratch
-            start_centers = None,
+            start_centers = None
             start_centers_shape = None
 
         self.logger.info(
