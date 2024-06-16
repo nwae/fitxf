@@ -9,7 +9,6 @@ from fitxf.math.data.ut.LabelTextEmbed01 import DATA_LABEL_TEXT_EMBEDDING_01_TRA
 from fitxf.math.fit.transform.FitXformInterface import FitXformInterface
 from fitxf.math.fit.transform.FitXformPca import FitXformPca
 from fitxf.math.fit.transform.FitXformCluster import FitXformCluster, FitXformClusterCosine
-from fitxf.math.lang.encode.LangModelPt import LangModelPt as LmPt
 from fitxf.math.utils.EnvironRepo import EnvRepo
 from fitxf.math.utils.Logging import Logging
 
@@ -79,16 +78,16 @@ class FitXformUnitTest:
             {k: v for (k, v) in r.items() if k not in ['embedding']} for r in df_eval.to_dict(orient='records')
         ]
 
-        def get_lm() -> LmPt:
-            return LmPt.get_singleton(
-                LmClass = LmPt,
-                lang = 'en',
-                cache_folder = self.lm_cache_folder,
-                logger = self.logger,
-            )
-
         try:
             raise Exception('Force to use pre-calculated embeddings.')
+            from fitxf.math.lang.encode.LangModelPt import LangModelPt
+            from fitxf.math.lang.encode.LangModelPtSingleton import LangModelPtSingleton
+            def get_lm() -> LmPt:
+                return LangModelPtSingleton.get_singleton(
+                    LmClass = LangModelPt,
+                    cache_folder = self.lm_cache_folder,
+                    logger = self.logger,
+                )
             # emb_train = get_lm().encode(text_list=texts_train, return_tensors='np')
             # emb_eval = get_lm().encode(text_list=texts_test, return_tensors='np')
         except Exception as ex:

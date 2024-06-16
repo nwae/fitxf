@@ -139,7 +139,6 @@ class FitXformInterface:
             'Start fine tuning by additional ' + str(n_add) + ' centers, shape of start centers '
             + str(start_centers_shape) + '.'
         )
-        # Check if n changed
         res = self.fit(
             X = X,
             X_labels = X_labels,
