@@ -109,6 +109,37 @@ class FitXformInterface:
     ) -> dict:
         raise Exception('Must be implemented by derived class')
 
+    def fine_tune(
+            self,
+            X: np.ndarray,
+            X_labels: list = None,
+            X_full_records: list = None,
+            n_components: int = None,
+    ) -> dict:
+        n_add = n_components - self.model_n_components_or_centers
+        if n_add > 0:
+            shp = self.model_centers.shape
+            centers_additional = np.random.rand(n_add, self.model_centers.shape[-1])
+            start_centers = np.append(self.model_centers, centers_additional, axis=0)
+        elif n_add == 0:
+            start_centers = self.model_centers
+        else:
+            start_centers = self.model_centers[:n_add]
+
+        self.logger.info(
+            'Start fine tuning by additional ' + str(n_add) + ' centers, shape of start centers '
+            + str(start_centers.shape) + '.'
+        )
+        # Check if n changed
+        res = self.fit(
+            X=X,
+            X_labels=X_labels,
+            X_full_records=X_full_records,
+            n_components=n_components,
+            start_centers=start_centers,
+        )
+        return res
+
     def transform(
             self,
             X: np.ndarray,
@@ -204,14 +235,6 @@ class FitXformInterface:
             string = model_json[self.KEY_GRID_NUMBERS],
             data_type = np.int64,
         )
-        return
-
-    def fine_tune(
-            self,
-            X_new: np.ndarray,
-            n_components,
-    ):
-        # Check if n changed
         return
 
     def predict(

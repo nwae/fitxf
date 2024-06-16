@@ -126,7 +126,7 @@ class FitXformUnitTest:
             fitter_old = fitter,
             FitterClassType = FitterClassType,
         )
-        # do the same test on this new object
+        # do the same test on this new object, to make sure it works just like the original
         self.__test_predictions(
             fitter_name = fitter_name,
             fitter = fitter_new_loaded,
@@ -137,6 +137,8 @@ class FitXformUnitTest:
             avg_score_threshold = avg_score_threshold,
             expected_top_labels = labels_eval,
         )
+        # now test fine tuning
+
         print('ALL TESTS PASSED OK')
         return
 
@@ -242,6 +244,13 @@ class FitXformUnitTest:
                 'Principle components after and before different, before\n' + str(pca_before) \
                 + ', after\n' + str(fitter_new.model_principal_components)
         return fitter_new
+
+    def test_fine_tune(
+            self,
+            fitter: FitXformInterface,
+            X: np.ndarray,
+    ):
+        return
 
 
 if __name__ == '__main__':
