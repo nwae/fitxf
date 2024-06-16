@@ -155,11 +155,18 @@ class ClusterCosine(Cluster):
         centroids = []
         cluster_numbers = np.array([-1]*l)
         for i, clstr in enumerate(clusters):
-            assert len(clstr) > 0, 'Empty cluster at ' + '#' + str(i) + ', cluster ' + str(clstr)
-            select = np.array([False]*l)
-            for item in clstr:
-                select[item] = True
-            center = x[select].mean(axis=0)
+            # assert len(clstr) > 0, 'Empty cluster at ' + '#' + str(i) + ', cluster ' + str(clstr)
+            # It can happen that no points are in cluster i, when for example user provided the start centers
+            # during iteration, thus we must simply pick another suitable random point
+            if len(clstr) == 0:
+                # simply assign a random center
+                center = np.mean(x, axis=0)
+            else:
+                select = np.array([False]*l)
+                for item in clstr:
+                    select[item] = True
+                center = x[select].mean(axis=0)
+
             centroids.append(center.tolist())
             cluster_numbers[np.array(clstr)] = i
         return cluster_numbers, centroids
