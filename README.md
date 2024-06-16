@@ -171,3 +171,27 @@ print('Expect 1 iteration, got ', res["n_iter"])
 print('old centers',centers)
 print('new centers',res['centers'])
 ```
+
+Fine tune with new points
+
+```
+x = np.array([
+    [5, 1, 1], [8, 2, 1], [6, 0, 2],
+    [1, 5, 1], [2, 7, 1], [0, 6, 2],
+    # remove last 2 points
+    [1, 1, 5], # [2, 1, 8], [0, 2, 6],
+    # new points
+    [4, 2, 1], [0, 6, 2], [1, 1, 7],
+])
+user_labels = [
+    'a', 'a', 'a',
+    'b', 'b', 'b',
+    # remove last 2 points
+    'c', # 'c', 'c',
+    'a', 'b', 'c',
+]
+res_fit_new = cls.fine_tune(X=x, X_labels=user_labels, n_components=3)
+
+print('old centers',centers)
+print('new centers',res_fit_new['centers'])
+```
