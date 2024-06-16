@@ -77,17 +77,18 @@ class ClusterCosine(Cluster):
             updated_cluster_numbers, updated_centroids = self.get_cluster_numbers_and_centroids(
                 x = x_normalized,
                 clusters = x_new_clusters,
+                previous_centers = last_centroids,
             )
-            # it is easier to do Euclidean distance changes of last centers to updated centers
-            dist_movements = np.sum((np.array(updated_centroids) - np.array(last_centroids)) ** 2, axis=-1) ** 0.5
-            # result_ordered, mdot_ordered = self.tensor_utils.dot_sim(
-            #     x = np.array(updated_centroids),
-            #     ref = np.array(last_centroids),
-            #     return_tensors = 'np',
-            # )
-            avg_dist_movements = np.mean(dist_movements)
+            if np.array(updated_centroids).shape == np.array(last_centroids).shape:
+                # it is easier to do Euclidean distance changes of last centers to updated centers
+                dist_movements = np.sum((np.array(updated_centroids) - np.array(last_centroids)) ** 2, axis=-1) ** 0.5
+                avg_dist_movements = np.mean(dist_movements)
+                centroid_move_changes.append(avg_dist_movements)
+            else:
+                self.logger.error('Some centers removed at iteration #' + str(iter))
+                # reset movements
+                centroid_move_changes = []
 
-            centroid_move_changes.append(avg_dist_movements)
             last_cluster_numbers = x_new_cluster_numbers
             last_centroids = updated_centroids
             last_clusters = x_new_clusters
@@ -150,6 +151,8 @@ class ClusterCosine(Cluster):
             x,
             # list of clusters by x indexes e.g. [[0,1], [2,3], [4]]
             clusters: list,
+            # for logging purposes only
+            previous_centers: np.ndarray = None,
     ):
         l = len(x)
         centroids = []
@@ -159,11 +162,8 @@ class ClusterCosine(Cluster):
             # It can happen that no points are in cluster i, when for example user provided the start centers
             # during iteration, thus we must simply pick another suitable random point
             if len(clstr) == 0:
-                # simply assign a random center
-                center = np.mean(x, axis=0)
-                centroids.append(center.tolist())
-                # no need to do this
-                # cluster_numbers[np.array(clstr)] = i
+                centr = None if previous_centers is None else previous_centers[i]
+                self.logger.warning('No points attached to cluster i=' + str(i) + ': ' + str(centr))
             else:
                 select = np.array([False]*l)
                 for item in clstr:
