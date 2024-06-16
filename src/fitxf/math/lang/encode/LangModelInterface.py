@@ -24,11 +24,9 @@ class LangModelInterface:
     @staticmethod
     def get_singleton(
             LmClass,    # class type
-            lang,
             model_name = None,
             cache_folder = None,
             include_tokenizer = False,
-            params_other = None,
             logger = None,
             return_key = False,
     ):
@@ -40,30 +38,24 @@ class LangModelInterface:
             logger = logger,
         ).get_singleton(
             key_id,
-            lang,
             model_name,
             cache_folder,
             include_tokenizer,
-            params_other,
             logger,
         )
         return (sgt, key_id) if return_key else sgt
 
     def __init__(
             self,
-            lang,
             model_name = None,
             cache_folder = None,
             include_tokenizer = False,
-            params_other = None,
             logger = None,
     ):
-        self.lang = lang
         self.cache_folder = cache_folder if cache_folder is not None else Env.get_home_download_dir()
         self.model_name = model_name
         self.logger = logger if logger is not None else logging.getLogger()
         self.include_tokenizer = include_tokenizer
-        self.params_other = params_other if params_other is not None else {}
 
         # local model path
         self.model_path = None
@@ -182,6 +174,6 @@ if __name__ == '__main__':
         [15, 19, 5], [17, 22, 5], [16, 20, 3],
     ])
     labels = ['dog', 'dog', 'dog', 'cat', 'cat', 'cat']
-    obj = LangModelInterface(lang='en')
+    obj = LangModelInterface()
     obj.visualize_embedding(encoding_np=x, labels_list=labels)
     exit(0)

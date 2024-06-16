@@ -402,7 +402,7 @@ class FitXformInterfaceUnitTest:
             "Monetary policies", "Interest rates", "Deposit rates",
         ]
         labels = ['d', 'd', 'd', 'x', 'x', 'x', '$', '$', '$']
-        lmo = LmPt(lang='en', cache_folder=EnvRepo(repo_dir=os.environ.get("REPO_DIR", None)).MODELS_PRETRAINED_DIR)
+        lmo = LmPt(cache_folder=EnvRepo(repo_dir=os.environ.get("REPO_DIR", None)).MODELS_PRETRAINED_DIR)
 
         embeddings = lmo.encode(text_list=texts, return_tensors='np')
 

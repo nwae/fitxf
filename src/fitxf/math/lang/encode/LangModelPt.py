@@ -13,44 +13,31 @@ from fitxf.math.utils.Logging import Logging
 #
 class LangModelPt(LangModelInterface):
 
-    DEFAULT_MODEL_MAP = {
-        # All other languages sink here
-        'multi': 'sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2',
-    }
+    DEFAULT_MODEL = 'sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2'
 
     def __init__(
             self,
-            lang,
-            model_name = None,
-            cache_folder = None,
-            include_tokenizer = False,
-            params_other = None,
+            model_name: str = None,
+            cache_folder: str = None,
+            include_tokenizer: bool = False,
             logger = None,
     ):
         super().__init__(
-            lang = lang,
             cache_folder = cache_folder,
             model_name = model_name,
             include_tokenizer = include_tokenizer,
-            params_other = params_other,
             logger = logger,
         )
 
-        assert self.lang, 'Language cannot be empty "' + str(self.lang) + '"'
-        if self.lang not in self.DEFAULT_MODEL_MAP.keys():
-            self.logger.warning('Lang not in default model map keys "' + str(self.lang) + '", default to "multi"')
-            self.lang = 'multi'
+        self.model_name = self.DEFAULT_MODEL if self.model_name is None else self.model_name
         self.logger.info(
-            'Lang "' + str(self.lang) + '", model name "' + str(self.model_name)
-            + '", cache folder "' + str(self.cache_folder) + '"'
+            'Model name "' + str(self.model_name) + '", cache folder "' + str(self.cache_folder) + '"'
         )
 
         # User may pass in model downloaded path
         if os.path.isdir(str(self.model_name)):
             self.model_path = self.model_name
-        # If user passes in only language, we derive the model and path
         else:
-            self.model_name = self.DEFAULT_MODEL_MAP[self.lang] if self.model_name is None else self.model_name
             self.model_path = self.cache_folder + '/' + self.model_name
 
         assert os.path.isdir(self.model_path), 'Not a directory "' + str(self.model_path) + '"'
@@ -146,7 +133,6 @@ if __name__ == '__main__':
     lgr = Logging.get_default_logger(log_level=logging.INFO, propagate=False)
 
     lm = LangModelPt(
-        lang = 'ko',
         model_name = 'intfloat/multilingual-e5-small',
         cache_folder = er.MODELS_PRETRAINED_DIR,
         logger = lgr,
