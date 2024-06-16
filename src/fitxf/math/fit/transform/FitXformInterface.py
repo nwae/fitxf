@@ -393,7 +393,8 @@ class FitXformInterfaceUnitTest:
         return
 
     def test(self, plot_chart=False):
-        from fitxf.math.lang.encode.LangModelPt import LangModelPt as LmPt
+        from fitxf.math.lang.encode.LangModelPtSingleton import LangModelPtSingleton, LangModelInterface
+        from fitxf.math.lang.encode.LangModelPt import LangModelPt
         ft = SampleFit(logger=self.logger)
 
         texts = [
@@ -402,7 +403,11 @@ class FitXformInterfaceUnitTest:
             "Monetary policies", "Interest rates", "Deposit rates",
         ]
         labels = ['d', 'd', 'd', 'x', 'x', 'x', '$', '$', '$']
-        lmo = LmPt(cache_folder=EnvRepo(repo_dir=os.environ.get("REPO_DIR", None)).MODELS_PRETRAINED_DIR)
+        lmo = LangModelPtSingleton.get_singleton(
+            LmClass = LangModelPt,
+            cache_folder = EnvRepo(repo_dir=os.environ.get("REPO_DIR", None)).MODELS_PRETRAINED_DIR,
+            logger = self.logger,
+        )
 
         embeddings = lmo.encode(text_list=texts, return_tensors='np')
 
