@@ -415,7 +415,7 @@ class FitXformInterfaceUnitTest:
             logger = self.logger,
         )
 
-        embeddings = lmo.encode(text_list=texts, return_tensors='np')
+        embeddings = lmo.encode(content_list=texts, return_tensors='np')
 
         res = ft.fit(X=embeddings)
         x_compressed = res[ft.KEY_X_TRANSFORM]

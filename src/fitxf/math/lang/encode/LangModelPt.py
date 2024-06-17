@@ -78,7 +78,7 @@ class LangModelPt(LangModelInterface):
 
     def encode(
             self,
-            text_list,
+            content_list,
             # max length has got no meaning
             maxlen = None,
             return_tensors = 'pt',
@@ -89,7 +89,7 @@ class LangModelPt(LangModelInterface):
         if self.include_tokenizer:
             self.logger.debug('Calculating embedding using tokenizer')
             embeddings_tensor = None
-            for txt in text_list:
+            for txt in content_list:
                 # Tokenize sentences
                 encoded_input = self.tokenizer(txt, padding=True, truncation=True, return_tensors='pt')
 
@@ -114,7 +114,7 @@ class LangModelPt(LangModelInterface):
         else:
             self.logger.debug('Calculating embedding using single sentence transformer wrapper')
             embedding = self.model.encode(
-                sentences = text_list,
+                sentences = content_list,
             )
             # TODO
             #    How to get this? Since this depends on the tokenizer used by the language model,
@@ -143,7 +143,7 @@ if __name__ == '__main__':
     ]
     labels = ['hot', 'hot', 'hot', 'sweet', 'sweet', 'sweet']
     lm.visualize_embedding(
-        encoding_np = lm.encode(text_list=text_list, return_tensors='np'),
+        encoding_np = lm.encode(content_list=text_list, return_tensors='np'),
         labels_list = labels,
     )
 

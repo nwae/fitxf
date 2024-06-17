@@ -1,12 +1,10 @@
-import logging
 import numpy as np
+from fitxf.math.datasource.vecdb.model.ModelEncoderInterface import ModelEncoderInterface
 from fitxf.math.fit.transform.FitXformPca import FitXformPca
-from fitxf.math.utils.Env import Env
-from fitxf.math.utils.Singleton import Singleton
 from fitxf.math.utils.Profile import Profiling
 
 
-class LangModelInterface:
+class LangModelInterface(ModelEncoderInterface):
 
     RANDOM_TEXT = \
 """2018년 10월 JYP엔터테인먼트와 정식 매니지먼트 계약을 맺었었다. 이후, 2019년 8월 7일 아티스트컴퍼니와 공식 매니지먼트 계약을 맺었다.
@@ -28,16 +26,15 @@ class LangModelInterface:
             include_tokenizer = False,
             logger = None,
     ):
-        self.cache_folder = cache_folder if cache_folder is not None else Env.get_home_download_dir()
+        super().__init__(cache_folder=cache_folder, logger=logger)
         self.model_name = model_name
-        self.logger = logger if logger is not None else logging.getLogger()
         self.include_tokenizer = include_tokenizer
 
         # local model path
         self.model_path = None
         return
 
-    def get_name(self):
+    def get_model_name(self):
         return self.model_name
 
     def get_model_path(self):
@@ -45,7 +42,7 @@ class LangModelInterface:
 
     def encode(
             self,
-            text_list,
+            content_list,
             # max length has got no meaning
             maxlen = None,
             return_tensors = 'pt',
@@ -76,7 +73,7 @@ class LangModelInterface:
             text = sample_text[0:n]
             self.logger.debug('n = ' + str(n) + ', text char len=' + str(n))
             emb, _ = self.encode(
-                text_list = [text],
+                content_list = [text],
                 return_tensors = 'np',
                 return_attnmasks = True,
             )
@@ -113,7 +110,7 @@ class LangModelInterface:
             if n >= min_rounds:
                 break
             for s in sentences:
-                self.encode(text_list=[s])
+                self.encode(content_list=[s])
                 n += 1
 
         diftime = prof.stop() - start_time
