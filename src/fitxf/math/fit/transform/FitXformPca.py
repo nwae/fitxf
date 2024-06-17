@@ -234,7 +234,8 @@ class FitXformPca(FitXformInterface):
         self.X_full_records = X_full_records
         self.model_principal_components = pca.components_
         self.model_centroid = np.mean(X, axis=0)
-        self.model_centers = self.model_centroid.reshape([1]+list(self.model_centroid.shape))
+        # not applicable to PCA
+        self.model_centers = np.array([])
 
         self.__check_consistency(principal_components=self.model_principal_components)
 
@@ -455,9 +456,9 @@ if __name__ == '__main__':
         "I am busy", "Go away", "Don't disturb me",
         "Monetary policies", "Interest rates", "Deposit rates",
     ]
-    lmo = LmPt(lang='en', cache_folder=EnvRepo(repo_dir=os.environ.get("REPO_DIR", None)).MODELS_PRETRAINED_DIR)
+    lmo = LmPt(cache_folder=EnvRepo(repo_dir=os.environ.get("REPO_DIR", None)).MODELS_PRETRAINED_DIR)
 
-    embeddings = lmo.encode(text_list=texts, return_tensors='np')
+    embeddings = lmo.encode(content_list=texts, return_tensors='np')
 
     # use the function create_pca_plot to
     fitter = FitXformPca(logger=Logging.get_default_logger(log_level=logging.INFO, propagate=False))

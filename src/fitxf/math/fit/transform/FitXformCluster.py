@@ -172,7 +172,8 @@ class FitXformCluster(FitXformInterface):
         self.X_full_records = X_full_records
         self.model_train_total_iterations = desired_cluster.get('total_iterations', None)
         self.model_centers = desired_cluster['cluster_centers']
-        self.model_principal_components = self.model_centers
+        # not applicable to cluster model
+        self.model_principal_components = np.array([])
         self.cluster_labels = np.array(desired_cluster['cluster_labels'])
         self.model_n_components_or_centers = desired_cluster['n_centers']
         self.model_centroid = np.mean(self.model_centers)
@@ -202,8 +203,9 @@ class FitXformCluster(FitXformInterface):
         self.angle_error = np.sum(self.X * self.X_inverse_transform, axis=-1) / (X_lengths * X_inverse_lengths)
         self.angle_error_mean = np.mean(self.angle_error)
 
-        self.X_grid_vectors = self.model_centers
-        self.X_grid_numbers = self.cluster_labels
+        # not applicable to cluster model
+        self.X_grid_vectors = np.array([])
+        self.X_grid_numbers = np.array([])
 
         return self.model_to_json(numpy_to_base64_str=False)
 
@@ -364,9 +366,9 @@ if __name__ == '__main__':
         "I am busy", "Go away", "Don't disturb me",
         "Monetary policies", "Interest rates", "Deposit rates",
     ]
-    lmo = LmPt(lang='en', cache_folder=EnvRepo(repo_dir=os.environ.get("REPO_DIR", None)).MODELS_PRETRAINED_DIR)
+    lmo = LmPt(cache_folder=EnvRepo(repo_dir=os.environ.get("REPO_DIR", None)).MODELS_PRETRAINED_DIR)
 
-    embeddings = lmo.encode(text_list=texts, return_tensors='np')
+    embeddings = lmo.encode(content_list=texts, return_tensors='np')
 
     # use the function create_pca_plot to
     fitter = FitXformCluster(logger=Logging.get_default_logger(log_level=logging.INFO, propagate=False))
