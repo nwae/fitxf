@@ -192,7 +192,7 @@ class ClusterCosine(Cluster):
             new_centers[i] = random_new_center.tolist()
             self.logger.info(
                 'Reassigning empty cluster center ' + str(i) + ' a random point taking mean from index ' + str(j)
-                + ' point ' + str(x[j]) # + ', random new center ' + str(random_new_center)
+                #+ ' point ' + str(x[j]) + ', random new center ' + str(random_new_center)
             )
         self.logger.info('Final centers length ' + str(len(new_centers)))
         self.logger.debug('Final clusters ' + str(cluster_numbers))
