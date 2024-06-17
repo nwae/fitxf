@@ -52,6 +52,8 @@ class ClusterCosine(Cluster):
                 'Last dim lengths not equal. Start centers shape ' + str(start_centers.shape) + ', x ' + str(x.shape)
             assert start_centers.ndim == x.ndim, \
                 'Dimensions not equal, start centers shape ' + str(start_centers.shape) + ', x ' + str(x.shape)
+            assert len(start_centers) == n_centers, \
+                'N centers ' + str(n_centers) + ' not same length with start centers ' + str(start_centers.shape)
             last_centers = start_centers
 
         last_cluster_numbers = None
@@ -70,7 +72,9 @@ class ClusterCosine(Cluster):
                 i_cluster = [idx for (idx, clstr_no) in enumerate(x_new_cluster_numbers) if clstr_no == i]
                 x_new_clusters.append(i_cluster)
             self.logger.debug('Result/mdot ordered ' + str(result_ordered) + ', ' + str(mdot_ordered))
-            self.logger.debug('Cluster numbers: ' + str(x_new_cluster_numbers))
+            self.logger.debug(
+                'N centers required ' + str(n_centers) + ', cluster numbers: ' + str(x_new_cluster_numbers)
+            )
 
             # update new centroids
             updated_cluster_numbers, updated_centers = self.get_cluster_numbers_and_centroids(
@@ -80,7 +84,7 @@ class ClusterCosine(Cluster):
             assert updated_cluster_numbers.tolist() == x_new_cluster_numbers, \
                 'Consistency off from updated cluster numbers ' + str(list(zip(updated_cluster_numbers, x_new_cluster_numbers)))
             assert updated_centers.shape == last_centers.shape, \
-                'Shape not same after update ' + str(updated_centers.shape) + ' != ' + str(last_centers.shape)
+                'Centers shape not same after update ' + str(updated_centers.shape) + ' != ' + str(last_centers.shape)
             # it is easier to do Euclidean distance changes of last centers to updated centers
             dist_movements = np.sum((updated_centers - last_centers) ** 2, axis=-1) ** 0.5
             avg_dist_movements = np.mean(dist_movements)
@@ -152,7 +156,10 @@ class ClusterCosine(Cluster):
     ):
         len_x = len(x)
         center_shape = list(x.shape[1:])
-        self.logger.info('x shape ' + str(x.shape) + ', center shape ' + str(center_shape))
+        self.logger.info(
+            'Clusters len ' + str(len(clusters)) + ', x shape ' + str(x.shape)
+            + ', center without first dim shape ' + str(center_shape)
+        )
         center_shape_1d = 1
         for i in center_shape:
             center_shape_1d *= i
@@ -187,7 +194,8 @@ class ClusterCosine(Cluster):
                 'Reassigning empty cluster center ' + str(i) + ' a random point taking mean from index ' + str(j)
                 + ' point ' + str(x[j]) + ', random new center ' + str(random_new_center)
             )
-        self.logger.debug('Final centers ' + str(new_centers))
+        self.logger.info('Final centers length ' + str(len(new_centers)))
+        self.logger.debug('Final clusters ' + str(cluster_numbers))
         return np.array(cluster_numbers), np.array(new_centers)
 
     def cluster_angle(

@@ -80,7 +80,7 @@ class Cluster:
                 inner_radiuses.append(inner_rad)
             else:
                 self.logger.warning('No points in cluster i=' + str(i))
-                inner_radiuses.append(np.array([]))
+                inner_radiuses.append(np.nan)
             inner_sizes.append(len(points_in_cluster))
 
         inner_radiuses = np.array(inner_radiuses)
