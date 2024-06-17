@@ -159,6 +159,43 @@ class FitXformCluster(FitXformInterface):
             X_full_records = X_full_records,
         )
 
+    def fine_tune(
+            self,
+            X: np.ndarray,
+            X_labels: list = None,
+            X_full_records: list = None,
+            n_components: int = None,
+    ) -> dict:
+        if self.model_n_components_or_centers is not None:
+            n_add = n_components - self.model_n_components_or_centers
+            if n_add > 0:
+                centers_additional = np.random.rand(n_add, self.model_centers.shape[-1])
+                start_centers = np.append(self.model_centers, centers_additional, axis=0)
+            elif n_add == 0:
+                start_centers = self.model_centers
+            else:
+                start_centers = self.model_centers[:n_add]
+            start_centers_shape = start_centers.shape
+        else:
+            # set as nothing to add to additional model (which does not exist)
+            n_add = 0
+            # if None means will train from scratch
+            start_centers = None
+            start_centers_shape = None
+
+        self.logger.info(
+            'Start fine tuning by additional ' + str(n_add) + ' centers, shape of start centers '
+            + str(start_centers_shape) + '.'
+        )
+        res = self.fit(
+            X = X,
+            X_labels = X_labels,
+            X_full_records = X_full_records,
+            n_components = n_components,
+            start_centers = start_centers,
+        )
+        return res
+
     def __record_cluster(
             self,
             desired_cluster: dict,

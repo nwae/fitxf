@@ -267,6 +267,23 @@ class FitXformPca(FitXformInterface):
 
         return self.model_to_json(numpy_to_base64_str=False)
 
+    def fine_tune(
+            self,
+            X: np.ndarray,
+            X_labels: list = None,
+            X_full_records: list = None,
+            n_components: int = None,
+    ) -> dict:
+        # TODO How to fine tune?
+        self.logger.warning('Fine tuning for PCA not yet implemented')
+        res = self.fit(
+            X = X,
+            X_labels = X_labels,
+            X_full_records = X_full_records,
+            n_components = n_components,
+        )
+        return res
+
     # Recover estimate of original point from PCA compression
     def inverse_transform(
             self,
