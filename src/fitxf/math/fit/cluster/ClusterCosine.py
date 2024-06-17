@@ -45,16 +45,15 @@ class ClusterCosine(Cluster):
         centroid_move_changes = []
         if start_centers is None:
             # randomly pick n unique points
-            last_centroids = np.unique(x_normalized, axis=0)[0:n_centers].tolist()
+            last_centers = np.unique(x_normalized, axis=0)[0:n_centers]
         else:
             self.logger.info('Using user provided start centers of shape ' + str(start_centers.shape))
             assert start_centers.shape[-1] == x.shape[-1], \
                 'Last dim lengths not equal. Start centers shape ' + str(start_centers.shape) + ', x ' + str(x.shape)
             assert start_centers.ndim == x.ndim, \
                 'Dimensions not equal, start centers shape ' + str(start_centers.shape) + ', x ' + str(x.shape)
-            last_centroids = start_centers
+            last_centers = start_centers
 
-        self.logger.debug('Initial centroids: ' + str(last_centroids))
         last_cluster_numbers = None
         last_clusters = None
         total_iters = 0
@@ -63,7 +62,7 @@ class ClusterCosine(Cluster):
             # Closest centers for all points
             result_ordered, mdot_ordered = self.tensor_utils.dot_sim(
                 x = x_normalized,
-                ref = np.array(last_centroids),
+                ref = last_centers,
             )
             x_new_cluster_numbers = result_ordered[:,0].tolist()
             x_new_clusters = []
@@ -74,22 +73,22 @@ class ClusterCosine(Cluster):
             self.logger.debug('Cluster numbers: ' + str(x_new_cluster_numbers))
 
             # update new centroids
-            updated_cluster_numbers, updated_centroids = self.get_cluster_numbers_and_centroids(
+            updated_cluster_numbers, updated_centers = self.get_cluster_numbers_and_centroids(
                 x = x_normalized,
                 clusters = x_new_clusters,
             )
-            if np.array(updated_centroids).shape == np.array(last_centroids).shape:
-                # it is easier to do Euclidean distance changes of last centers to updated centers
-                dist_movements = np.sum((np.array(updated_centroids) - np.array(last_centroids)) ** 2, axis=-1) ** 0.5
-                avg_dist_movements = np.mean(dist_movements)
-                centroid_move_changes.append(avg_dist_movements)
-            else:
-                self.logger.error('Some centers removed at iteration #' + str(iter))
-                # reset movements
-                centroid_move_changes = []
+            assert updated_cluster_numbers.tolist() == x_new_cluster_numbers, \
+                'Consistency off from updated cluster numbers ' + str(list(zip(updated_cluster_numbers, x_new_cluster_numbers)))
+            assert updated_centers.shape == last_centers.shape, \
+                'Shape not same after update ' + str(updated_centers.shape) + ' != ' + str(last_centers.shape)
+            # it is easier to do Euclidean distance changes of last centers to updated centers
+            dist_movements = np.sum((updated_centers - last_centers) ** 2, axis=-1) ** 0.5
+            avg_dist_movements = np.mean(dist_movements)
+            centroid_move_changes.append(avg_dist_movements)
 
-            last_cluster_numbers = x_new_cluster_numbers
-            last_centroids = updated_centroids
+
+            last_cluster_numbers = updated_cluster_numbers
+            last_centers = updated_centers
             last_clusters = x_new_clusters
 
             if len(centroid_move_changes) >= 2:
@@ -117,14 +116,14 @@ class ClusterCosine(Cluster):
         additional_info = self.derive_additional_cluster_info(
             x = x_normalized,
             n_centers = n_centers,
-            cluster_centers = np.array(last_centroids),
-            cluster_labels = np.array(last_cluster_numbers),
+            cluster_centers = last_centers,
+            cluster_labels = last_cluster_numbers,
             metric = 'cosine',
         )
         if x_labels is not None:
             cluster_label_to_labelsori = self.map_centers_to_original_labels(
                 labels_original = x_labels,
-                labels_cluster = last_cluster_numbers,
+                labels_cluster = last_cluster_numbers.tolist(),
             )
         else:
             cluster_label_to_labelsori = None
@@ -132,9 +131,9 @@ class ClusterCosine(Cluster):
             'total_iterations': total_iters,
             'n_centers': n_centers,
             'clusters': last_clusters,
-            'cluster_centers': np.array(last_centroids),
+            'cluster_centers': last_centers,
             # correspond to the index of the "centroids"
-            'cluster_labels': np.array(last_cluster_numbers),
+            'cluster_labels': last_cluster_numbers,
             'cluster_label_to_original_labels': cluster_label_to_labelsori,
             'centers_median': additional_info['centers_median'],
             'inner_radiuses': additional_info['inner_radiuses'],
@@ -151,24 +150,45 @@ class ClusterCosine(Cluster):
             # list of clusters by x indexes e.g. [[0,1], [2,3], [4]]
             clusters: list,
     ):
-        l = len(x)
-        centroids = []
-        cluster_numbers = np.array([-1]*l)
+        len_x = len(x)
+        center_shape = list(x.shape[1:])
+        self.logger.info('x shape ' + str(x.shape) + ', center shape ' + str(center_shape))
+        center_shape_1d = 1
+        for i in center_shape:
+            center_shape_1d *= i
+
+        new_centers = []
+        empty_centers_indexes = []
+        cluster_numbers = np.array([-1]*len_x)
         for i, clstr in enumerate(clusters):
             # assert len(clstr) > 0, 'Empty cluster at ' + '#' + str(i) + ', cluster ' + str(clstr)
             # It can happen that no points are in cluster i, when for example user provided the start centers
             # during iteration, thus we must simply pick another suitable random point
             if len(clstr) == 0:
-                self.logger.warning('No points attached to cluster i=' + str(i))
+                self.logger.warning('No points attached to cluster center i=' + str(i))
+                empty_centers_indexes.append(i)
+                new_centers.append(None)
             else:
-                select = np.array([False]*l)
+                select = np.array([False]*len_x)
                 for item in clstr:
                     select[item] = True
                 center = x[select].mean(axis=0)
-                centroids.append(center.tolist())
+                new_centers.append(center.tolist())
                 cluster_numbers[np.array(clstr)] = i
 
-        return cluster_numbers, centroids
+        for i in empty_centers_indexes:
+            # TODO pick 3 random points from x instead of 1
+            j = np.random.randint(low=0, high=len(x), size=1)
+            random_new_center = np.reshape(x[j], newshape=center_shape)
+            # Make sure add a very small random number
+            random_new_center += np.reshape(np.random.rand(center_shape_1d), newshape=center_shape) / 1000000
+            new_centers[i] = random_new_center.tolist()
+            self.logger.info(
+                'Reassigning empty cluster center ' + str(i) + ' a random point taking mean from index ' + str(j)
+                + ' point ' + str(x[j]) + ', random new center ' + str(random_new_center)
+            )
+        self.logger.debug('Final centers ' + str(new_centers))
+        return np.array(cluster_numbers), np.array(new_centers)
 
     def cluster_angle(
             self,
@@ -268,7 +288,7 @@ class ClusterCosine(Cluster):
         return {
             'clusters': clusters_corrected,
             # correspond to the index of the "centroids"
-            'cluster_numbers': cluster_numbers.tolist(),
+            'cluster_numbers': cluster_numbers,
             # index of the centroids is the cluster numbers
             'centroids': centroids,
             'dist_threshold': min_dist_abs,

@@ -69,14 +69,18 @@ class Cluster:
         for i in range(len(cluster_centers)):
             points_in_cluster = x[cluster_labels == i]
             # get distances of points with respect to center reference point
-            inner_distances = self.fit_utils.get_point_distances(
-                np_tensors = points_in_cluster,
-                np_center = cluster_centers[i],
-                metric = metric,
-            )
-            inner_rad = np.median(inner_distances)
-            # self.logger.debug('Cluster #' + str(i) + ', radius = ' + str(radius))
-            inner_radiuses.append(inner_rad)
+            if len(points_in_cluster) > 0:
+                inner_distances = self.fit_utils.get_point_distances(
+                    np_tensors = points_in_cluster,
+                    np_center = cluster_centers[i],
+                    metric = metric,
+                )
+                inner_rad = np.median(inner_distances)
+                # self.logger.debug('Cluster #' + str(i) + ', radius = ' + str(radius))
+                inner_radiuses.append(inner_rad)
+            else:
+                self.logger.warning('No points in cluster i=' + str(i))
+                inner_radiuses.append(np.array([]))
             inner_sizes.append(len(points_in_cluster))
 
         inner_radiuses = np.array(inner_radiuses)

@@ -181,8 +181,8 @@ class ClusterCosineUnitTest:
             diff_error = np.sum( ( np.array(centroids) - np.array(exp_centroids) ) ** 2 )
             assert diff_error < 0.0000001, \
                 'Observed centroids ' + str(centroids) + ' not expected ' + str(exp_centroids)
-            assert cluster_numbers == exp_cluster_numbers, \
-                    'Cluster numbers ' + str(cluster_numbers) + ' not expected ' + str(exp_cluster_numbers)
+            assert cluster_numbers.tolist() == exp_cluster_numbers, \
+                    'Cluster numbers ' + str(cluster_numbers.tolist()) + ' not expected ' + str(exp_cluster_numbers)
 
             res = self.cluster_cos.kmeans(
                 x = x,
@@ -241,6 +241,28 @@ class ClusterCosineUnitTest:
             assert new_center_lbls[i] == new_center_lbls[j], \
                 'Points ' + str((i,j)) + ' not in same cluster ' + str(new_center_lbls)
 
+        #
+        # Test fine-tuning with new cluster center, make sure n remains the same after training
+        #
+        # add new point
+        x_add = np.array([[1.1, 0.2, 0.1], [-2.1, -2.0, -1.9]])
+        x_new = np.append(x, x_add, axis=0)
+        res = self.cluster_cos.kmeans(
+            x = x_new,
+            n_centers = optimal_n + 1,
+            start_centers = np.append(new_centers, np.array([[100., -100., 100.]]), axis=0),
+        )
+        n = res['n_centers']
+        clusters = res['clusters']
+        new_centers = res['cluster_centers']
+        new_center_lbls = res['cluster_labels']
+
+        # Last added point cluster number must equal 1st one
+        self.logger.info(
+            'After fine tuning add another center far away, n = ' + str(n) + ', cluster labels ' + str(new_center_lbls)
+            + ', clusters ' + str(clusters)
+        )
+        assert n == optimal_n + 1
         print('Now testing via NLP..')
         self.test_nlp()
         print('CLUSTER COSINE TESTS PASSED')
