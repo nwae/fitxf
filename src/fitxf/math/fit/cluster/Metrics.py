@@ -103,7 +103,8 @@ class Metrics:
         map_index_to_labels = {i: lbl for i, lbl in enumerate(labels_unique)}
         map_labels_to_index = {v: k for k, v in map_index_to_labels.items()}
         n_labels_unique = len(labels_unique)
-        n_cno_unique = len(np.unique(point_cluster_numbers))
+        # It is possible some cluster labels have no clusters, thus taking max number is more correct
+        n_cno_unique = np.max(point_cluster_numbers) + 1
 
         self.logger.info('Total unique original labels ' + str(n_labels_unique))
         df = pd.DataFrame({'label': point_labels, 'cluster_number': point_cluster_numbers})
