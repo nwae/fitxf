@@ -244,7 +244,10 @@ class FitXformCluster(FitXformInterface):
         self.X_grid_vectors = np.array([])
         self.X_grid_numbers = np.array([])
 
-        return self.model_to_json(numpy_to_base64_str=False)
+        return self.model_to_b64json(
+            numpy_to_base64_str = False,
+            dump_to_b64json_str = False,
+        )
 
     # Inverse transform is just the cluster center
     def inverse_transform(
@@ -357,28 +360,33 @@ class FitXformCluster(FitXformInterface):
         finally:
             self.__lock.release_mutexes(mutexes=[self.__mutex_model])
 
-    def model_to_json(
+    def model_to_b64json(
             self,
             numpy_to_base64_str = False,
-            dump_to_json_str = False,
+            dump_to_b64json_str = False,
     ):
-        base_model_json = super().model_to_json(numpy_to_base64_str=numpy_to_base64_str)
+        base_model_dict = super().model_to_b64json(
+            numpy_to_base64_str = numpy_to_base64_str,
+            dump_to_b64json_str = False,
+        )
         # Add more info
         # Keep dictionary as string, because json cannot dump or load np.int32, and that problem is hard
         # to trace where the int32 comes from, so keep the whole dict as string and load back later by literal_eval
-        base_model_json[self.KEY_CLUSTERNO_TO_USERLABELS_INFO] = str(self.cluster_no_map_to_userlabel)
-        if dump_to_json_str:
+        base_model_dict[self.KEY_CLUSTERNO_TO_USERLABELS_INFO] = str(self.cluster_no_map_to_userlabel)
+        if dump_to_b64json_str:
             # retain UTF-8 if any
-            return json.dumps(base_model_json, ensure_ascii=False)
+            return self.base64.encode(b=json.dumps(base_model_dict, ensure_ascii=False).encode(encoding='utf-8'))
         else:
-            return base_model_json
-    def load_model_from_json(
+            return base_model_dict
+    def load_model_from_b64json(
             self,
-            model_json,
+            model_b64json,
     ):
-        super().load_model_from_json(model_json=model_json)
+        model_dict = super().load_model_from_b64json(
+            model_b64json = model_b64json,
+        )
         # Load back dict using literal_eval, to avoid int32 json problems
-        self.cluster_no_map_to_userlabel = ast.literal_eval(model_json[self.KEY_CLUSTERNO_TO_USERLABELS_INFO])
+        self.cluster_no_map_to_userlabel = ast.literal_eval(model_dict[self.KEY_CLUSTERNO_TO_USERLABELS_INFO])
         return
 
 

@@ -132,10 +132,10 @@ class FitXformInterface:
     ) -> np.ndarray:
         raise Exception('Must be implemented by derived class')
 
-    def model_to_json(
+    def model_to_b64json(
             self,
             numpy_to_base64_str = False,
-            dump_to_json_str = False,
+            dump_to_b64json_str = False,
     ):
         if numpy_to_base64_str:
             x_tf = self.base64.encode_numpy_array_to_base64_string_multidim(
@@ -181,42 +181,46 @@ class FitXformInterface:
             self.KEY_GRID_VECTORS: grid_vecs,
             self.KEY_GRID_NUMBERS: grid_numbers,
         }
-        if dump_to_json_str:
-            return json.dumps(model_json)
+        if dump_to_b64json_str:
+            return self.base64.encode(
+                b = str(json.dumps(model_json)).encode(encoding='utf-8'),
+            )
         else:
             return model_json
 
-    def load_model_from_json(
+    def load_model_from_b64json(
             self,
-            model_json,
+            model_b64json,
     ):
+        model_dict_json = self.base64.decode(s=model_b64json)
+        model_dict = json.loads(model_dict_json)
         self.X_transform = self.base64.decode_base64_string_to_numpy_array_multidim(
-            string = model_json[self.KEY_X_TRANSFORM],
+            string = model_dict[self.KEY_X_TRANSFORM],
             data_type = np.float64,
         )
-        self.X_labels = model_json[self.KEY_X_LABELS]
+        self.X_labels = model_dict[self.KEY_X_LABELS]
         self.model_centroid = self.base64.decode_base64_string_to_numpy_array_multidim(
-            string = model_json[self.KEY_CENTROID],
+            string = model_dict[self.KEY_CENTROID],
             data_type = np.float64,
         )
-        self.model_n_components_or_centers = model_json[self.KEY_N_COMPONENTS_OR_CENTERS]
+        self.model_n_components_or_centers = model_dict[self.KEY_N_COMPONENTS_OR_CENTERS]
         self.model_principal_components = self.base64.decode_base64_string_to_numpy_array_multidim(
-            string = model_json[self.KEY_PRINCIPAL_COMPONENTS],
+            string = model_dict[self.KEY_PRINCIPAL_COMPONENTS],
             data_type = np.float64,
         )
         self.model_centers = self.base64.decode_base64_string_to_numpy_array_multidim(
-            string = model_json[self.KEY_CENTERS],
+            string = model_dict[self.KEY_CENTERS],
             data_type = np.float64,
         )
         self.X_grid_vectors = self.base64.decode_base64_string_to_numpy_array_multidim(
-            string = model_json[self.KEY_GRID_VECTORS],
+            string = model_dict[self.KEY_GRID_VECTORS],
             data_type = np.int64,
         )
         self.X_grid_numbers = self.base64.decode_base64_string_to_numpy_array_multidim(
-            string = model_json[self.KEY_GRID_NUMBERS],
+            string = model_dict[self.KEY_GRID_NUMBERS],
             data_type = np.int64,
         )
-        return
+        return model_dict
 
     def predict(
             self,

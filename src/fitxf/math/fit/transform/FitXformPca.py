@@ -265,7 +265,7 @@ class FitXformPca(FitXformInterface):
 
         self.model_params_ready = True
 
-        return self.model_to_json(numpy_to_base64_str=False)
+        return self.model_to_b64json(numpy_to_base64_str=False)
 
     def fine_tune(
             self,
@@ -444,25 +444,25 @@ class FitXformPca(FitXformInterface):
         finally:
             self.__lock.release_mutexes(mutexes=[self.__mutex_model])
 
-    def model_to_json(
+    def model_to_b64json(
             self,
             numpy_to_base64_str = False,
-            dump_to_json_str = False,
+            dump_to_b64json_str = False,
     ):
-        base_model_json = super().model_to_json(
+        base_model_dict = super().model_to_b64json(
             numpy_to_base64_str = numpy_to_base64_str,
-            dump_to_json_str = False,
+            dump_to_b64json_str = False,
         )
-        if dump_to_json_str:
-            return json.dumps(base_model_json)
+        if dump_to_b64json_str:
+            return self.base64.encode(b=json.dumps(base_model_dict).encode(encoding='utf-8'))
         else:
-            return base_model_json
+            return base_model_dict
 
-    def load_model_from_json(
+    def load_model_from_b64json(
             self,
-            model_json,
+            model_b64json,
     ):
-        super().load_model_from_json(model_json=model_json)
+        _ = super().load_model_from_b64json(model_b64json=model_b64json)
         return
 
 

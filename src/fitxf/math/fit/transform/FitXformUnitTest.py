@@ -238,15 +238,15 @@ class FitXformUnitTest:
         #
         centers_before = np.array(fitter_old.model_centers)
         pca_before = np.array(fitter_old.model_principal_components)
-        model_dict_jsondump = fitter_old.model_to_json(numpy_to_base64_str=True, dump_to_json_str=True)
-        model_dict = json.loads(model_dict_jsondump)
-        [self.logger.info(str(k) + ': ' + str(v)) for k, v in model_dict.items()]
+        model_dict_b64jsondump = fitter_old.model_to_b64json(numpy_to_base64_str=True, dump_to_b64json_str=True)
+        # model_dict = json.loads(model_dict_jsondump)
+        # [self.logger.info(str(k) + ': ' + str(v)) for k, v in model_dict.items()]
 
         def get_fitter() -> FitXformInterface:
             return FitterClassType(logger=self.logger)
 
         fitter_new = get_fitter()
-        fitter_new.load_model_from_json(model_json=model_dict)
+        fitter_new.load_model_from_b64json(model_b64json=model_dict_b64jsondump)
 
         assert fitter_new.model_centers.shape == centers_before.shape, \
             'Shape before ' + str(centers_before.shape) + ' but after ' + str(fitter_new.model_centers.shape)
