@@ -31,7 +31,9 @@ class MetadataInterface:
     def update_metadata_model_updated(
             self,
             llm_path: str,
-            model_save_json_string: str,
+            # recommended to encode via json-dump, then encode to base64 string
+            # json-dump string got many problems with csv format, but base64 is just a savior
+            model_save_b64json_string: str,
     ):
         raise Exception('Must be implemented by child class')
 
