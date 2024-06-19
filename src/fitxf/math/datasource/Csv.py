@@ -186,8 +186,10 @@ class Csv(DatastoreInterface):
                 tablename = tablename,
             )
         except Exception as ex:
-            self.logger.error('Error occurred: ' + str(ex))
-            raise Exception(ex)
+            errmsg = \
+                'Error occurred table "' + str(tablename) + '" add records ' + str(records) + ', exception: ' + str(ex)
+            self.logger.error(errmsg)
+            raise Exception(errmsg)
         finally:
             self.__release_lock()
 
@@ -240,8 +242,10 @@ class Csv(DatastoreInterface):
                 tablename = tablename,
             )
         except Exception as ex:
-            self.logger.error('Error occurred: ' + str(ex))
-            return {'error': str(ex), 'deleted': 0}
+            errmsg = \
+                'Error occurred table "' + str(tablename) + '" delete ' + str(match_phrase) + ', exception: ' + str(ex)
+            self.logger.error(errmsg)
+            raise Exception(errmsg)
         finally:
             self.__release_lock()
 
@@ -315,7 +319,7 @@ class Csv(DatastoreInterface):
 
 
 if __name__ == '__main__':
-    Env.set_env_vars_from_file(env_filepath=EnvRepo().REPO_DIR + os.sep + '.env.fitxf.ut')
+    Env.set_env_vars_from_file(env_filepath=EnvRepo().REPO_DIR + os.sep + '.env.fitxf.math.ut')
     DatastoreInterfaceUnitTest(
         ChildClass = Csv,
         logger = Logging.get_default_logger(log_level=logging.INFO, propagate=False)
