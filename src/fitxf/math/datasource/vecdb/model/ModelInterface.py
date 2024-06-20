@@ -10,7 +10,7 @@ from fitxf import TensorUtils, FitXformInterface
 from fitxf.math.algo.encoding.Base64 import Base64
 from fitxf.math.datasource.vecdb.model.ModelEncoderInterface import ModelEncoderInterface
 from fitxf.math.datasource.vecdb.model.ModelDbInterface import ModelDbInterface
-from fitxf.math.datasource.vecdb.model.ModelDb import ModelDb
+#from fitxf.math.datasource.vecdb.model.ModelDb import ModelDb
 from fitxf.math.datasource.vecdb.metadata.MetadataInterface import MetadataInterface
 from fitxf.math.utils.Lock import Lock
 
