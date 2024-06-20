@@ -45,14 +45,35 @@ class ModelDbInterface:
     def get_underlying_db(self) -> DatastoreInterface:
         raise Exception('물려받는 클래스에서 구현해야 함')
 
-    def load_model_from_underlying_db_with_max_retries(
+    def insert(
             self,
-            max_tries = 1,
+            records: list[dict],
+            tablename: str,
+    ):
+        raise Exception('물려받는 클래스에서 구현해야 함')
+
+    def delete(
+            self,
+            match_phrase: dict,
+            tablename: str,
+    ):
+        raise Exception('물려받는 클래스에서 구현해야 함')
+
+    def load_data(
+            self,
+            max_attempts = 1,
     ):
         raise Exception('물려받는 클래스에서 구현해야 함')
 
     def connect_to_underlying_db(
             self,
+    ):
+        raise Exception('물려받는 클래스에서 구현해야 함')
+
+    def convert_csv_string_array_to_float_array(
+            self,
+            string_array,
+            custom_chars_remove,
     ):
         raise Exception('물려받는 클래스에서 구현해야 함')
 
