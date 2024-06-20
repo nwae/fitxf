@@ -78,7 +78,7 @@ class ModelFitTransform(ModelInterface):
             if self.signal_stop_bg_thread:
                 self.logger.warning('Exiting model thread, stop signal received.')
                 break
-            if not self.is_need_to_sync_model_with_db():
+            if not self.is_need_sync_db():
                 continue
             try:
                 self.update_model()
