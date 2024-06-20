@@ -5,6 +5,7 @@ import numpy as np
 from fitxf.math.datasource.DatastoreInterface import DbParams
 from fitxf import FitXformInterface
 from fitxf.math.lang.encode.LangModelPt import LangModelPt
+from fitxf.math.datasource.vecdb.model.ModelDbInterface import ModelDbInterface
 from fitxf.math.datasource.vecdb.model.ModelInterface import ModelInterface, ModelEncoderInterface
 from fitxf.math.datasource.vecdb.metadata.MetadataInterface import MetadataInterface
 from fitxf.math.utils.Logging import Logging
@@ -18,6 +19,7 @@ class ModelFitTransform(ModelInterface):
             self,
             user_id: str,
             llm_model: ModelEncoderInterface,
+            model_db_class: type(ModelDbInterface),
             col_content: str,
             col_label_user: str,
             col_label_std: str,
@@ -35,6 +37,7 @@ class ModelFitTransform(ModelInterface):
         super().__init__(
             user_id = user_id,
             llm_model = llm_model,
+            model_db_class = model_db_class,
             col_content = col_content,
             col_label_user = col_label_user,
             col_label_std = col_label_std,

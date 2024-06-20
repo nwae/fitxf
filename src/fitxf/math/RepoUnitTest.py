@@ -121,7 +121,7 @@ class RepoUnitTest:
 
 if __name__ == '__main__':
     env_repo = EnvRepo(repo_dir=os.environ.get('REPO_DIR', None))
-    Env.set_env_vars_from_file(env_filepath=env_repo.REPO_DIR + '/.env.fitxf.ut')
+    Env.set_env_vars_from_file(env_filepath=env_repo.REPO_DIR + '/.env.fitxf.math.ut')
 
     RepoUnitTest().test()
     exit(0)

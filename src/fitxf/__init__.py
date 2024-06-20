@@ -15,7 +15,7 @@ from fitxf.math.fit.cluster.ClusterCosineUT import ClusterCosine, ClusterCosineU
 from fitxf.math.algo.encoding.Base64 import Base64, Base64UnitTest
 
 # VecDB
-#from fitxf.math.datasource.vecdb.metadata.MetadataInterface import MetadataInterface
-#from fitxf.math.datasource.vecdb.model.ModelDbInterface import ModelDbInterface
-#from fitxf.math.datasource.vecdb.model.ModelEncoderInterface import ModelEncoderInterface
-#from fitxf.math.datasource.vecdb.model.ModelInterface import ModelInterface
+from fitxf.math.datasource.vecdb.metadata.MetadataInterface import MetadataInterface
+from fitxf.math.datasource.vecdb.model.ModelDbInterface import ModelDbInterface
+from fitxf.math.datasource.vecdb.model.ModelEncoderInterface import ModelEncoderInterface
+from fitxf.math.datasource.vecdb.model.ModelInterface import ModelInterface

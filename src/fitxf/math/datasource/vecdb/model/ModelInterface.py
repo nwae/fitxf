@@ -10,7 +10,6 @@ from fitxf import TensorUtils, FitXformInterface
 from fitxf.math.algo.encoding.Base64 import Base64
 from fitxf.math.datasource.vecdb.model.ModelEncoderInterface import ModelEncoderInterface
 from fitxf.math.datasource.vecdb.model.ModelDbInterface import ModelDbInterface
-#from fitxf.math.datasource.vecdb.model.ModelDb import ModelDb
 from fitxf.math.datasource.vecdb.metadata.MetadataInterface import MetadataInterface
 from fitxf.math.utils.Lock import Lock
 
@@ -23,6 +22,7 @@ class ModelInterface:
             self,
             user_id: str,
             llm_model: ModelEncoderInterface,
+            model_db_class: type(ModelDbInterface),
             col_content: str,
             col_label_user: str,
             col_label_std: str,
@@ -39,6 +39,7 @@ class ModelInterface:
     ):
         self.user_id = user_id
         self.llm_model = llm_model
+        self.model_db_class = model_db_class
         self.col_content = col_content
         self.col_label_user = col_label_user
         self.col_label_standardized = col_label_std
@@ -56,7 +57,7 @@ class ModelInterface:
         self.tensor_utils = TensorUtils(logger=self.logger)
         self.llm_model_path = self.llm_model.get_model_path()
 
-        self.model_db = self.__get_model_db(ModelClass=ModelDb)
+        self.model_db = self.__get_model_db(ModelClass=self.model_db_class)
         self.logger.info('DB params "' + str(self.user_id) +'": ' + str(self.model_db.get_db_params().get_db_info()))
 
         # Lock only by threads in the same worker
