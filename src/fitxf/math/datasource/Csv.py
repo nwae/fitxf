@@ -327,39 +327,3 @@ if __name__ == '__main__':
         tablename = 'csvtest',
     )
     exit(0)
-
-    ds = Csv(
-        db_params = DbParams.get_db_params_from_envvars(
-            identifier = 'csvtest',
-            db_create_tbl_sql = '',
-            db_table = DATAPATH,
-        ),
-        logger = Logging.get_default_logger(log_level=logging.INFO, propagate=False)
-    )
-    ds.connect()
-    rows = ds.get_all(key='')
-    [print(r) for r in rows]
-
-    new_records = [
-        {'id': 100, 'text': "give me today shows", 'answer': ' today_showing', 'val': 9.8},
-        {'id': 101, 'text': "davai menya kino sigodnya", 'answer': ' today_showing', 'val': 1.2},
-        {'id': 102, 'text': "remain text", 'answer': 'random'},
-        {'id': 103, 'text': "missing column answer"},
-    ]
-    ds.add(records=new_records)
-    new_records = [
-        {'id': 104, 'text': "missing column answer 2", 'no_such_column': 'asdf'},
-    ]
-    ds.add(records=new_records)
-
-    print('After ADD...')
-    [print(r) for r in ds.get_all(key='')]
-
-    for id in [101]:
-        ds.delete(match_phrase={'id': id})
-        print('After DELETE ' + str(id) + '..')
-        rows = ds.get_all(key='')
-        [print(r) for r in rows]
-
-    print('Final records')
-    [print(r) for r in ds.get_all(key='')]
