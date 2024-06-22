@@ -120,14 +120,14 @@ class ModelFitTransform(ModelInterface):
             self.fit_xform_model.load_model_from_b64json(
                 model_b64json = model_b64json_str,
             )
-            self.text_labels_standardized = self.fit_xform_model.X_labels
-            self.last_sync_time_with_underlying_db = datetime.now()
+            self.text_labels_standardized = np.array(self.fit_xform_model.X_labels)
+            self.last_sync_time_with_underlying_db = self.vec_db_metadata.get_datetime_from_timestamp(
+                timestamp = mtd_row[MetadataInterface.COL_METADATA_TIMESTAMP]
+            )
             self.logger.info(
                 'Loaded model ' + str(self.fit_xform_model.__class__)
-                + ' from previous model metadata, length ' + str(len(self.fit_xform_model.X_transform))
-                + ', n components/centers ' + str(self.fit_xform_model.model_n_components_or_centers)
-                + ', centers ' + str(len(self.fit_xform_model.model_centers))
-                + ', metadata: ' + str(model_b64json_str)
+                + ' from saved model with timestamp ' + str(self.last_sync_time_with_underlying_db)
+                + ' metadata: ' + str(model_b64json_str)
             )
         return
 
@@ -178,7 +178,14 @@ class ModelFitTransform(ModelInterface):
             self.text_labels_standardized = np.array([r[self.col_label_standardized] for r in self.data_records])
 
             unique_labels = len(np.unique(np.array(text_labels_user)))
-            n_cluster = min(unique_labels * 3, len(text_labels_user))
+
+            # not more than 3 per label, or not more than half the data length
+            n_cluster = min(unique_labels * 3, int(len(text_labels_user)/2))
+            self.logger.info(
+                'Empirical estimation of total clusters ' + str(n_cluster) + ' from unique labels ' + str(unique_labels)
+                + ', length of data ' + str(len(text_labels_user))
+            )
+
             self.logger.info('Fitting to labels of user: ' + str(self.text_labels_standardized))
             if len(text_encoded) > 0:
                 res = self.fit_xform_model.fine_tune(
@@ -396,7 +403,8 @@ if __name__ == '__main__':
     model_fit = ModelFitTransform(
         user_id = user_id,
         llm_model = LangModelPt(
-            model_name = 'intfloat/multilingual-e5-small',
+            # model_name = 'intfloat/multilingual-e5-small',
+            # model_name = 'sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2',
             cache_folder = er.MODELS_PRETRAINED_DIR,
             logger = lgr,
         ),
@@ -420,7 +428,7 @@ if __name__ == '__main__':
         {'label': 'fruits', 'text': 'apple'}, {'label': 'fruits', 'text': 'orange'},
         {'label': 'beer', 'text': 'Мюнхенский хеллес или Хелль '}, {'label': 'beer', 'text': 'Грузинский Черный Лев'},
     ]
-    model_fit.atomic_delete_add(records=recs_test, delete_key='text')
+    # model_fit.atomic_delete_add(records=recs_test, delete_key='text')
     res = model_fit.predict(text_list_or_embeddings=['давай выпем'], top_k=2)
     print(res)
     exit(0)

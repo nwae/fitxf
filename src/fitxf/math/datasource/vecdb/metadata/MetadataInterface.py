@@ -23,11 +23,18 @@ class MetadataInterface:
         self.logger = logger if logger is not None else logging.getLogger()
         return
 
-    def get_timestamp_float(self):
-        tref = datetime(year=2024, month=1, day=1)
-        tnow = datetime.now()
-        diff = tnow - tref
-        return diff.total_seconds()
+    def get_timestamp(
+            self,
+            dt: datetime = None,
+    ):
+        dt = datetime.now() if dt is None else dt
+        return datetime.timestamp(dt)
+
+    def get_datetime_from_timestamp(
+            self,
+            timestamp: float,
+    ):
+        return datetime.fromtimestamp(timestamp)
 
     def get_metadata(
             self,
@@ -48,3 +55,11 @@ class MetadataInterface:
     ):
         raise Exception('Must be implemented by child class')
 
+
+if __name__ == '__main__':
+    m = MetadataInterface(user_id='main')
+    now = datetime.now()
+    ts = m.get_timestamp(dt=now)
+    dt = m.get_datetime_from_timestamp(timestamp=ts)
+    print(ts, dt, now)
+    exit(0)

@@ -244,6 +244,8 @@ class FitXformCluster(FitXformInterface):
         self.X_grid_vectors = np.array([])
         self.X_grid_numbers = np.array([])
 
+        self.model_params_ready = True
+
         return self.model_to_b64json(
             numpy_to_base64_str = False,
             dump_to_b64json_str = False,
@@ -387,6 +389,13 @@ class FitXformCluster(FitXformInterface):
         )
         # Load back dict using literal_eval, to avoid int32 json problems
         self.cluster_no_map_to_userlabel = ast.literal_eval(model_dict[self.KEY_CLUSTERNO_TO_USERLABELS_INFO])
+        self.logger.info(
+            'Loaded model from saved base64-json string, for cluster class "' + str(self.cluster.__class__)
+            + ' data length ' + str(len(self.X_transform))
+            + ', n components/centers ' + str(self.model_n_components_or_centers)
+            + ', centers ' + str(len(self.model_centers))
+            + ', model base64-json string: ' + str(model_b64json)
+        )
         return
 
 
