@@ -310,9 +310,18 @@ class FitXformCluster(FitXformInterface):
     ):
         raise Exception('TODO')
 
+    def __get_local_space_vectors(
+            self,
+            X_local_space: np.ndarray,
+    ):
+        # TODO
+        pass
+
     def predict(
             self,
             X: np.ndarray,
+            # can be cluster numbers to zoom into
+            X_local_space: np.ndarray = None,
             top_k = 5,
             return_full_record = False,
             use_grid = False,
@@ -324,9 +333,17 @@ class FitXformCluster(FitXformInterface):
                 mutexes = [self.__mutex_model],
             )
 
+            if X_local_space is None:
+                # use model centers if local space not specified
+                X_ref = self.model_centers
+            else:
+                X_ref = self.__get_local_space_vectors(
+                    X_local_space = X_local_space,
+                )
+
             pred_cluster_numbers, pred_probs = self.predict_standard(
                 X = X,
-                ref_X = self.model_centers,
+                ref_X = X_ref,
                 ref_labels = list(range(len(self.model_centers))),
                 ref_full_records = self.X_full_records,
                 top_k = top_k,
@@ -420,13 +437,27 @@ if __name__ == '__main__':
         "I am busy", "Go away", "Don't disturb me",
         "Monetary policies", "Interest rates", "Deposit rates",
     ]
+    labels = ['coffee', 'coffee', 'coffee', 'busy', 'busy', 'busy', 'ir', 'ir', 'ir']
     lmo = LmPt(cache_folder=EnvRepo(repo_dir=os.environ.get("REPO_DIR", None)).MODELS_PRETRAINED_DIR)
 
     embeddings = lmo.encode(content_list=texts, return_tensors='np')
 
-    # use the function create_pca_plot to
     fitter = FitXformCluster(logger=Logging.get_default_logger(log_level=logging.INFO, propagate=False))
-    x_compressed = fitter.fit_optimal(X=embeddings)
+    res = fitter.fit_optimal(X=embeddings, X_labels=labels)
+    # Save model to base64-json string
+    model_save_str = fitter.model_to_b64json(numpy_to_base64_str=True, dump_to_b64json_str=True)
+
+    # Load from saved model
+    fitter2 = FitXformCluster(logger=Logging.get_default_logger(log_level=logging.INFO, propagate=False))
+    fitter2.load_model_from_b64json(model_b64json=model_save_str)
+
+    print('Cluster info:')
+    [print(k,v) for k,v in res.items()]
+    print('Fit arbitrary:', fitter2.predict(
+        X  = lmo.encode(content_list=['latte with cream']),
+        use_grid = False
+    ))
+    exit(0)
 
     fitter.create_scatter_plot2d(
         x_transform = fitter.X_inverse_transform,

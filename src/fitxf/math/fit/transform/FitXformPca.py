@@ -378,6 +378,8 @@ class FitXformPca(FitXformInterface):
     def predict(
             self,
             X: np.ndarray,
+            # can be cluster numbers to zoom into
+            X_local_space: np.ndarray = None,
             top_k = 5,
             return_full_record = False,
             use_grid = False,
