@@ -310,18 +310,12 @@ class FitXformCluster(FitXformInterface):
     ):
         raise Exception('TODO')
 
-    def __get_local_space_vectors(
-            self,
-            X_local_space: np.ndarray,
-    ):
-        # TODO
-        pass
-
     def predict(
             self,
             X: np.ndarray,
             # can be cluster numbers to zoom into
-            X_local_space: np.ndarray = None,
+            X_search_local_space: np.ndarray = None,
+            labels_search_local_space: list = None,
             top_k = 5,
             return_full_record = False,
             use_grid = False,
@@ -333,29 +327,38 @@ class FitXformCluster(FitXformInterface):
                 mutexes = [self.__mutex_model],
             )
 
-            if X_local_space is None:
+            if X_search_local_space is None:
                 # use model centers if local space not specified
                 X_ref = self.model_centers
+                # labels are just the indexes of the centers - cluster labels
+                labels_ref = list(range(len(self.model_centers)))
+                using_cluster_labels = True
             else:
-                X_ref = self.__get_local_space_vectors(
-                    X_local_space = X_local_space,
-                )
+                X_ref = X_search_local_space
+                # user provided labels
+                labels_ref = labels_search_local_space
+                using_cluster_labels = False
+                assert labels_ref is not None
+                assert len(X_ref) == len(labels_ref), \
+                    'Inconsistent lengths, X_search_local_space shape ' + str(X_search_local_space.shape) \
+                    + ', labels_search_local_space length ' + str(len(labels_search_local_space))
 
-            pred_cluster_numbers, pred_probs = self.predict_standard(
+            pred_labels, pred_probs = self.predict_standard(
                 X = X,
                 ref_X = X_ref,
-                ref_labels = list(range(len(self.model_centers))),
+                ref_labels = labels_ref,
                 ref_full_records = self.X_full_records,
                 top_k = top_k,
                 return_full_record = return_full_record,
             )
-            self.logger.debug('Predicted clusters for top k ' + str(top_k) + ': ' + str(pred_cluster_numbers))
+            self.logger.debug('Predicted clusters for top k ' + str(top_k) + ': ' + str(pred_labels))
 
-            if self.cluster_no_map_to_userlabel is not None:
+            if using_cluster_labels:
+                assert self.cluster_no_map_to_userlabel is not None
                 # Include user label info
                 pred_label_and_clusterno = []
                 # map from cluster numbers to actual user labels
-                for cluster_numbers in pred_cluster_numbers:
+                for cluster_numbers in pred_labels:
                     user_labels_cno = []
                     for cno in cluster_numbers:
                         # each cluster number is mapped to user labels probabilities, e.g.
@@ -367,10 +370,10 @@ class FitXformCluster(FitXformInterface):
                     pred_label_and_clusterno.append(user_labels_cno)
                 self.logger.info(
                     'Converted to user labels: ' + str(pred_label_and_clusterno)
-                    + ' from cluster numbers ' + str(pred_cluster_numbers)
+                    + ' from cluster numbers ' + str(pred_labels)
                 )
             else:
-                raise Exception('For clustering prediction, no cluster number map to user labels found')
+                pred_label_and_clusterno = pred_labels
                 # pred_labels_user = pred_labels
 
             # Cluster transform is just the cluster label
@@ -397,6 +400,7 @@ class FitXformCluster(FitXformInterface):
             return self.base64.encode(b=json.dumps(base_model_dict, ensure_ascii=False).encode(encoding='utf-8'))
         else:
             return base_model_dict
+
     def load_model_from_b64json(
             self,
             model_b64json,
@@ -405,6 +409,7 @@ class FitXformCluster(FitXformInterface):
             model_b64json = model_b64json,
         )
         # Load back dict using literal_eval, to avoid int32 json problems
+        self.cluster_labels = list(self.X_transform)
         self.cluster_no_map_to_userlabel = ast.literal_eval(model_dict[self.KEY_CLUSTERNO_TO_USERLABELS_INFO])
         self.logger.info(
             'Loaded model from saved base64-json string, for cluster class "' + str(self.cluster.__class__)
@@ -450,11 +455,25 @@ if __name__ == '__main__':
     # Load from saved model
     fitter2 = FitXformCluster(logger=Logging.get_default_logger(log_level=logging.INFO, propagate=False))
     fitter2.load_model_from_b64json(model_b64json=model_save_str)
+    embeddings_clusterno = fitter2.cluster_labels
+    print('Embeddings cluster labels ' + str(embeddings_clusterno))
 
     print('Cluster info:')
     [print(k,v) for k,v in res.items()]
-    print('Fit arbitrary:', fitter2.predict(
+    pred_cnos, pred_probs = fitter2.predict(
         X  = lmo.encode(content_list=['latte with cream']),
+        use_grid = False
+    )
+    top_cluster = pred_cnos[0][0]['cluster_label']
+    print('Search among centers: ', top_cluster, pred_cnos, pred_probs)
+
+    # Zoom search in local space
+    cond = [True if cno==top_cluster else False for cno in embeddings_clusterno]
+    print(cond)
+    print('Search among cluster "' + str(top_cluster) + '":', fitter2.predict(
+        X = lmo.encode(content_list=['latte with cream']),
+        X_search_local_space = embeddings[np.array(cond)],
+        labels_search_local_space = [l for i,l in enumerate(labels) if cond[i]==True],
         use_grid = False
     ))
     exit(0)

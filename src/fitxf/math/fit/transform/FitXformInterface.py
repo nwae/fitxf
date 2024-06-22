@@ -226,7 +226,8 @@ class FitXformInterface:
             self,
             X: np.ndarray,
             # can be cluster numbers to zoom into
-            X_local_space: np.ndarray = None,
+            X_search_local_space: np.ndarray = None,
+            labels_search_local_space: list = None,
             top_k = 5,
             return_full_record = False,
             use_grid = False,
