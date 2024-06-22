@@ -32,7 +32,7 @@ class ModelFitTransform(ModelInterface):
             file_temp_dir: str,
             # allowed values: "np", "torch"
             return_tensors: str = 'np',
-            enable_bg_thread_for_training: bool = True,
+            enable_bg_thread_for_training: bool = False,
             logger = None,
     ):
         super().__init__(
@@ -52,8 +52,6 @@ class ModelFitTransform(ModelInterface):
             enable_bg_thread_for_training = enable_bg_thread_for_training,
             logger = logger,
         )
-
-        self.model_grid_helper = self.fit_xform_model
 
         # 1st time load data
         self.init_data_model(
@@ -183,7 +181,7 @@ class ModelFitTransform(ModelInterface):
             n_cluster = min(unique_labels * 3, len(text_labels_user))
             self.logger.info('Fitting to labels of user: ' + str(self.text_labels_standardized))
             if len(text_encoded) > 0:
-                res = self.model_grid_helper.fine_tune(
+                res = self.fit_xform_model.fine_tune(
                     X = text_encoded,
                     X_labels = text_labels_user,
                     X_full_records = self.data_records,
@@ -193,7 +191,7 @@ class ModelFitTransform(ModelInterface):
                     'Fit to n cluster = ' + str(n_cluster) + ' result ' + str(res) + ', ' + str(text_labels_user)
                 )
 
-                model_save_b64json_string = self.model_grid_helper.model_to_b64json(
+                model_save_b64json_string = self.fit_xform_model.model_to_b64json(
                     numpy_to_base64_str = True,
                     dump_to_b64json_str = True,
                 )
@@ -240,13 +238,13 @@ class ModelFitTransform(ModelInterface):
     ):
         if self.is_need_sync_db():
             self.logger.info(
-                'Model "' + str(self.model_grid_helper.__class__) + '" need update before prediction: '
+                'Model "' + str(self.fit_xform_model.__class__) + '" need update before prediction: '
                 + str(text_list_or_embeddings)
             )
             self.update_model()
         else:
             self.logger.info(
-                'Model "' + str(self.model_grid_helper.__class__) + '" dont need update before prediction: '
+                'Model "' + str(self.fit_xform_model.__class__) + '" dont need update before prediction: '
                 + str(text_list_or_embeddings)
             )
 
@@ -261,7 +259,7 @@ class ModelFitTransform(ModelInterface):
         #       of transforming the input vector.
         #
 
-        pred_labels_std_or_full_records, pred_probs = self.model_grid_helper.predict(
+        pred_labels_std_or_full_records, pred_probs = self.fit_xform_model.predict(
             X = txt_lm,
             top_k = top_k,
             return_full_record = return_full_record,

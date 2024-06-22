@@ -34,7 +34,7 @@ class ModelInterface:
             file_temp_dir: str,
             # allowed values: "np", "torch"
             return_tensors: str = 'np',
-            enable_bg_thread_for_training: bool = True,
+            enable_bg_thread_for_training: bool = False,
             logger = None,
     ):
         self.user_id = user_id
