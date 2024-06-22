@@ -139,7 +139,7 @@ center label.
 Sample code to save and load model -
 ```
 import json
-# Save this json string somewhere
+# Save this Base64 string somewhere
 model_save = pca.model_to_b64json(numpy_to_base64_str=True, dump_to_b64json_str=True)
 
 # Load back into new instance
