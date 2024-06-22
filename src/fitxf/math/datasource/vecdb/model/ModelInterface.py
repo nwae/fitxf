@@ -122,7 +122,9 @@ class ModelInterface:
     ):
         # Verify that model name has not changed from previous
         try:
-            metadata_model_json = json.loads(self.vec_db_metadata.get_metadata_model_last_update())
+            metadata_model_json = self.vec_db_metadata.get_metadata(
+                identifier = 'llm',
+            )[MetadataInterface.COL_METADATA_VALUE]
             model_prev = metadata_model_json['llm_model']
         except Exception as ex:
             self.logger.error('Error getting metadata model: ' + str(ex))

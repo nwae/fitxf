@@ -1,6 +1,6 @@
 [project]
 name = "fitxf"
-version = "0.2.33"
+version = "0.2.34"
 authors = [
   { name="HH" },
 ]
