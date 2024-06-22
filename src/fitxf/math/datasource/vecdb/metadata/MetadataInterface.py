@@ -6,10 +6,10 @@ class MetadataInterface:
 
     DATETIME_FORMAT = '%Y-%m-%d %H:%M:%S.%f'
 
-    COL_METADATA_INDEX = 'metadata_index'           # Index that this metadata refers to
-    COL_METADATA_IDENTIFIER = 'metadata_identifier' # What kind of metadata (e.g. model, embedding size)
+    COL_METADATA_USERID = 'metadata_userid'
+    COL_METADATA_IDENTIFIER = 'metadata_identifier'
     COL_METADATA_TIMESTAMP = 'metadata_timestamp'
-    COL_METADATA_VALUE = 'content'
+    COL_METADATA_VALUE = 'metadata_value'
 
     def __init__(
             self,
