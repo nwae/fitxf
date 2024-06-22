@@ -6,6 +6,11 @@ class MetadataInterface:
 
     DATETIME_FORMAT = '%Y-%m-%d %H:%M:%S.%f'
 
+    COL_METADATA_INDEX = 'metadata_index'           # Index that this metadata refers to
+    COL_METADATA_IDENTIFIER = 'metadata_identifier' # What kind of metadata (e.g. model, embedding size)
+    COL_METADATA_TIMESTAMP = 'metadata_timestamp'
+    COL_METADATA_VALUE = 'content'
+
     def __init__(
             self,
             # name to identify which user/table/etc this metadata is referring to
@@ -24,7 +29,7 @@ class MetadataInterface:
         diff = tnow - tref
         return diff.total_seconds()
 
-    def get_metadata_last_update(
+    def get_metadata(
             self,
             identifier
     ):

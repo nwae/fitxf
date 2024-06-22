@@ -207,7 +207,7 @@ class ModelInterface:
     def update_metadata_db_data_updated(self):
         self.vec_db_metadata.update_metadata_identifier_value(
             identifier = 'lastUpdateTimeDb',
-            value = '-',
+            value = datetime.now().strftime(MetadataInterface.DATETIME_FORMAT),
         )
         return
 
@@ -297,17 +297,21 @@ class ModelInterface:
         #     start = self.last_sync_time_with_underlying_db,
         #     stop = last_updated_time_underlying_db
         # )
-        db_last_update_time = self.vec_db_metadata.get_metadata_last_update(
+        row = self.vec_db_metadata.get_metadata(
             identifier = 'lastUpdateTimeDb',
         )
-        self.logger.debug(
-            'Last DB update time "' + str(db_last_update_time)
-            + '", last sync time ' + str(self.last_sync_time_with_underlying_db)
-        )
-        if db_last_update_time is None:
+        if row is None:
+            db_last_update_time = None
             need_update = True
         else:
+            db_last_update_time = datetime.strptime(
+                row[MetadataInterface.COL_METADATA_VALUE], MetadataInterface.DATETIME_FORMAT
+            )
             need_update = db_last_update_time > self.last_sync_time_with_underlying_db
+        self.logger.info(
+            'Need update = ' + str(need_update) + '. Last DB update time "' + str(db_last_update_time)
+            + '", last sync time ' + str(self.last_sync_time_with_underlying_db)
+        )
 
         if need_update:
             self.logger.info(

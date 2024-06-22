@@ -2,6 +2,7 @@ import time
 import logging
 import os
 import numpy as np
+from datetime import datetime
 from fitxf.math.datasource.DatastoreInterface import DbParams
 from fitxf import FitXformInterface
 from fitxf.math.lang.encode.LangModelPt import LangModelPt
@@ -105,7 +106,28 @@ class ModelFitTransform(ModelInterface):
         finally:
             self.lock_mutexes.release_mutexes(mutexes=required_mutexes)
 
-        self.update_model()
+        # get previous model data
+        mtd_row = self.vec_db_metadata.get_metadata(identifier='model')
+        self.logger.info(
+            'Previous model type "' + str(type(mtd_row)) + '" info from metadata: '
+            + str(mtd_row)
+        )
+        mtd_row = None
+        if mtd_row is None:
+            self.logger.info(
+                'No model from metadata, will proceed to update model..'
+            )
+            self.update_model()
+        else:
+            model_b64json_str = mtd_row[MetadataInterface.COL_METADATA_VALUE]
+            self.fit_xform_model.load_model_from_b64json(
+                model_b64json = model_b64json_str,
+            )
+            self.last_sync_time_with_underlying_db = datetime.now()
+            self.logger.info(
+                'Loaded model from previous model metadata, length ' + str(len(self.fit_xform_model.X_transform))
+                + ', centers ' + str(len(self.fit_xform_model.model_centers)) + ', metadata: ' + str(model_b64json_str)
+            )
         return
 
     def __reset_data_model(
@@ -132,16 +154,6 @@ class ModelFitTransform(ModelInterface):
                 return False
 
         self.logger.info('Model updating...')
-
-        # get previous model data
-        model_save_b64_json_str = self.vec_db_metadata.get_metadata_last_update(identifier='model')
-        self.logger.info(
-            'Previous model type "' + str(type(model_save_b64_json_str)) + '" info from metadata: '
-            + str(model_save_b64_json_str)
-        )
-        # model_prev = self.fit_xform_model.load_model_from_b64json(model_b64json=model_save_b64_json_str)
-        # self.logger.info('Previous model info: ' + str(model_prev))
-        # raise Exception('asdf')
 
         # Lock also underlying DB mutex because our metadata is also stored there
         required_mutexes = [self.mutex_name_model, self.mutex_name_underlying_db]
@@ -196,12 +208,16 @@ class ModelFitTransform(ModelInterface):
                 )
                 self.logger.info('No data or dont exist yet for "' + str(self.user_id) + '", nothing to fit.')
 
-            self.last_sync_time_with_underlying_db = self.vec_db_metadata.get_metadata_last_update(
+            mtd_row = self.vec_db_metadata.get_metadata(
                 identifier = 'lastUpdateTimeDb',
             )
-            if self.last_sync_time_with_underlying_db is None:
+            if mtd_row is None:
                 self.logger.warning('Last DB data update time from metadata returned None')
                 self.last_sync_time_with_underlying_db = self.OLD_DATETIME
+            else:
+                self.last_sync_time_with_underlying_db = datetime.strptime(
+                    mtd_row[MetadataInterface.COL_METADATA_VALUE], MetadataInterface.DATETIME_FORMAT
+                )
             self.logger.info(
                 'DB params: ' + str(self.model_db.get_db_params().get_db_info())
                 + ', encode embedding to base 64 = ' + str(self.numpy_to_b64_for_db)
