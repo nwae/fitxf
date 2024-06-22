@@ -112,7 +112,6 @@ class ModelFitTransform(ModelInterface):
             'Previous model type "' + str(type(mtd_row)) + '" info from metadata: '
             + str(mtd_row)
         )
-        mtd_row = None
         if mtd_row is None:
             self.logger.info(
                 'No model from metadata, will proceed to update model..'
@@ -123,10 +122,14 @@ class ModelFitTransform(ModelInterface):
             self.fit_xform_model.load_model_from_b64json(
                 model_b64json = model_b64json_str,
             )
+            self.text_labels_standardized = self.fit_xform_model.X_labels
             self.last_sync_time_with_underlying_db = datetime.now()
             self.logger.info(
-                'Loaded model from previous model metadata, length ' + str(len(self.fit_xform_model.X_transform))
-                + ', centers ' + str(len(self.fit_xform_model.model_centers)) + ', metadata: ' + str(model_b64json_str)
+                'Loaded model ' + str(self.fit_xform_model.__class__)
+                + ' from previous model metadata, length ' + str(len(self.fit_xform_model.X_transform))
+                + ', n components/centers ' + str(self.fit_xform_model.model_n_components_or_centers)
+                + ', centers ' + str(len(self.fit_xform_model.model_centers))
+                + ', metadata: ' + str(model_b64json_str)
             )
         return
 
