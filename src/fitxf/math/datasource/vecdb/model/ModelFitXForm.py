@@ -132,6 +132,17 @@ class ModelFitTransform(ModelInterface):
                 return False
 
         self.logger.info('Model updating...')
+
+        # get previous model data
+        model_save_b64_json_str = self.vec_db_metadata.get_metadata_last_update(identifier='model')
+        self.logger.info(
+            'Previous model type "' + str(type(model_save_b64_json_str)) + '" info from metadata: '
+            + str(model_save_b64_json_str)
+        )
+        # model_prev = self.fit_xform_model.load_model_from_b64json(model_b64json=model_save_b64_json_str)
+        # self.logger.info('Previous model info: ' + str(model_prev))
+        # raise Exception('asdf')
+
         # Lock also underlying DB mutex because our metadata is also stored there
         required_mutexes = [self.mutex_name_model, self.mutex_name_underlying_db]
         try:
@@ -185,7 +196,9 @@ class ModelFitTransform(ModelInterface):
                 )
                 self.logger.info('No data or dont exist yet for "' + str(self.user_id) + '", nothing to fit.')
 
-            self.last_sync_time_with_underlying_db = self.vec_db_metadata.get_metadata_db_data_last_update()
+            self.last_sync_time_with_underlying_db = self.vec_db_metadata.get_metadata_last_update(
+                identifier = 'lastUpdateTimeDb',
+            )
             if self.last_sync_time_with_underlying_db is None:
                 self.logger.warning('Last DB data update time from metadata returned None')
                 self.last_sync_time_with_underlying_db = self.OLD_DATETIME

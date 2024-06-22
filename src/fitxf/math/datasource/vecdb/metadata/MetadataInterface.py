@@ -24,27 +24,18 @@ class MetadataInterface:
         diff = tnow - tref
         return diff.total_seconds()
 
-    def get_metadata_db_data_last_update(
+    def get_metadata_last_update(
             self,
-    ):
-        raise Exception('Must be implemented by child class')
-
-    def get_metadata_model_last_update(
-            self,
+            identifier
     ):
         raise Exception('Must be implemented by child class')
 
     # signify that model has been updated
-    def update_metadata_model_updated(
+    def update_metadata_identifier_value(
             self,
-            llm_path: str,
-            # recommended to encode via json-dump, then encode to base64 string
-            # json-dump string got many problems with csv format, but base64 is just a savior
-            model_save_b64json_string: str,
+            identifier: str,
+            value: str,
     ):
-        raise Exception('Must be implemented by child class')
-
-    def update_metadata_db_raw_data_updated(self):
         raise Exception('Must be implemented by child class')
 
     def cleanup(

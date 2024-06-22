@@ -197,15 +197,18 @@ class ModelInterface:
             self,
             model_save_b64json_string = None,
     ):
-        # CSV still got problem with json string
-        self.vec_db_metadata.update_metadata_model_updated(
-            llm_path = self.llm_model_path,
-            model_save_b64json_string = model_save_b64json_string,
-        )
+        for id, val in (('model', model_save_b64json_string), ('llm', self.llm_model_path)):
+            self.vec_db_metadata.update_metadata_identifier_value(
+                identifier = id,
+                value = val,
+            )
         return
 
     def update_metadata_db_data_updated(self):
-        self.vec_db_metadata.update_metadata_db_raw_data_updated()
+        self.vec_db_metadata.update_metadata_identifier_value(
+            identifier = 'lastUpdateTimeDb',
+            value = '-',
+        )
         return
 
     def init_data_model(
@@ -294,7 +297,9 @@ class ModelInterface:
         #     start = self.last_sync_time_with_underlying_db,
         #     stop = last_updated_time_underlying_db
         # )
-        db_last_update_time = self.vec_db_metadata.get_metadata_db_data_last_update()
+        db_last_update_time = self.vec_db_metadata.get_metadata_last_update(
+            identifier = 'lastUpdateTimeDb',
+        )
         self.logger.debug(
             'Last DB update time "' + str(db_last_update_time)
             + '", last sync time ' + str(self.last_sync_time_with_underlying_db)
