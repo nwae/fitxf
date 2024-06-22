@@ -122,9 +122,9 @@ class ModelInterface:
     ):
         # Verify that model name has not changed from previous
         try:
-            row = self.vec_db_metadata.get_metadata(identifier='llm')[MetadataInterface.COL_METADATA_VALUE]
+            row = self.vec_db_metadata.get_metadata(identifier='llm')
             self.logger.info('Row from metadata for llm: ' + str(row))
-            model_prev = row['llm_model']
+            model_prev = row[MetadataInterface.COL_METADATA_VALUE]
         except Exception as ex:
             self.logger.error('Error getting metadata model: ' + str(ex))
             model_prev = None

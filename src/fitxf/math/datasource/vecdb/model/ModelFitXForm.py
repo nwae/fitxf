@@ -58,6 +58,7 @@ class ModelFitTransform(ModelInterface):
             max_tries = 1,
             background = False,
         )
+        self.check_model_consistency_with_prev()
 
         if self.enable_bg_thread_for_training:
             self.bg_thread.start()
