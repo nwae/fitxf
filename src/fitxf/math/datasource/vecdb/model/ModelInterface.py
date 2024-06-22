@@ -23,29 +23,29 @@ class ModelInterface:
             user_id: str,
             llm_model: ModelEncoderInterface,
             model_db_class: type(ModelDbInterface),
+            model_metadata_class: type(MetadataInterface),
             col_content: str,
             col_label_user: str,
             col_label_std: str,
             col_embedding: str,
             numpy_to_b64_for_db: bool,
-            vec_db_metadata: MetadataInterface,
             fit_xform_model: FitXformInterface,
             cache_tensor_to_file: bool,
             file_temp_dir: str,
             # allowed values: "np", "torch"
-            return_tensors: str,
+            return_tensors: str = 'np',
             enable_bg_thread_for_training: bool = True,
             logger = None,
     ):
         self.user_id = user_id
         self.llm_model = llm_model
         self.model_db_class = model_db_class
+        self.model_metadata_class = model_metadata_class
         self.col_content = col_content
         self.col_label_user = col_label_user
         self.col_label_standardized = col_label_std
         self.col_embedding = col_embedding
         self.numpy_to_b64_for_db = numpy_to_b64_for_db
-        self.vec_db_metadata = vec_db_metadata
         self.fit_xform_model = fit_xform_model
         self.cache_tensor_to_file = cache_tensor_to_file
         self.file_temp_dir = file_temp_dir
@@ -59,6 +59,8 @@ class ModelInterface:
 
         self.model_db = self.__get_model_db(ModelClass=self.model_db_class)
         self.logger.info('DB params "' + str(self.user_id) +'": ' + str(self.model_db.get_db_params().get_db_info()))
+
+        self.vec_db_metadata = self.__get_model_metadata(MetadataClass=self.model_metadata_class)
 
         # Lock only by threads in the same worker
         self.mutex_name_model = 'model'
@@ -103,6 +105,15 @@ class ModelInterface:
             col_label_standardized = self.col_label_standardized,
             col_embedding = self.col_embedding,
             max_records = 999999,
+            logger = self.logger,
+        )
+
+    def __get_model_metadata(
+            self,
+            MetadataClass: type(MetadataInterface),
+    ) -> MetadataInterface:
+        return MetadataClass(
+            user_id = self.user_id,
             logger = self.logger,
         )
 

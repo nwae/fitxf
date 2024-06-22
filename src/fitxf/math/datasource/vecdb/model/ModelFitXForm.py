@@ -20,17 +20,17 @@ class ModelFitTransform(ModelInterface):
             user_id: str,
             llm_model: ModelEncoderInterface,
             model_db_class: type(ModelDbInterface),
+            model_metadata_class: type(MetadataInterface),
             col_content: str,
             col_label_user: str,
             col_label_std: str,
             col_embedding: str,
             numpy_to_b64_for_db: bool,
-            vec_db_metadata: MetadataInterface,
             fit_xform_model: FitXformInterface,
             cache_tensor_to_file: bool,
             file_temp_dir: str,
             # allowed values: "np", "torch"
-            return_tensors: str,
+            return_tensors: str = 'np',
             enable_bg_thread_for_training: bool = True,
             logger = None,
     ):
@@ -38,12 +38,12 @@ class ModelFitTransform(ModelInterface):
             user_id = user_id,
             llm_model = llm_model,
             model_db_class = model_db_class,
+            model_metadata_class = model_metadata_class,
             col_content = col_content,
             col_label_user = col_label_user,
             col_label_std = col_label_std,
             col_embedding = col_embedding,
             numpy_to_b64_for_db = numpy_to_b64_for_db,
-            vec_db_metadata = vec_db_metadata,
             fit_xform_model = fit_xform_model,
             cache_tensor_to_file = cache_tensor_to_file,
             file_temp_dir = file_temp_dir,
@@ -261,9 +261,14 @@ class ModelFitTransform(ModelInterface):
                 records = records,
                 text_encoding_tensor = txt_encoding,
             )
-            self.delete_records_from_underlying_db__(
-                match_phrases = [{delete_key: r[delete_key]} for r in records_with_embedding_and_labelstd],
-            )
+            mps = [{delete_key: r[delete_key]} for r in records_with_embedding_and_labelstd]
+            try:
+                self.delete_records_from_underlying_db__(
+                    match_phrases = mps,
+                )
+            except Exception as ex_del:
+                self.logger.info('Ignore delete error before add using match phrases ' + str(mps) + ': ' + str(ex_del))
+                pass
             self.add_records_to_underlying_db__(
                 records_with_embedding_and_labelstd = records_with_embedding_and_labelstd,
             )
@@ -346,6 +351,9 @@ class ModelFitTransform(ModelInterface):
 
 
 if __name__ == '__main__':
+    from fitxf import FitXformClusterCosine, FitXformCluster, FitXformPca
+    from fitxf.math.datasource.vecdb.model.ModelDb import ModelDb
+    from fitxf.math.datasource.vecdb.metadata.Metadata import ModelMetadata
     lgr = Logging.get_default_logger(log_level=logging.INFO, propagate=False)
     er = EnvRepo(repo_dir=os.environ.get("REPO_DIR", None))
     Env.set_env_vars_from_file(env_filepath=er.REPO_DIR + '/.env.fitxf.math.ut')
@@ -355,16 +363,34 @@ if __name__ == '__main__':
         db_create_tbl_sql = None,
         db_table = user_id,
     )
-    ModelFitTransform(
+    model_fit = ModelFitTransform(
         user_id = user_id,
         llm_model = LangModelPt(
-            model_name = 'test_modelfitxf',
+            model_name = 'intfloat/multilingual-e5-small',
             cache_folder = er.MODELS_PRETRAINED_DIR,
             logger = lgr,
         ),
+        model_db_class = ModelDb,
+        model_metadata_class = ModelMetadata,
         col_content = 'text',
         col_label_user = 'label',
         col_label_std = '__label',
         col_embedding = 'embedding',
+        fit_xform_model = FitXformClusterCosine(
+            logger = lgr,
+        ),
+        numpy_to_b64_for_db = True,
+        file_temp_dir = er.REPO_DIR + '/tmp',
+        cache_tensor_to_file = False,
+        enable_bg_thread_for_training = False,
+        logger = lgr,
     )
+    recs_test = [
+        {'label': 'fruits', 'text': 'mango'}, {'label': 'fruits', 'text': 'pineapple'},
+        {'label': 'fruits', 'text': 'apple'}, {'label': 'fruits', 'text': 'orange'},
+        {'label': 'beer', 'text': 'Мюнхенский хеллес или Хелль '}, {'label': 'beer', 'text': 'Грузинский Черный Лев'},
+    ]
+    model_fit.atomic_delete_add(records=recs_test, delete_key='text')
+    res = model_fit.predict(text_list_or_embeddings=['давай выпем'], top_k=2)
+    print(res)
     exit(0)

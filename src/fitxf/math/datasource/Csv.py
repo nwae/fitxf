@@ -241,11 +241,6 @@ class Csv(DatastoreInterface):
                 match_condition = match_condition,
                 tablename = tablename,
             )
-        except Exception as ex:
-            errmsg = \
-                'Error occurred table "' + str(tablename) + '" delete ' + str(match_phrase) + ', exception: ' + str(ex)
-            self.logger.error(errmsg)
-            raise Exception(errmsg)
         finally:
             self.__release_lock()
 

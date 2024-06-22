@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 
 
 class MetadataInterface:
@@ -16,6 +17,12 @@ class MetadataInterface:
         self.metadata_tbl_name = metadata_tbl_name
         self.logger = logger if logger is not None else logging.getLogger()
         return
+
+    def get_timestamp_float(self):
+        tref = datetime(year=2024, month=1, day=1)
+        tnow = datetime.now()
+        diff = tnow - tref
+        return diff.total_seconds()
 
     def get_metadata_db_data_last_update(
             self,
