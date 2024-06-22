@@ -122,14 +122,14 @@ class ModelInterface:
     ):
         # Verify that model name has not changed from previous
         try:
-            metadata_model_json = self.vec_db_metadata.get_metadata(
-                identifier = 'llm',
-            )[MetadataInterface.COL_METADATA_VALUE]
-            model_prev = metadata_model_json['llm_model']
+            row = self.vec_db_metadata.get_metadata(identifier='llm')[MetadataInterface.COL_METADATA_VALUE]
+            self.logger.info('Row from metadata for llm: ' + str(row))
+            model_prev = row['llm_model']
         except Exception as ex:
             self.logger.error('Error getting metadata model: ' + str(ex))
             model_prev = None
-        self.logger.info('Previous model from metadata "' + str(model_prev) + '"')
+            # raise Exception(ex)
+        self.logger.info('Previous LLM model from metadata "' + str(model_prev) + '"')
 
         # csv can return float type "nan" instead of None
         if model_prev is not None:
