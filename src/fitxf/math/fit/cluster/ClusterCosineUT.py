@@ -59,7 +59,7 @@ class ClusterCosineUnitTest:
         if is_csv_exist:
             self.logger.info('Not using precalculated embeddings, recalculating text embeddings..')
             embeddings = get_lm().encode(
-                text_list = df['text'].tolist(),
+                content_list = df['text'].tolist(),
                 return_tensors = 'np',
             )
             df['embedding'] = [

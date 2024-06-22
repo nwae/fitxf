@@ -166,6 +166,7 @@ class ClusterCosine(Cluster):
 
         new_centers = []
         empty_centers_indexes = []
+        cluster_item_counts = []
         cluster_numbers = np.array([-1]*len_x)
         for i, clstr in enumerate(clusters):
             # assert len(clstr) > 0, 'Empty cluster at ' + '#' + str(i) + ', cluster ' + str(clstr)
@@ -175,6 +176,7 @@ class ClusterCosine(Cluster):
                 self.logger.warning('No points attached to cluster center i=' + str(i))
                 empty_centers_indexes.append(i)
                 new_centers.append(None)
+                cluster_item_counts.append(0)
             else:
                 select = np.array([False]*len_x)
                 for item in clstr:
@@ -182,18 +184,34 @@ class ClusterCosine(Cluster):
                 center = x[select].mean(axis=0)
                 new_centers.append(center.tolist())
                 cluster_numbers[np.array(clstr)] = i
+                cluster_item_counts.append(len(clstr))
 
-        for i in empty_centers_indexes:
-            # TODO pick 3 random points from x instead of 1
-            j = np.random.randint(low=0, high=len(x), size=1)
-            random_new_center = np.reshape(x[j], newshape=center_shape)
-            # Make sure add a very small random number
-            random_new_center += np.reshape(np.random.rand(center_shape_1d), newshape=center_shape) / 1000000
-            new_centers[i] = random_new_center.tolist()
+        if len(empty_centers_indexes) > 0:
             self.logger.info(
-                'Reassigning empty cluster center ' + str(i) + ' a random point taking mean from index ' + str(j)
-                #+ ' point ' + str(x[j]) + ', random new center ' + str(random_new_center)
+                'Empty clusters exist total ' + str(len(empty_centers_indexes)) + ' at ' + str(empty_centers_indexes)
             )
+            np_cluster_item_counts = np.array(cluster_item_counts)
+            # Now we know which index has most points (last index), and which has least (index 0)
+            np_cluster_item_counts_sorted = np.argsort(np_cluster_item_counts)
+            # We split the clusters with most points if there are empty clusters
+            clusterno_to_split = np_cluster_item_counts_sorted[-1]
+            cluster_to_split = clusters[clusterno_to_split]
+            self.logger.info(
+                'Empty clusters during train, using cluster at index #' + str(clusterno_to_split) + ' to split with '
+                + str(len(cluster_to_split)) + ' elements ' + str(cluster_to_split)
+            )
+
+            for i in empty_centers_indexes:
+                j = np.random.randint(low=0, high=len(cluster_to_split), size=1)[0]
+                point_index = cluster_to_split[j]
+                random_new_center = np.reshape(x[point_index], newshape=center_shape)
+                # Make sure add a very small random number
+                random_new_center += np.reshape(np.random.rand(center_shape_1d), newshape=center_shape) / 1000000
+                new_centers[i] = random_new_center.tolist()
+                self.logger.info(
+                    'Reassigning empty cluster center ' + str(i) + ' a random point taking mean from index '
+                    + str(point_index) + '.'
+                )
         self.logger.info('Final centers length ' + str(len(new_centers)))
         self.logger.debug('Final clusters ' + str(cluster_numbers))
         return np.array(cluster_numbers), np.array(new_centers)
