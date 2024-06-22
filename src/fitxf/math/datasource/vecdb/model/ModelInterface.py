@@ -376,10 +376,6 @@ class ModelInterface:
             # when new data added, we might need to create new label mapping
             labels_from_new_records,
     ):
-        # Problem with mapping to ordered integer is that in multithreaded environment like Rest Server,
-        # race condition can cause 2 labels to generate same index, if there is no locking within programs
-        # in different workers or servers.
-        # But if we generate random numbers, then the probability of that happening is almost 0.
         for lb in labels_from_new_records:
             if lb not in self.map_lbl_to_idx:
                 while True:
