@@ -240,6 +240,9 @@ class ModelFitTransform(ModelInterface):
     def predict(
             self,
             text_list_or_embeddings,
+            # can be cluster numbers to zoom into
+            X_embeddings_local_space: np.ndarray = None,
+            labels_local_space: list = None,
             top_k = 5,
             # Instead of just returning the user labels, return full record. Applicable to some models only
             return_full_record = False,
@@ -269,9 +272,12 @@ class ModelFitTransform(ModelInterface):
 
         pred_labels_std_or_full_records, pred_probs = self.fit_xform_model.predict(
             X = txt_lm,
+            X_search_local_space = X_embeddings_local_space,
+            labels_search_local_space = labels_local_space,
             top_k = top_k,
             return_full_record = return_full_record,
         )
+
         return pred_labels_std_or_full_records, pred_probs
 
     def atomic_delete_add(

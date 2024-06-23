@@ -269,6 +269,9 @@ class ModelInterface:
     def predict(
             self,
             text_list_or_embeddings,
+            # can be cluster numbers to zoom into
+            X_embeddings_local_space: np.ndarray = None,
+            labels_local_space: list = None,
             top_k = 5,
             # Instead of just returning the user labels, return full record. Applicable to some models only
             return_full_record = False,
