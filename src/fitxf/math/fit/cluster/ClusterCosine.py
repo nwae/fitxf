@@ -188,7 +188,8 @@ class ClusterCosine(Cluster):
 
         if len(empty_centers_indexes) > 0:
             self.logger.info(
-                'Empty clusters exist total ' + str(len(empty_centers_indexes)) + ' at ' + str(empty_centers_indexes)
+                'Empty clusters exist total ' + str(len(empty_centers_indexes))
+                + ' at center indexes ' + str(empty_centers_indexes)
             )
             np_cluster_item_counts = np.array(cluster_item_counts)
             # Now we know which index has most points (last index), and which has least (index 0)

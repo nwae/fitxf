@@ -279,6 +279,8 @@ class ClusterCosineUnitTest:
         n = res['n_centers']
         clusters = res['clusters']
         new_center_lbls = res['cluster_labels']
+        for clstr in clusters:
+            assert len(clstr) > 0, 'Empty cluster after fine-tuning: ' + str(clusters)
 
         # Last added point cluster number must equal 1st one
         self.logger.info(
