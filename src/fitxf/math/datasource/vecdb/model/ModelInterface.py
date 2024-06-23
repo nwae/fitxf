@@ -3,7 +3,6 @@ import os
 import re
 import torch
 import threading
-import json
 import numpy as np
 from datetime import datetime
 from fitxf import TensorUtils, FitXformInterface
