@@ -194,3 +194,7 @@ res_fit_new = cls.fine_tune(X=x, X_labels=user_labels, n_components=3)
 print('old centers',centers)
 print('new centers',res_fit_new['centers'])
 ```
+
+### Vector DB Models
+
+TODO

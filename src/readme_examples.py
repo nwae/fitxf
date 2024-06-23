@@ -91,8 +91,6 @@ print('old centers',centers)
 print('new centers',res['centers'])
 
 
-
-
 x = np.array([
     [5, 1, 1], [8, 2, 1], [6, 0, 2],
     [1, 5, 1], [2, 7, 1], [0, 6, 2],
