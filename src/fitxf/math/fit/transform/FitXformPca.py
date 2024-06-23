@@ -62,8 +62,8 @@ class FitXformPca(FitXformInterface):
     def fit_optimal(
             self,
             X: np.ndarray,
-            X_labels = None,
-            X_full_records = None,
+            X_labels: list = None,
+            X_full_records: list = None,
             target_grid_density = 2,
             # allowed values 'median', 'mean', 'min'
             measure = 'median',
@@ -92,8 +92,8 @@ class FitXformPca(FitXformInterface):
     def __fit_optimal(
             self,
             X: np.ndarray,
-            X_labels = None,
-            X_full_records = None,
+            X_labels: list = None,
+            X_full_records: list = None,
             target_grid_density = 2,
             # allowed values 'median', 'mean', 'min'
             measure = 'median',
@@ -179,8 +179,8 @@ class FitXformPca(FitXformInterface):
     def fit(
             self,
             X: np.ndarray,
-            X_labels = None,
-            X_full_records = None,
+            X_labels: list = None,
+            X_full_records: list = None,
             # Model dependent interpretation, or ignore if not relevant for specific model
             # For example, can mean how many clusters, or how many PCA components, or how many to sample
             # in a discrete Fourier transform, etc.
@@ -207,8 +207,8 @@ class FitXformPca(FitXformInterface):
     def __fit(
             self,
             X: np.ndarray,
-            X_labels = None,
-            X_full_records = None,
+            X_labels: list = None,
+            X_full_records: list = None,
             # Model dependent interpretation, or ignore if not relevant for specific model
             # For example, can mean how many clusters, or how many PCA components, or how many to sample
             # in a discrete Fourier transform, etc.

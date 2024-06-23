@@ -57,8 +57,8 @@ class FitXformCluster(FitXformInterface):
     def fit_optimal(
             self,
             X: np.ndarray,
-            X_labels = None,
-            X_full_records = None,
+            X_labels: list = None,
+            X_full_records: list = None,
             target_grid_density = 2,
             # allowed values 'median', 'mean', 'min'
             measure = 'median',
@@ -89,8 +89,8 @@ class FitXformCluster(FitXformInterface):
     def fit(
             self,
             X: np.ndarray,
-            X_labels = None,
-            X_full_records = None,
+            X_labels: list = None,
+            X_full_records: list = None,
             # Model dependent interpretation, or ignore if not relevant for specific model
             # For example, can mean how many clusters, or how many PCA components, or how many to sample
             # in a discrete Fourier transform, etc.
@@ -123,8 +123,8 @@ class FitXformCluster(FitXformInterface):
     def __fit_optimal(
             self,
             X: np.ndarray,
-            X_labels = None,
-            X_full_records = None,
+            X_labels: list = None,
+            X_full_records: list = None,
             target_grid_density = 2,
             # Model dependent interpretation, or ignore if not relevant for specific model
             min_clusters = 2,
@@ -211,7 +211,7 @@ class FitXformCluster(FitXformInterface):
         self.model_centers = desired_cluster['cluster_centers']
         # not applicable to cluster model
         self.model_principal_components = np.array([])
-        self.cluster_labels = np.array(desired_cluster['cluster_labels'])
+        self.cluster_labels = desired_cluster['cluster_labels']
         self.model_n_components_or_centers = desired_cluster['n_centers']
         self.model_centroid = np.mean(self.model_centers)
         self.cluster_no_map_to_userlabel = desired_cluster["cluster_label_to_original_labels"]
@@ -227,9 +227,12 @@ class FitXformCluster(FitXformInterface):
             + ', centers median distance ' + str(self.centers_median_distance)
         )
 
-        self.X_transform = self.__transform(
-            X = self.X,
-        )
+        # Same as cluster labels
+        # self.X_transform = self.__transform(X=self.X)   # also can use transform
+        self.X_transform = np.array(self.cluster_labels, dtype=np.int64)
+        # assert self.X_transform.tolist() == self.cluster_labels, \
+        #     'Inconsistent ' + str(list(zip(self.X_transform.tolist(), self.cluster_labels.tolist())))
+
         self.logger.info('X transform: ' + str(self.X_transform))
         self.X_inverse_transform = self.__inverse_transform(
             x_transform = self.X_transform,
@@ -372,6 +375,11 @@ class FitXformCluster(FitXformInterface):
                     'Converted to user labels: ' + str(pred_label_and_clusterno)
                     + ' from cluster numbers ' + str(pred_labels)
                 )
+
+                # Do a 2nd zoom search
+                # condition_same_cluster = self.X_transform == top_cluster
+                # To simplify matters, we leave it to the caller to pull required data and call this
+                # function again passing in X_search_local_space & labels_search_local_space
             else:
                 pred_label_and_clusterno = pred_labels
                 # pred_labels_user = pred_labels

@@ -200,14 +200,38 @@ class FitXformUnitTest:
                 '[' + str(fitter.__class__) + '] Use grid "' + str(use_grid)
                 + '", predicted labels: ' + str(pred_labels)
             )
+
             scores = []
             for i, exp_lbl in enumerate(expected_top_labels):
                 pred_top_label = pred_labels[i][0]['label'] if ret_full_rec else pred_labels[i][0]
                 pred_top_label_2 = pred_labels[i][1]['label'] if ret_full_rec else pred_labels[i][1]
                 if type(fitter) in [FitXformClusterCosine, FitXformCluster]:
                     # First in tuple is predicted cluster number, take
+                    pred_top_cluster = pred_top_label['cluster_label']
                     pred_top_label = pred_top_label['user_label_estimate']
+                    pred_top_cluster_2 = pred_top_label_2['cluster_label']
                     pred_top_label_2 = pred_top_label_2['user_label_estimate']
+
+                    #
+                    # Example of how to obtain data to zooom into search
+                    #
+                    condition_zoom = fitter.X_transform == pred_top_cluster
+                    emb_zoom_local_space = emb_train[condition_zoom]
+                    labels_zoom_local_space = [
+                        lbl for i_lbl, lbl in enumerate(fitter.X_labels) if condition_zoom[i_lbl]
+                    ]
+                    assert len(emb_zoom_local_space) == len(labels_zoom_local_space)
+                    self.logger.info('labels list zoom ' + str(labels_zoom_local_space))
+
+                    zoom_lbls, zoom_probs = fitter.predict(
+                        X = emb_eval[i:(i+1)],
+                        X_search_local_space = emb_zoom_local_space,
+                        labels_search_local_space = labels_zoom_local_space,
+                        top_k = 3,
+                    )
+                    self.logger.info('Zoom search result ' + str(zoom_lbls) + ', probs ' + str(zoom_probs))
+                    # raise Exception('asdf')
+
                 # 1.0 for being 1st, 0.5 for appearing 2nd
                 score_i = 1*(pred_top_label == exp_lbl) + 0.5*(pred_top_label_2 == exp_lbl)
                 score_i = min(score_i, 1.0)

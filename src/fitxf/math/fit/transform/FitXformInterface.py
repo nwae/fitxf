@@ -82,8 +82,8 @@ class FitXformInterface:
     def fit_optimal(
             self,
             X: np.ndarray,
-            X_labels = None,
-            X_full_records = None,
+            X_labels: list = None,
+            X_full_records: list = None,
             # may not apply to all models. for clusters, grid is just the cluster.
             # for PCA, we need to predefine how to calculate the grid.
             target_grid_density = 2, # at least 2 points per grid
@@ -98,8 +98,8 @@ class FitXformInterface:
     def fit(
             self,
             X: np.ndarray,
-            X_labels = None,
-            X_full_records = None,
+            X_labels: list = None,
+            X_full_records: list = None,
             # Model dependent interpretation, or ignore if not relevant for specific model
             # For example, can mean how many clusters, or how many PCA components, or how many to sample
             # in a discrete Fourier transform, etc.
