@@ -37,8 +37,14 @@ class ClusterCosine(Cluster):
             # pass through mode
             test_mode = False,
     ):
+        if test_mode:
+            raise Exception('Test mode not supported')
+
         assert km_iters > 0
         start_time = self.profiler.start()
+
+        if x_labels is None:
+            x_labels = list(range(len(x)))
 
         self.logger.info('Start cosine cos clustering x of shape ' + str(x.shape))
         # For cosine similarity, it makes no sense not to normalize first
