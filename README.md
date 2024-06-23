@@ -197,4 +197,4 @@ print('new centers',res_fit_new['centers'])
 
 ### Vector DB Models
 
-Vector DB models are available, to add documentation soon.
+Vector DB models:
