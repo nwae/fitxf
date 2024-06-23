@@ -5,20 +5,12 @@ import re
 
 class EnvRepo:
 
-    # Relative directory of model download folder
-    MODEL_FOLDER_VERSIONS_DIR = '_models/__versions'
-
-    CLOUD_SERVERS = []
-
     def __init__(
             self,
-            # will be given priority over repo_dir if passed in
-            user = None,
             repo_dir = None,
             model_version = 'latest',
             logger = None,
     ):
-        self.user = user
         self.repo_dir = repo_dir
         self.model_version = model_version
         self.logger = logger if logger is not None else logging.getLogger()
@@ -54,8 +46,7 @@ class EnvRepo:
         self.logger.info('Set to different environment, REPO_DIR "' + str(self.REPO_DIR))
 
         self.MODELS_TRAINING_DIR = self.REPO_DIR + r'/data/models/training'
-        self.MODELS_PRETRAINED_DIR = \
-            self.REPO_DIR + '/' + self.MODEL_FOLDER_VERSIONS_DIR + '/' + self.model_version
+        self.MODELS_PRETRAINED_DIR = self.REPO_DIR + '/_models/' + self.model_version
 
         self.CONFIG_DIR = self.REPO_DIR + r'/config'
 
