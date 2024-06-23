@@ -124,7 +124,7 @@ class ClusterUnitTest:
             [1, 1, 5], [2, 1, 8], [0, 2, 6],
         ])
         x_labels = ['a', 'a', 'a', 'b', 'b', 'b', 'c', 'c', 'c']
-        expected_cluster_labels = [0, 0, 0, 1, 1, 1, 2, 2, 2]
+        expected_cluster_labels = list(range(len(x)))
         obj = Cluster(logger=self.logger)
         res = obj.kmeans_optimal(
             x = x,

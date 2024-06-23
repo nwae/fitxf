@@ -136,6 +136,16 @@ class ModelFitTransform(ModelInterface):
             )
         return
 
+    def load_data_model(
+            self,
+            max_tries = 1,
+            background = False,
+    ):
+        return self.init_data_model(
+            max_tries = max_tries,
+            background = background,
+        )
+
     def __reset_data_model(
             self,
     ):
@@ -160,7 +170,7 @@ class ModelFitTransform(ModelInterface):
                 self.logger.warning('No longer required to update model...')
                 return False
 
-        self.logger.info('Model updating...')
+        self.logger.info('Model updating, test mode ' + str(test_mode) + '.')
 
         # Lock also underlying DB mutex because our metadata is also stored there
         required_mutexes = [self.mutex_name_model, self.mutex_name_underlying_db]
