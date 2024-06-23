@@ -37,6 +37,28 @@ class FitXformUnitTest:
                 avg_score_threshold = score_thr,
                 ret_full_rec = ret_full_rec,
             )
+
+        # Test pass thru mode
+        x = np.random.rand(10,10)
+        fitter = FitXformCluster(logger=self.logger)
+        res = fitter.fit(
+            X = x,
+            test_mode = True,
+        )
+        n_centers = res[FitXformInterface.KEY_N_COMPONENTS_OR_CENTERS]
+        centers = res[FitXformInterface.KEY_CENTERS]
+        # self.logger.info('Test mode fit result for cluster: ' + str(res))
+        assert n_centers == len(x)
+        assert np.sum((x - centers)**2) < 0.0000000001
+
+        pred_lbls, pred_probs = fitter.predict(X=x)
+        for i, pred_lbls_row in enumerate(pred_lbls):
+            top_pred_i, top_prob_i = pred_lbls_row[0], pred_probs[i][0]
+            print(i, top_pred_i, top_prob_i)
+            assert top_pred_i['cluster_label'] == top_pred_i['user_label_estimate'] == i
+            assert top_prob_i**2 - 1 < 0.0000000001
+
+        print('ALL TESTS PASSED OK')
         return
 
     def __test_fit(
@@ -155,8 +177,6 @@ class FitXformUnitTest:
             X_full_records = full_recs_fine_tune,
             n_components = fitter.model_n_components_or_centers,
         )
-
-        print('ALL TESTS PASSED OK')
         return
 
     def __test_predictions(

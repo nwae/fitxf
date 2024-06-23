@@ -196,6 +196,8 @@ class FitXformPca(FitXformInterface):
             # pass through mode
             test_mode = False,
     ) -> dict:
+        if X_labels is None:
+            X_labels = list(range(len(X)))
         try:
             self.__lock.acquire_mutexes(
                 id = 'fit',

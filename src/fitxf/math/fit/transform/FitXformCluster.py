@@ -83,6 +83,7 @@ class FitXformCluster(FitXformInterface):
                 target_grid_density = target_grid_density,
                 min_clusters = min_clusters,
                 max_clusters = max_clusters,
+                test_mode = test_mode,
             )
         finally:
             self.__lock.release_mutexes(mutexes=[self.__mutex_model])
@@ -104,6 +105,9 @@ class FitXformCluster(FitXformInterface):
             test_mode = False,
     ) -> dict:
         n_centers = n_components
+        if X_labels is None:
+            X_labels = list(range(len(X)))
+
         self.logger.info(
             'Start kmeans optimal with X shape ' + str(X.shape) + ', n clusters ' + str(n_centers)
             + ', test mode ' + str(test_mode)
@@ -114,6 +118,7 @@ class FitXformCluster(FitXformInterface):
             x_labels = X_labels,
             start_centers = start_centers,
             km_iters = 100,
+            test_mode = test_mode,
         )
         self.logger.info('Desired cluster of requested n=' + str(n_centers) + ': ' + str(desired_cluster))
         return self.__record_cluster(
@@ -137,6 +142,8 @@ class FitXformCluster(FitXformInterface):
             # by default if 25% of the clusters are single point clusters, we quit
             thr_single_clusters = 0.25,
             plot = False,
+            # pass through mode
+            test_mode = False,
     ) -> dict:
         assert target_grid_density > 0, 'Target grid density not valid ' + str(target_grid_density)
         self.logger.info(
@@ -151,6 +158,7 @@ class FitXformCluster(FitXformInterface):
             max_clusters = max_clusters,
             thr_single_clusters = thr_single_clusters,
             plot = plot,
+            test_mode = test_mode,
         )
         desired_cluster = res[0]
         self.logger.info(
@@ -199,6 +207,7 @@ class FitXformCluster(FitXformInterface):
             X_full_records = X_full_records,
             n_components = n_components,
             start_centers = start_centers,
+            test_mode = test_mode,
         )
         return res
 

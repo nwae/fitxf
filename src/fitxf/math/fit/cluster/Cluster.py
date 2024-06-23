@@ -123,6 +123,8 @@ class Cluster:
             fit_total_iters = kmeans.n_iter_
             fit_inertia = kmeans.inertia_
         else:
+            # Change the given n_centers from user
+            n_centers = len(x)
             np_tmp_labels = np.array(x_labels)
             tmp_unique_labels = np.unique(np_tmp_labels).tolist()
             # self.logger.info('Unique labels for test mode ' + str(tmp_unique_labels))
@@ -136,6 +138,7 @@ class Cluster:
             fit_total_iters = 0
             # 0 distance between centers and points
             fit_inertia = 0
+            # self.logger.info('Test mode values for cluster, fit cluster numbers ' + str(fit_cluster_numbers))
 
         additional_info = self.derive_additional_cluster_info(
             x = x,
