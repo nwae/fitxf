@@ -92,6 +92,8 @@ class FitXformInterface:
             # Model dependent interpretation, or ignore if not relevant for specific model
             min_components = 1,
             max_components = 99999,
+            # pass through mode
+            test_mode = False,
     ) -> dict:
         raise Exception('Must be implemented by derived class')
 
@@ -108,6 +110,8 @@ class FitXformInterface:
             # useful for clusters of more than 1,000,000 points for example, where starting
             # again means another half day of fit training
             start_centers: np.ndarray = None,
+            # pass through mode
+            test_mode = False,
     ) -> dict:
         raise Exception('Must be implemented by derived class')
 
@@ -117,6 +121,8 @@ class FitXformInterface:
             X_labels: list = None,
             X_full_records: list = None,
             n_components: int = None,
+            # pass through mode
+            test_mode = False,
     ) -> dict:
         raise Exception('Must be implemented by derived class')
 
@@ -354,6 +360,8 @@ class SampleFit(FitXformInterface):
             # again means another half day of fit training
             start_centers: np.ndarray = None,
             return_details = False,
+            # pass through mode
+            test_mode = False,
     ) -> dict:
         pca = PCA(n_components=n_components)
 

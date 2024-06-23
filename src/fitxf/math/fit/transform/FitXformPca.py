@@ -70,6 +70,8 @@ class FitXformPca(FitXformInterface):
             # Model dependent interpretation, or ignore if not relevant for specific model
             min_components = 1,
             max_components = 99999,
+            # pass through mode
+            test_mode = False,
     ) -> dict:
         try:
             self.__lock.acquire_mutexes(
@@ -100,6 +102,8 @@ class FitXformPca(FitXformInterface):
             # Model dependent interpretation, or ignore if not relevant for specific model
             min_components = 1,
             max_components = 99999,
+            # pass through mode
+            test_mode = False,
     ) -> dict:
         assert target_grid_density > 0, 'Target grid density not valid ' + str(target_grid_density)
         x_dim = X.shape[-1]
@@ -189,6 +193,8 @@ class FitXformPca(FitXformInterface):
             # useful for clusters of more than 1,000,000 points for example, where starting
             # again means another half day of fit training
             start_centers: np.ndarray = None,
+            # pass through mode
+            test_mode = False,
     ) -> dict:
         try:
             self.__lock.acquire_mutexes(
@@ -213,6 +219,8 @@ class FitXformPca(FitXformInterface):
             # For example, can mean how many clusters, or how many PCA components, or how many to sample
             # in a discrete Fourier transform, etc.
             n_components = 2,
+            # pass through mode
+            test_mode = False,
     ):
         assert type(X) is np.ndarray, 'Wrong type X "' + str(type(X)) + '"'
         if X_labels is None:
@@ -274,6 +282,8 @@ class FitXformPca(FitXformInterface):
             X_labels: list = None,
             X_full_records: list = None,
             n_components: int = None,
+            # pass through mode
+            test_mode = False,
     ) -> dict:
         # TODO How to fine tune?
         self.logger.warning('Fine tuning for PCA not yet implemented')

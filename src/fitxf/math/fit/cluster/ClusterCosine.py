@@ -34,6 +34,8 @@ class ClusterCosine(Cluster):
             start_centers: np.ndarray = None,
             km_iters = 100,
             converge_diff_thr = 0.00001,
+            # pass through mode
+            test_mode = False,
     ):
         assert km_iters > 0
         start_time = self.profiler.start()

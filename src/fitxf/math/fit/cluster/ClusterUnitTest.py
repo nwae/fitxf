@@ -1,6 +1,7 @@
 import numpy as np
 import logging
 from fitxf.math.fit.cluster.Cluster import Cluster
+from fitxf.math.utils.Logging import Logging
 
 
 class ClusterUnitTest:
@@ -116,16 +117,46 @@ class ClusterUnitTest:
         obj.logger.debug('Cluster sizes: ' + str(res[1]['cluster_sizes']))
         assert n == 4
 
+    def test_pass_thru_mode(self):
+        x = np.array([
+            [5, 1, 1], [8, 2, 1], [6, 0, 2],
+            [1, 5, 1], [2, 7, 1], [0, 6, 2],
+            [1, 1, 5], [2, 1, 8], [0, 2, 6],
+        ])
+        x_labels = ['a', 'a', 'a', 'b', 'b', 'b', 'c', 'c', 'c']
+        expected_cluster_labels = [0, 0, 0, 1, 1, 1, 2, 2, 2]
+        obj = Cluster(logger=self.logger)
+        res = obj.kmeans_optimal(
+            x = x,
+            x_labels = x_labels,
+            estimate_min_max = True,
+            test_mode = True,
+        )
+        n_iters = res[0]['total_iterations']
+        n = res[0]['n_centers']
+        centers = res[0]['cluster_centers']
+        cluster_lbls = res[0]['cluster_labels']
+        self.logger.info('Total iterations from full train = ' + str(n_iters))
+        assert n == len(x), \
+            'n centers  should be just length of x ' + str(len(x)) + ', but got ' + str(n)
+        assert np.sum((centers - x)**2) < 0.0000000001, \
+            'Centers should just be x but centers ' + str(centers) + ', x ' + str(x)
+        assert cluster_lbls == expected_cluster_labels, \
+            'Center labels should be ' + str(expected_cluster_labels) + ', got ' + str(cluster_lbls)
+        return
+
     def test(self):
         self.test_converge()
         self.test_diverge()
         self.test_imbalanced()
+        self.test_pass_thru_mode()
         print('ALL TESTS PASSED OK')
         return
 
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO)
-    ut = ClusterUnitTest()
+    ut = ClusterUnitTest(
+        logger = Logging.get_default_logger(log_level=logging.INFO, propagate=False)
+    )
     ut.test()
     exit(0)

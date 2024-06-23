@@ -102,36 +102,59 @@ class Cluster:
             start_centers: np.ndarray = None,
             km_iters = 100,
             converge_diff_thr = 0.00001,
+            # pass through mode
+            test_mode = False,
     ):
         assert x.ndim == 2
+        if x_labels is None:
+            x_labels = list(range(len(x)))
 
-        kmeans = KMeans(
-            n_clusters = n_centers,
-            init = 'k-means++' if start_centers is None else start_centers,
-            max_iter = km_iters,
-            n_init = 10,
-            random_state = 0
-        )
-        kmeans.fit(x)
-        self.logger.debug(kmeans.labels_)
+        if not test_mode:
+            kmeans = KMeans(
+                n_clusters = n_centers,
+                init = 'k-means++' if start_centers is None else start_centers,
+                max_iter = km_iters,
+                n_init = 10,
+                random_state = 0
+            )
+            kmeans.fit(x)
+            fit_centers = kmeans.cluster_centers_
+            fit_cluster_numbers = kmeans.labels_
+            fit_total_iters = kmeans.n_iter_
+            fit_inertia = kmeans.inertia_
+        else:
+            np_tmp_labels = np.array(x_labels)
+            tmp_unique_labels = np.unique(np_tmp_labels).tolist()
+            # self.logger.info('Unique labels for test mode ' + str(tmp_unique_labels))
+
+            fit_centers = x
+            fit_cluster_numbers = np.zeros(shape=np_tmp_labels.shape, dtype=np.int64)
+            for i, lbl in enumerate(tmp_unique_labels):
+                fit_cluster_numbers[np_tmp_labels==lbl] = i
+            # self.logger.info('Fit cluster numbers in test mode ' + str(fit_cluster_numbers))
+            fit_cluster_numbers = fit_cluster_numbers.tolist()
+            fit_total_iters = 0
+            # 0 distance between centers and points
+            fit_inertia = 0
 
         additional_info = self.derive_additional_cluster_info(
             x = x,
             n_centers = n_centers,
-            cluster_centers = kmeans.cluster_centers_,
-            cluster_labels = kmeans.labels_,
+            cluster_centers = fit_centers,
+            cluster_labels = fit_cluster_numbers,
             metric = 'euclid',
         )
 
         if x_labels is not None:
             cluster_label_to_labelsori = self.map_centers_to_original_labels(
                 labels_original = x_labels,
-                labels_cluster = list(kmeans.labels_),
+                labels_cluster = list(fit_cluster_numbers),
             )
         else:
             cluster_label_to_labelsori = None
 
-        cluster_numbers = list(kmeans.labels_)
+        self.logger.info(fit_cluster_numbers)
+        cluster_numbers = list(fit_cluster_numbers)
         #
         # Приложения должно быть сохранить только "cluster_centers" и "cluster_labels"
         # Если входиться новые точки, не надо тренировать снова, но только продольжать трейнинг с
@@ -140,14 +163,14 @@ class Cluster:
         #   - продолжать трейнинг с прошлых центров и их меток кластеров
         #
         return {
-            'total_iterations': kmeans.n_iter_,
+            'total_iterations': fit_total_iters,
             'n_centers': n_centers,
             # Group the indexes in same cluster
             'clusters': [
                 [idx for idx, clbl in enumerate(cluster_numbers) if clbl==i_center]
                 for i_center in range(n_centers)
             ],
-            'cluster_centers': kmeans.cluster_centers_,
+            'cluster_centers': fit_centers,
             # e.g. [2, 2, 2, 0, 0, 0, 1, 1, 1] из меток пользавателя ['a', 'a', 'a', 'b', 'b', 'b', 'c', 'c', 'd']
             'cluster_labels': cluster_numbers,
             # как связываются между новыми метками кластерами и исходными метками пользавателя. e.g. {
@@ -159,7 +182,7 @@ class Cluster:
             'centers_median': additional_info['centers_median'],
             'inner_radiuses': additional_info['inner_radiuses'],
             'cluster_sizes': additional_info['cluster_sizes'],
-            'points_inertia': kmeans.inertia_,
+            'points_inertia': fit_inertia,
         }
 
     def kmeans_optimal(
@@ -173,11 +196,24 @@ class Cluster:
             # by default if 25% of the clusters are single point clusters, we quit
             thr_single_clusters = 0.25,
             estimate_min_max = False,
+            # pass through mode
+            test_mode = False,
     ):
         assert x.ndim == 2
 
         if estimate_min_max:
             min_clusters, max_clusters = self.estimate_min_max_clusters(n=len(x))
+
+        if test_mode:
+            min_clusters = len(x)
+            max_clusters = len(x)
+            start_centers = x
+            self.logger.info(
+                'Test mode set to ' + str(test_mode) + ', overwriting min/max clusters to ' + str(min_clusters)
+                + '/' + str(max_clusters) + ', and start centers to be just the points itself.'
+            )
+        else:
+            start_centers = None
 
         # do a Monte-carlo
         # distances = self.fit_utils.get_point_distances_mc(np_tensors=self.text_encoded, iters=10000)
@@ -191,6 +227,8 @@ class Cluster:
                 x_labels = x_labels,
                 n_centers = n_centers,
                 km_iters = km_iters,
+                start_centers = start_centers,
+                test_mode = test_mode,
             )
             cluster_sets[n_centers] = cluster_res
             max_n = n_centers

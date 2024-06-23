@@ -65,6 +65,7 @@ class FitXformCluster(FitXformInterface):
             # Model dependent interpretation, or ignore if not relevant for specific model
             min_components = 2,
             max_components = 100,
+            test_mode = False,
     ) -> dict:
         try:
             self.__lock.acquire_mutexes(
@@ -99,10 +100,13 @@ class FitXformCluster(FitXformInterface):
             # useful for clusters of more than 1,000,000 points for example, where starting
             # again means another half day of fit training
             start_centers: np.ndarray = None,
+            # pass through mode
+            test_mode = False,
     ) -> dict:
         n_centers = n_components
         self.logger.info(
             'Start kmeans optimal with X shape ' + str(X.shape) + ', n clusters ' + str(n_centers)
+            + ', test mode ' + str(test_mode)
         )
         desired_cluster = self.cluster.kmeans(
             x = X,
@@ -165,6 +169,8 @@ class FitXformCluster(FitXformInterface):
             X_labels: list = None,
             X_full_records: list = None,
             n_components: int = None,
+            # pass through mode
+            test_mode = False,
     ) -> dict:
         if self.model_n_components_or_centers is not None:
             n_add = n_components - self.model_n_components_or_centers
@@ -456,7 +462,11 @@ if __name__ == '__main__':
     embeddings = lmo.encode(content_list=texts, return_tensors='np')
 
     fitter = FitXformCluster(logger=Logging.get_default_logger(log_level=logging.INFO, propagate=False))
-    res = fitter.fit_optimal(X=embeddings, X_labels=labels)
+    res = fitter.fit_optimal(
+        X = embeddings,
+        X_labels = labels,
+        test_mode = True,
+    )
     # Save model to base64-json string
     model_save_str = fitter.model_to_b64json(numpy_to_base64_str=True, dump_to_b64json_str=True)
 
