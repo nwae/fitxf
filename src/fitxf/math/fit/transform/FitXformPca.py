@@ -228,7 +228,8 @@ class FitXformPca(FitXformInterface):
         # Keep model parameters
         self.model_train_total_iterations = None
         self.model_n_components_or_centers = n_components
-        self.X = np.array(X)
+        # don't keep large tensors in memory
+        # self.X = np.array(X)
         self.X_transform = x_reduced
         self.X_labels = X_labels
         self.X_full_records = X_full_records
@@ -247,15 +248,15 @@ class FitXformPca(FitXformInterface):
             x_pca = self.X_transform,
         )
 
-        X_lengths = np.sum((self.X * self.X), axis=-1) ** 0.5
+        X_lengths = np.sum((X * X), axis=-1) ** 0.5
         X_inverse_lengths = np.sum((self.X_inverse_transform * self.X_inverse_transform), axis=-1) ** 0.5
 
         # Equivalent to cluster "inertia"
-        self.distance_error = np.sum((self.X - self.X_inverse_transform) ** 2, axis=-1) ** 0.5
+        self.distance_error = np.sum((X - self.X_inverse_transform) ** 2, axis=-1) ** 0.5
         self.distance_error = self.distance_error / X_lengths
         self.distance_error_mean = np.mean(self.distance_error)
 
-        self.angle_error = np.sum(self.X * self.X_inverse_transform, axis=-1) / (X_lengths * X_inverse_lengths)
+        self.angle_error = np.sum(X * self.X_inverse_transform, axis=-1) / (X_lengths * X_inverse_lengths)
         self.angle_error_mean = np.mean(self.angle_error)
 
         self.grid_density = np.zeros(2**self.X_grid_vectors.shape[-1])

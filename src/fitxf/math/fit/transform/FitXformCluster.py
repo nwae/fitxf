@@ -198,13 +198,13 @@ class FitXformCluster(FitXformInterface):
 
     def __record_cluster(
             self,
-            desired_cluster: dict,
             X: np.ndarray,
+            desired_cluster: dict,
             X_labels,
             X_full_records,
     ):
-        # Copy over original data
-        self.X = np.array(X)
+        # Copy over original data, don't retain large tensors in memory like X
+        # self.X = np.array(X)
         self.X_labels = X_labels
         self.X_full_records = X_full_records
         self.model_train_total_iterations = desired_cluster.get('total_iterations', None)
@@ -217,7 +217,7 @@ class FitXformCluster(FitXformInterface):
         self.cluster_no_map_to_userlabel = desired_cluster["cluster_label_to_original_labels"]
 
         self.cluster_inertia = desired_cluster['points_inertia']
-        self.cluster_inertia_per_point = self.cluster_inertia / len(self.X)
+        self.cluster_inertia_per_point = self.cluster_inertia / len(X_labels)
         self.distance_error = self.cluster_inertia_per_point
         self.distance_error_mean = np.mean(self.distance_error)
 
@@ -228,7 +228,7 @@ class FitXformCluster(FitXformInterface):
         )
 
         # Same as cluster labels
-        # self.X_transform = self.__transform(X=self.X)   # also can use transform
+        # self.X_transform = self.__transform(X=X)   # also can use transform
         self.X_transform = np.array(self.cluster_labels, dtype=np.int64)
         # assert self.X_transform.tolist() == self.cluster_labels, \
         #     'Inconsistent ' + str(list(zip(self.X_transform.tolist(), self.cluster_labels.tolist())))
@@ -238,9 +238,9 @@ class FitXformCluster(FitXformInterface):
             x_transform = self.X_transform,
         )
 
-        X_lengths = np.sum((self.X * self.X), axis=-1) ** 0.5
+        X_lengths = np.sum((X * X), axis=-1) ** 0.5
         X_inverse_lengths = np.sum((self.X_inverse_transform * self.X_inverse_transform), axis=-1) ** 0.5
-        self.angle_error = np.sum(self.X * self.X_inverse_transform, axis=-1) / (X_lengths * X_inverse_lengths)
+        self.angle_error = np.sum(X * self.X_inverse_transform, axis=-1) / (X_lengths * X_inverse_lengths)
         self.angle_error_mean = np.mean(self.angle_error)
 
         # not applicable to cluster model
