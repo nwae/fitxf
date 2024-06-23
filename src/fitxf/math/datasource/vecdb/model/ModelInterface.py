@@ -236,6 +236,7 @@ class ModelInterface:
     def update_model(
             self,
             force_update = False,
+            test_mode = False,
     ):
         raise Exception('Must be implemented by derived class')
 

@@ -84,7 +84,9 @@ class ModelFitTransform(ModelInterface):
             if not self.is_need_sync_db():
                 continue
             try:
-                self.update_model()
+                self.update_model(
+                    test_mode = os.environ["VECDB_FIT_XFORM_MODEL_TEST_MODE"].lower() in ['1', 'true', 'yes'],
+                )
             except Exception as ex:
                 self.logger.error('Error updating model compression from scheduled job: ' + str(ex))
 
@@ -115,7 +117,9 @@ class ModelFitTransform(ModelInterface):
             self.logger.info(
                 'No model from metadata, will proceed to update model..'
             )
-            self.update_model()
+            self.update_model(
+                test_mode = os.environ["VECDB_FIT_XFORM_MODEL_TEST_MODE"].lower() in ['1', 'true', 'yes'],
+            )
         else:
             model_b64json_str = mtd_row[MetadataInterface.COL_METADATA_VALUE]
             self.fit_xform_model.load_model_from_b64json(
@@ -149,6 +153,7 @@ class ModelFitTransform(ModelInterface):
     def update_model(
             self,
             force_update = False,
+            test_mode = False,
     ):
         if not force_update:
             if not self.is_need_sync_db():
@@ -194,6 +199,7 @@ class ModelFitTransform(ModelInterface):
                     X_labels = text_labels_user,
                     X_full_records = self.data_records,
                     n_components = n_cluster,
+                    test_mode = test_mode,
                 )
                 self.logger.debug(
                     'Fit to n cluster = ' + str(n_cluster) + ' result ' + str(res) + ', ' + str(text_labels_user)
@@ -252,7 +258,9 @@ class ModelFitTransform(ModelInterface):
                 'Model "' + str(self.fit_xform_model.__class__) + '" need update before prediction: '
                 + str(text_list_or_embeddings)
             )
-            self.update_model()
+            self.update_model(
+                test_mode = os.environ["VECDB_FIT_XFORM_MODEL_TEST_MODE"].lower() in ['1', 'true', 'yes'],
+            )
         else:
             self.logger.info(
                 'Model "' + str(self.fit_xform_model.__class__) + '" dont need update before prediction: '
