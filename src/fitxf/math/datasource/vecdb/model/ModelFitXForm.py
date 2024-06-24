@@ -113,27 +113,34 @@ class ModelFitTransform(ModelInterface):
             'Previous model type "' + str(type(mtd_row)) + '" info from metadata: '
             + str(mtd_row)
         )
-        if mtd_row is None:
+        if not self.base64_encoder.is_base_64_string(mtd_row):
             self.logger.info(
-                'No model from metadata, will proceed to update model..'
+                'Invalid model base64 string "' + str(mtd_row) + '", proceed to update model..'
             )
             self.update_model(
                 test_mode = os.environ["VECDB_FIT_XFORM_MODEL_TEST_MODE"].lower() in ['1', 'true', 'yes'],
             )
         else:
-            model_b64json_str = mtd_row[MetadataInterface.COL_METADATA_VALUE]
-            self.fit_xform_model.load_model_from_b64json(
-                model_b64json = model_b64json_str,
-            )
-            self.text_labels_standardized = np.array(self.fit_xform_model.X_labels)
-            self.last_sync_time_with_underlying_db = self.vec_db_metadata.get_datetime_from_timestamp(
-                timestamp = mtd_row[MetadataInterface.COL_METADATA_TIMESTAMP]
-            )
-            self.logger.info(
-                'Loaded model ' + str(self.fit_xform_model.__class__)
-                + ' from saved model with timestamp ' + str(self.last_sync_time_with_underlying_db)
-                + ' metadata: ' + str(model_b64json_str)
-            )
+            try:
+                self.lock_mutexes.acquire_mutexes(
+                    id = 'init_data_model',
+                    mutexes = required_mutexes,
+                )
+                model_b64json_str = mtd_row[MetadataInterface.COL_METADATA_VALUE]
+                self.fit_xform_model.load_model_from_b64json(
+                    model_b64json = model_b64json_str,
+                )
+                self.text_labels_standardized = np.array(self.fit_xform_model.X_labels)
+                self.last_sync_time_with_underlying_db = self.vec_db_metadata.get_datetime_from_timestamp(
+                    timestamp = mtd_row[MetadataInterface.COL_METADATA_TIMESTAMP]
+                )
+                self.logger.info(
+                    'Loaded model ' + str(self.fit_xform_model.__class__)
+                    + ' from saved model with timestamp ' + str(self.last_sync_time_with_underlying_db)
+                    + ' metadata: ' + str(model_b64json_str)
+                )
+            finally:
+                self.lock_mutexes.release_mutexes(mutexes=required_mutexes)
         return
 
     def load_data_model(
