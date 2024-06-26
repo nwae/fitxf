@@ -179,7 +179,7 @@ class DatastoreInterface:
     def atomic_delete_add(
             self,
             delete_key: str,
-            # list of dicts
+            # list of dicts, python3.8 & below does not support this syntax
             records: list[dict],
             tablename: str = None,
     ):
@@ -187,7 +187,7 @@ class DatastoreInterface:
 
     def add(
             self,
-            # list of dicts
+            # list of dicts, python3.8 & below does not support this syntax
             records: list[dict],
             tablename: str = None,
     ):
