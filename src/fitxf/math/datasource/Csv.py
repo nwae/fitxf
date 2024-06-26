@@ -8,7 +8,6 @@ from fitxf.math.utils.LockF import LockFile
 from fitxf.math.datasource.DatastoreInterface import DatastoreInterface, DbParams, DatastoreInterfaceUnitTest
 from fitxf.math.utils.Logging import Logging
 from fitxf.math.utils.Env import Env
-from fitxf.math.utils.EnvironRepo import EnvRepo
 
 
 class Csv(DatastoreInterface):
@@ -314,7 +313,7 @@ class Csv(DatastoreInterface):
 
 
 if __name__ == '__main__':
-    Env.set_env_vars_from_file(env_filepath=EnvRepo().REPO_DIR + os.sep + '.env.fitxf.math.ut')
+    Env.set_env_vars_from_file(env_filepath=Env().REPO_DIR + os.sep + '.env.fitxf.math.ut')
     DatastoreInterfaceUnitTest(
         ChildClass = Csv,
         logger = Logging.get_default_logger(log_level=logging.INFO, propagate=False)

@@ -2,7 +2,7 @@ import warnings
 import uuid
 import os
 import re
-from fitxf.utils import Logging, Profiling, EnvRepo, Env
+from fitxf.utils import Logging, Profiling, Env
 #----------------------------------------------------------------------------------
 # IC Section
 #----------------------------------------------------------------------------------
@@ -27,12 +27,9 @@ class RepoUnitTest:
     def __init__(
             self,
     ):
-        self.env_repo = EnvRepo(repo_dir=os.environ["REPO_DIR"])
+        self.env_repo = Env()
 
         self.keys_dir = self.env_repo.REPO_DIR + '/keys'
-        self.regex_exceptions_path = self.env_repo.CONFIG_UNITTEST_REGEX_EXCEPTIONS_FILEPATH
-        self.presidio_yaml_path = self.env_repo.CONFIG_UNITTEST_PRESIDIO_YAML_FILEPATH
-        self.presidio_entities_path = self.env_repo.CONFIG_UNITTEST_PRESIDIO_DEF_ENTITIES_JSON
         self.lm_cache_folder = self.env_repo.MODELS_PRETRAINED_DIR
         self.document_folder = self.env_repo.REPO_DIR + '/data/sample_docs'
         self.tmp_dir = os.environ["TEMP_DIR"]
@@ -120,7 +117,7 @@ class RepoUnitTest:
 
 
 if __name__ == '__main__':
-    env_repo = EnvRepo(repo_dir=os.environ.get('REPO_DIR', None))
+    env_repo = Env()
     Env.set_env_vars_from_file(env_filepath=env_repo.REPO_DIR + '/.env.fitxf.math.ut')
 
     RepoUnitTest().test()

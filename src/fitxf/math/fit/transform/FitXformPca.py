@@ -7,7 +7,7 @@ import pandas as pd
 from sklearn.decomposition import PCA
 from fitxf.math.fit.transform.FitXformInterface import FitXformInterface
 from fitxf.math.utils.Lock import Lock
-from fitxf.math.utils.EnvironRepo import EnvRepo
+from fitxf.math.utils.Env import Env
 from fitxf.math.utils.Logging import Logging
 
 
@@ -489,7 +489,7 @@ if __name__ == '__main__':
         "I am busy", "Go away", "Don't disturb me",
         "Monetary policies", "Interest rates", "Deposit rates",
     ]
-    lmo = LmPt(cache_folder=EnvRepo(repo_dir=os.environ.get("REPO_DIR", None)).MODELS_PRETRAINED_DIR)
+    lmo = LmPt(cache_folder=Env().MODELS_PRETRAINED_DIR)
 
     embeddings = lmo.encode(content_list=texts, return_tensors='np')
 

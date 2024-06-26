@@ -1,13 +1,16 @@
 import os
 import re
+import logging
 from fitxf.math.utils.File import FileUtils
+from inspect import getsourcefile
 
 
 class Env:
 
     @staticmethod
-    def get_directory_separator():
-        return '/' if os.name not in ['nt'] else '\\'
+    def get_source_code_path():
+        path = os.path.abspath(getsourcefile(lambda: 0))
+        return path
 
     @staticmethod
     def get_home_dir():
@@ -15,7 +18,7 @@ class Env:
 
     @staticmethod
     def get_home_download_dir():
-        dir = str(Env.get_home_dir()) + Env.get_directory_separator() + 'Downloads'
+        dir = str(Env.get_home_dir()) + os.sep + 'Downloads'
         if not os.path.isdir(dir):
             os.mkdir(dir)
         return dir
@@ -31,8 +34,53 @@ class Env:
             os.environ[varname] = value
             print('Set env var ' + str(varname) + ' = "' + str(value) + '"')
 
+    def __init__(
+            self,
+            model_version = 'latest',
+            logger = None,
+    ):
+        self.model_version = model_version
+        self.logger = logger if logger is not None else logging.getLogger()
+
+        try:
+            import google.colab
+            self.in_google_colab = True
+            self.logger.info('Detected Colab environment')
+        except:
+            self.in_google_colab = False
+
+        self.logger.info('In Google Colab "' + str(self.in_google_colab) + '"')
+
+        if self.in_google_colab:
+            self.REPO_DIR = '/content/drive/My Drive/colab/poc'
+        else:
+            self.REPO_DIR = self.guess_repo_dir()
+            self.logger.info('Not in any special environment, using repo dir "' + str(self.REPO_DIR) + '"')
+
+        self.logger.info('Set to different environment, REPO_DIR "' + str(self.REPO_DIR))
+
+        self.MODELS_PRETRAINED_DIR = self.REPO_DIR + '/_models/' + self.model_version
+        self.CONFIG_DIR = self.REPO_DIR + r'/config'
+
+        # ----- NLP DATASETS -----
+        self.NLP_DATASET_DIR = self.REPO_DIR + r'/data/nlp-datasets'
+
+    def guess_repo_dir(self):
+        try:
+            repo_dir = os.environ['REPO_DIR']
+        except Exception as ex:
+            self.logger.info('Failed to get repo directory from env var "REPO_DIR", got exception ' + str(ex))
+            src_code_path = self.get_source_code_path()
+            self.logger.info('Try to guess repo dir from cwd "' + str(src_code_path) + '"')
+            # Look "/src/" in Linux or "\src\" in Windows
+            repo_dir = re.sub(pattern="(/src/.*)|([\\\\]src[\\\\].*)", repl="", string=src_code_path)
+            print('Repository directory guessed as "' + str(repo_dir) + '"')
+        return repo_dir
+
 
 if __name__ == '__main__':
+    print(Env.get_source_code_path())
     print(Env.get_home_dir())
     print(Env.get_home_download_dir())
-    print(Env.get_directory_separator())
+    print(Env().REPO_DIR)
+    exit(0)

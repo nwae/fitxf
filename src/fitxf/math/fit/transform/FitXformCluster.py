@@ -8,8 +8,8 @@ from fitxf.math.fit.utils.FitUtils import FitUtils
 from fitxf.math.fit.cluster.Cluster import Cluster
 from fitxf.math.fit.cluster.ClusterCosine import ClusterCosine
 from fitxf.math.utils.Lock import Lock
-from fitxf.math.utils.EnvironRepo import EnvRepo
 from fitxf.math.utils.Logging import Logging
+from fitxf.math.utils.Env import Env
 
 
 class FitXformCluster(FitXformInterface):
@@ -466,7 +466,7 @@ if __name__ == '__main__':
         "Monetary policies", "Interest rates", "Deposit rates",
     ]
     labels = ['coffee', 'coffee', 'coffee', 'busy', 'busy', 'busy', 'ir', 'ir', 'ir']
-    lmo = LmPt(cache_folder=EnvRepo(repo_dir=os.environ.get("REPO_DIR", None)).MODELS_PRETRAINED_DIR)
+    lmo = LmPt(cache_folder=Env().MODELS_PRETRAINED_DIR)
 
     embeddings = lmo.encode(content_list=texts, return_tensors='np')
 

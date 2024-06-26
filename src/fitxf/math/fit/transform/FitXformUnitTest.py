@@ -8,7 +8,7 @@ from fitxf.math.data.ut.LabelTextEmbed01 import DATA_LABEL_TEXT_EMBEDDING_01_TRA
 from fitxf.math.fit.transform.FitXformInterface import FitXformInterface
 from fitxf.math.fit.transform.FitXformPca import FitXformPca
 from fitxf.math.fit.transform.FitXformCluster import FitXformCluster, FitXformClusterCosine
-from fitxf.math.utils.EnvironRepo import EnvRepo
+from fitxf.math.utils.Env import Env
 from fitxf.math.utils.Logging import Logging
 
 
@@ -327,7 +327,7 @@ class FitXformUnitTest:
 
 if __name__ == '__main__':
     FitXformUnitTest(
-        lm_cache_folder = EnvRepo(repo_dir=os.environ.get("REPO_DIR", None)).MODELS_PRETRAINED_DIR,
+        lm_cache_folder = Env().MODELS_PRETRAINED_DIR,
         logger = Logging.get_default_logger(log_level=logging.INFO, propagate=False),
     ).test()
     exit(0)

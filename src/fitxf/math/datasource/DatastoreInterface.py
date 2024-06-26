@@ -4,7 +4,6 @@ import threading
 import os
 import builtins
 from fitxf.math.utils.Env import Env
-from fitxf.math.utils.EnvironRepo import EnvRepo
 from fitxf.math.utils.Logging import Logging
 
 
@@ -320,7 +319,7 @@ class DatastoreInterfaceUnitTest:
 
 
 if __name__ == '__main__':
-    er = EnvRepo(repo_dir=os.environ.get("REPO_DIR", None))
+    er = Env()
     Env.set_env_vars_from_file(env_filepath= er.REPO_DIR + '/.env.fitxf.math')
     Logging.get_logger_from_env_var()
     dbp = DbParams.get_db_params_from_envvars(

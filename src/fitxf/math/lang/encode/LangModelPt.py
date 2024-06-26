@@ -4,7 +4,7 @@ import os
 from fitxf.math.lang.encode.LangModelInterface import LangModelInterface
 from transformers import AutoTokenizer, AutoModel
 from sentence_transformers import SentenceTransformer
-from fitxf.math.utils.EnvironRepo import EnvRepo
+from fitxf.math.utils.Env import Env
 from fitxf.math.utils.Logging import Logging
 
 
@@ -129,7 +129,7 @@ class LangModelPt(LangModelInterface):
 
 
 if __name__ == '__main__':
-    er = EnvRepo(repo_dir=os.environ.get("REPO_DIR", None))
+    er = Env()
     lgr = Logging.get_default_logger(log_level=logging.INFO, propagate=False)
 
     lm = LangModelPt(

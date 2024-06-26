@@ -11,7 +11,6 @@ from fitxf.math.datasource.vecdb.model.ModelInterface import ModelInterface, Mod
 from fitxf.math.datasource.vecdb.metadata.MetadataInterface import MetadataInterface
 from fitxf.math.utils.Logging import Logging
 from fitxf.math.utils.Env import Env
-from fitxf.math.utils.EnvironRepo import EnvRepo
 
 
 class ModelFitTransform(ModelInterface):
@@ -424,7 +423,7 @@ if __name__ == '__main__':
     from fitxf.math.datasource.vecdb.model.ModelDb import ModelDb
     from fitxf.math.datasource.vecdb.metadata.Metadata import ModelMetadata
     lgr = Logging.get_default_logger(log_level=logging.INFO, propagate=False)
-    er = EnvRepo(repo_dir=os.environ.get("REPO_DIR", None))
+    er = Env()
     Env.set_env_vars_from_file(env_filepath=er.REPO_DIR + '/.env.fitxf.math.ut')
     user_id = 'test_modelfitxf'
     db_prms = DbParams.get_db_params_from_envvars(

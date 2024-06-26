@@ -1,5 +1,4 @@
 from fitxf.math.utils.Env import Env
-from fitxf.math.utils.EnvironRepo import EnvRepo
 from fitxf.math.utils.Logging import Logging
 from fitxf.math.utils.Lock import Lock
 from fitxf.math.utils.Singleton import Singleton, SingletonMemoryMgmt, SingletonUnitTest

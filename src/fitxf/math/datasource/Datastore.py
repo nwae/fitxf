@@ -3,7 +3,6 @@ import re
 from fitxf.math.datasource.DatastoreInterface import DbParams
 from fitxf.math.datasource.Csv import Csv
 from fitxf.math.utils.Env import Env
-from fitxf.math.utils.EnvironRepo import EnvRepo
 
 
 class Datastore:
@@ -32,7 +31,7 @@ class Datastore:
 
 
 if __name__ == '__main__':
-    Env.set_env_vars_from_file(env_filepath=EnvRepo().REPO_DIR + '/.env.fitxf.math.ut')
+    Env.set_env_vars_from_file(env_filepath=Env().REPO_DIR + '/.env.fitxf.math.ut')
     dbp = DbParams.get_db_params_from_envvars(identifier='test', db_create_tbl_sql='', db_table='test_table')
     db = Datastore(db_params=dbp)
     db.get_data_store()

@@ -8,7 +8,7 @@ from fitxf.math.algo.encoding.Base64 import Base64
 from fitxf.math.fit.utils.FitUtils import FitUtils
 from sklearn.decomposition import PCA
 from fitxf.math.fit.utils.TensorUtils import TensorUtils
-from fitxf.math.utils.EnvironRepo import EnvRepo
+from fitxf.math.utils.Env import Env
 from fitxf.math.utils.Logging import Logging
 
 
@@ -398,7 +398,7 @@ class FitXformInterfaceUnitTest:
         labels = ['d', 'd', 'd', 'x', 'x', 'x', '$', '$', '$']
         lmo = LangModelPtSingleton.get_singleton(
             LmClass = LangModelPt,
-            cache_folder = EnvRepo(repo_dir=os.environ.get("REPO_DIR", None)).MODELS_PRETRAINED_DIR,
+            cache_folder = Env().MODELS_PRETRAINED_DIR,
             logger = self.logger,
         )
 

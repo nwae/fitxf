@@ -11,7 +11,7 @@ from fitxf.math.fit.cluster.ClusterCosine import ClusterCosine
 from fitxf.math.lang.encode.LangModelPtSingleton import LangModelPtSingleton, LangModelInterface
 from fitxf.math.lang.encode.LangModelPt import LangModelPt
 from fitxf.math.utils.Logging import Logging
-from fitxf.math.utils.EnvironRepo import EnvRepo
+from fitxf.math.utils.Env import Env
 from fitxf.math.utils.Pandas import Pandas
 
 
@@ -30,7 +30,7 @@ class ClusterCosineUnitTest:
     def test_nlp(
             self,
     ):
-        er = EnvRepo(repo_dir=os.environ.get("REPO_DIR", None))
+        er = Env()
         sample_data_csv = er.NLP_DATASET_DIR + '/lang-model-test/data.csv'
         # Force to only use pre-calculated embedding
         # is_csv_exist = os.path.exists(sample_data_csv)
