@@ -84,7 +84,7 @@ class ModelFitTransform(ModelInterface):
                 continue
             try:
                 self.update_model(
-                    test_mode = os.environ["VECDB_FIT_XFORM_MODEL_TEST_MODE"].lower() in ['1', 'true', 'yes'],
+                    test_mode = self.in_plain_or_test_mode,
                 )
             except Exception as ex:
                 self.logger.error('Error updating model compression from scheduled job: ' + str(ex))
@@ -117,7 +117,7 @@ class ModelFitTransform(ModelInterface):
                 'Invalid model base64 string "' + str(mtd_row) + '", proceed to update model..'
             )
             self.update_model(
-                test_mode = os.environ["VECDB_FIT_XFORM_MODEL_TEST_MODE"].lower() in ['1', 'true', 'yes'],
+                test_mode = self.in_plain_or_test_mode,
             )
         else:
             try:
@@ -275,7 +275,7 @@ class ModelFitTransform(ModelInterface):
                 + str(text_list_or_embeddings)
             )
             self.update_model(
-                test_mode = os.environ["VECDB_FIT_XFORM_MODEL_TEST_MODE"].lower() in ['1', 'true', 'yes'],
+                test_mode = self.in_plain_or_test_mode,
             )
         else:
             self.logger.info(

@@ -7,8 +7,8 @@ from datetime import datetime
 
 class Logging:
 
-    LOGGER_NAME_DEFAULT = 'fitxf.math'
-    LOGGER_FILENAME_DEFAULT = 'fitxf.math'
+    LOGGER_NAME_DEFAULT = 'fitxf'
+    LOGGER_FILENAME_DEFAULT = 'fitxf'
 
     LOG_FORMAT_DEFAULT = '%(asctime)s: %(name)s: %(levelname)s: <%(filename)s> "%(funcName)s" line #%(lineno)d:\t%(message)s'
 
@@ -46,10 +46,15 @@ class Logging:
 
     @staticmethod
     def get_logger_from_env_var():
+        log_level = logging.DEBUG if os.environ["LOGGER_LEVEL"].lower() == "debug" else None
+        log_level = logging.WARN if os.environ["LOGGER_LEVEL"].lower() == "warn" else log_level
+        log_level = logging.ERROR if os.environ["LOGGER_LEVEL"].lower() == "error" else log_level
+        log_level = logging.INFO if log_level is None else log_level
+
         if os.environ["LOGGER_TYPE"] == 'rotatingfile':
             return Logging.get_logger_rotating_file(
                 logger_name = os.environ["LOGGER_NAME"],
-                log_level = logging.INFO,
+                log_level = log_level,
                 filename = os.environ["LOGGER_FILE_PATH"],
                 max_bytes = int(os.environ["LOGGER_MAX_MB"]) * 1048576,
                 backup_count = int(os.environ["LOGGER_BACKUP_COUNT"]),
@@ -57,7 +62,7 @@ class Logging:
             )
         else:
             return Logging.get_default_logger(
-                log_level = logging.INFO,
+                log_level = log_level,
                 propagate = False,
             )
 

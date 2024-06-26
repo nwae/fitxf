@@ -82,6 +82,9 @@ class ModelInterface:
             'LLM model path "' + str(self.llm_model_path)
             + '", encode numpy to base 64 in DB = ' + str(self.numpy_to_b64_for_db)
         )
+        self.in_plain_or_test_mode = \
+            os.environ.get("VECDB_FIT_XFORM_MODEL_TEST_MODE", '0').lower() in ['1', 'true', 'yes']
+        self.logger.info('Model in plain/test mode set to "' + str(self.in_plain_or_test_mode) + '"')
         
         self.bg_thread = threading.Thread(target=self.run_bg_thread)
         self.bg_thread_sleep_secs = float(os.environ.get("VECDB_BG_SLEEP_SECS", "10."))
