@@ -1,3 +1,5 @@
+# This is to make sure python <=3.8 will not throw error for types like "list[dict]"
+from __future__ import annotations
 import warnings
 import logging
 import threading
