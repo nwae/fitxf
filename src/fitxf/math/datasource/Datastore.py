@@ -22,12 +22,14 @@ class Datastore:
         if self.db_params.db_type == 'csv':
             assert not re.match(pattern="/", string=self.db_params.db_table), \
                 'Must not contain full path in table name or index "' + str(self.db_params.db_table) + '"'
-            return Csv(
-                db_params = self.db_params,
-                logger = self.logger,
-            )
+            DbClass = Csv
         else:
             raise Exception('Not supported data store type "' + str(self.db_params.db_type) + '"')
+
+        return DbClass(
+            db_params = self.db_params,
+            logger = self.logger,
+        )
 
 
 if __name__ == '__main__':
