@@ -1,12 +1,12 @@
 [project]
 name = "fitxf"
-version = "0.2.43"
+version = "0.2.44"
 authors = [
   { name="HH" },
 ]
 description = "Fit & Predict Utils"
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 dependencies = [
     'matplotlib >= 3.0.0',
     'numpy >= 1.20.0',
