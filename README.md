@@ -195,9 +195,11 @@ print('old centers',centers)
 print('new centers',res_fit_new['centers'])
 ```
 
-### Vector DB Models
+### Tensor DB Models
 
 The math is simple, but the technical implementation is orders
 of magnitude far more complicated.
 Transformed data needs to be updated to storage for subsequent
 level searches, model & data needs to be kept in sync, etc.
+
+To be updated..
