@@ -110,20 +110,28 @@ class MathUtils:
             # self.logger.debug('Base N = ' + str(base))
             converted_bases = []
             for idx in match_start_indexes_1d:
-                nbr_rep = []
-                n = idx
-                while n > 0:
-                    remainder = int(n % base)
-                    nbr_rep.append(remainder)
-                    n = (n - remainder) / base
-                while len(nbr_rep) < x.ndim:
-                    nbr_rep.append(0)
-                nbr_rep.reverse()
+                nbr_rep = self.convert_to_base(n=idx, base=base, n_digits=x.ndim)
                 converted_bases.append(nbr_rep)
                 # self.logger.debug('Converted idx ' + str(idx) + ' to base ' + str(base) + ' number: ' + str(nbr_rep))
             return converted_bases
         else:
             return self.match_template_1d(x=x, seq=seq)
+
+    def convert_to_base(
+            self,
+            n,      # base 10 number
+            base,   # base to convert to
+            n_digits = 0,
+    ):
+        nbr_rep = []
+        while n > 0:
+            remainder = int(n % base)
+            nbr_rep.append(remainder)
+            n = (n - remainder) / base
+        while len(nbr_rep) < n_digits:
+            nbr_rep.append(0)
+        nbr_rep.reverse()
+        return nbr_rep
 
     def sample_random_no_repeat(
             self,
@@ -142,9 +150,19 @@ class MathUtils:
 class MathUtilsUnitTest:
     def __init__(self, logger=None):
         self.logger = logger if logger is not None else logging.getLogger()
+        self.mu = MathUtils(logger=self.logger)
         return
 
     def test(self):
+        for n, base, exp in [
+            (19, 5, [3, 4]),
+            (29, 13, [2, 3]),
+            (38, 13, [2, 12]),
+        ]:
+            res = self.mu.convert_to_base(n=n, base=base)
+            assert res == exp, \
+                'Test base convertion n=' + str(n) + ', base=' + str(base) + ', exp=' + str(exp) + ', res=' + str(res)
+
         self.test_1d()
         self.logger.info('1-DIMENSION TESTS PASSED')
         self.test_2d()
@@ -185,6 +203,7 @@ class MathUtilsUnitTest:
 
         for seq, exp_matches in [
             (np.array([[1, 2, nan, nan, nan], [6, 7, nan, nan, nan]]), np.array([[0,1], [2,1]])),
+            # (np.array([[1, 2], [6, 7]]), np.array([[0, 1], [2, 1]])),
         ]:
             match_idxs = mu.match_template(x=x, seq=seq)
             assert np.sum((np.array(match_idxs) - exp_matches)**2) < 0.0000000001, \
