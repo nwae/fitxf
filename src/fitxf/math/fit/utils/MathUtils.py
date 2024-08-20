@@ -99,10 +99,30 @@ class MathUtils:
                 seq_1d = seq_1d[:-1]
         self.logger.debug('Sequence flattened ' + str(seq_1d))
 
-        res = self.match_template_1d(x=x_1d, seq=seq_1d)
-        self.logger.debug('Match 1d result ' + str(res))
+        match_start_indexes_1d = self.match_template_1d(x=x_1d, seq=seq_1d)
+        self.logger.debug('Match 1d result ' + str(match_start_indexes_1d))
 
-        return res
+        # Convert to ndim, same as converting to a base-N number
+        N = np.prod(x.shape)
+        base = int(N / x.shape[0])
+        self.logger.debug('Base N = ' + str(base))
+        if base > 1:
+            converted_bases = []
+            for idx in match_start_indexes_1d:
+                nbr_rep = []
+                n = idx
+                while n > 0:
+                    remainder = int(n % base)
+                    nbr_rep.append(remainder)
+                    n = (n - remainder) / base
+                while len(nbr_rep) < x.ndim:
+                    nbr_rep.append(0)
+                nbr_rep.reverse()
+                converted_bases.append(nbr_rep)
+                self.logger.debug('Converted idx ' + str(idx) + ' to base ' + str(base) + ' number: ' + str(nbr_rep))
+            return np.array(converted_bases)
+        else:
+            return match_start_indexes_1d
 
     def sample_random_no_repeat(
             self,
@@ -163,7 +183,7 @@ class MathUtilsUnitTest:
         self.logger.info('2D test data:\n' + str(x))
 
         for seq, exp_matches in [
-            (np.array([[1, 2, nan, nan, nan], [6, 7, nan, nan, nan]]), np.array([1, 11])),
+            (np.array([[1, 2, nan, nan, nan], [6, 7, nan, nan, nan]]), np.array([[0,1], [2,1]])),
         ]:
             match_idxs = mu.match_template(x=x, seq=seq)
             assert np.sum((np.array(match_idxs) - exp_matches)**2) < 0.0000000001, \
