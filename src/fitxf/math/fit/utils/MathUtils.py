@@ -3,6 +3,7 @@ import numpy as np
 from fitxf.math.utils.Logging import Logging
 
 
+# Important Note: Logging commented out in release version as it slows down code by hundreds of milliseconds.
 class MathUtils:
   
     def __init__(
@@ -48,22 +49,22 @@ class MathUtils:
         #     ...
         #   ]
         template_matching_indices = template_matching_indices + r_seq
-        self.logger.debug('Template matching indices final: ' + str(template_matching_indices))
+        # self.logger.debug('Template matching indices final: ' + str(template_matching_indices))
         # Find matches
         template_matches = x[template_matching_indices] == seq
-        self.logger.debug('Template matches for seq ' + str(seq) + ': ' + str(template_matches))
+        # self.logger.debug('Template matches for seq ' + str(seq) + ': ' + str(template_matches))
 
         #
         # nan means "*" match like in string regex
         #
         nan_positions = np.isnan(seq)
-        self.logger.debug('nan positions: ' + str(nan_positions))
+        # self.logger.debug('nan positions: ' + str(nan_positions))
         template_matches = 1 * (template_matches | nan_positions)
-        self.logger.debug('Template matches with nan for seq ' + str(seq) + ': ' + str(template_matches))
+        # self.logger.debug('Template matches with nan for seq ' + str(seq) + ': ' + str(template_matches))
 
         # Match is when all are 1's
         match_start_indexes = 1 * (np.sum(template_matches, axis=-1) == len(seq))
-        self.logger.debug('Match start indexes: ' + str(match_start_indexes))
+        # self.logger.debug('Match start indexes: ' + str(match_start_indexes))
 
         # Get the range of those indices as final output
         if match_start_indexes.any() > 0:
@@ -91,22 +92,22 @@ class MathUtils:
         assert x.ndim == seq.ndim, 'Dimensions do not match, x dim ' + str(x.ndim) + ', seq dim ' + str(seq.ndim)
         n_dim = x.ndim
 
-        x_1d = x.flatten()
-        seq_1d = seq.flatten()
-        # Remove ending nan(s)
-        for i in range(len(seq_1d)):
-            if np.isnan(seq_1d[-1]):
-                seq_1d = seq_1d[:-1]
-        self.logger.debug('Sequence flattened ' + str(seq_1d))
-
-        match_start_indexes_1d = self.match_template_1d(x=x_1d, seq=seq_1d)
-        self.logger.debug('Match 1d result ' + str(match_start_indexes_1d))
-
         # Convert to ndim, same as converting to a base-N number
-        N = np.prod(x.shape)
-        base = int(N / x.shape[0])
-        self.logger.debug('Base N = ' + str(base))
-        if base > 1:
+        if n_dim > 1:
+            x_1d = x.flatten()
+            seq_1d = seq.flatten()
+            # Remove ending nan(s)
+            for i in range(len(seq_1d)):
+                if np.isnan(seq_1d[-1]):
+                    seq_1d = seq_1d[:-1]
+            # self.logger.debug('Sequence flattened ' + str(seq_1d))
+
+            match_start_indexes_1d = self.match_template_1d(x=x_1d, seq=seq_1d)
+            # self.logger.debug('Match 1d result ' + str(match_start_indexes_1d))
+
+            N = np.prod(x.shape)
+            base = int(N / x.shape[0])
+            # self.logger.debug('Base N = ' + str(base))
             converted_bases = []
             for idx in match_start_indexes_1d:
                 nbr_rep = []
@@ -119,10 +120,10 @@ class MathUtils:
                     nbr_rep.append(0)
                 nbr_rep.reverse()
                 converted_bases.append(nbr_rep)
-                self.logger.debug('Converted idx ' + str(idx) + ' to base ' + str(base) + ' number: ' + str(nbr_rep))
+                # self.logger.debug('Converted idx ' + str(idx) + ' to base ' + str(base) + ' number: ' + str(nbr_rep))
             return converted_bases
         else:
-            return match_start_indexes_1d
+            return self.match_template_1d(x=x, seq=seq)
 
     def sample_random_no_repeat(
             self,
