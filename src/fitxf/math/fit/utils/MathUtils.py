@@ -120,7 +120,7 @@ class MathUtils:
                 nbr_rep.reverse()
                 converted_bases.append(nbr_rep)
                 self.logger.debug('Converted idx ' + str(idx) + ' to base ' + str(base) + ' number: ' + str(nbr_rep))
-            return np.array(converted_bases)
+            return converted_bases
         else:
             return match_start_indexes_1d
 
