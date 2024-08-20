@@ -93,31 +93,16 @@ class MathUtils:
 
         x_1d = x.flatten()
         seq_1d = seq.flatten()
-        self.logger.debug('Sequence start: ' + str(seq_1d))
-        l_x_cum = 1
-        for i in range(1, n_dim):
-            l_seq_cum = l_x_cum * seq.shape[-i]
-            l_x_cum = l_x_cum * x.shape[-i]
-            l_append = l_x_cum - l_seq_cum
-            self.logger.debug(
-                'At dim=' + str(-i) + ', len seq cum ' + str(l_seq_cum) + ', len x cum ' + str(l_x_cum)
-                + ' for x shape ' + str(x.shape)
-            )
-            assert l_append >= 0, 'Append length to seq cannot be negative ' + str(l_append)
-            parts = []
-            block_len = int(len(seq_1d) / l_seq_cum)
-            self.logger.debug('Block length ' + str(block_len))
-            for j in range(block_len):
-                parts += seq_1d[(j*l_seq_cum):((j*l_seq_cum) + seq.shape[-i])].tolist()
-                parts += [np.nan] * l_append
-                self.logger.debug('Parts #' + str(j) + ' ' + str(parts))
-            seq_1d = np.array(parts)
-            self.logger.debug('Sequence 1d: ' + str(seq_1d))
+        # Remove ending nan(s)
+        for i in range(len(seq_1d)):
+            if np.isnan(seq_1d[-1]):
+                seq_1d = seq_1d[:-1]
+        self.logger.debug('Sequence flattened ' + str(seq_1d))
 
         res = self.match_template_1d(x=x_1d, seq=seq_1d)
         self.logger.debug('Match 1d result ' + str(res))
 
-        return []
+        return res
 
     def sample_random_no_repeat(
             self,
@@ -159,7 +144,7 @@ class MathUtilsUnitTest:
             (np.array([9, 10, 11]), np.array([9])),
             # (np.array([1, 3, 5]), []),
         ]:
-            match_idxs = mu.match_template_1d(x=x, seq=seq)
+            match_idxs = mu.match_template(x=x, seq=seq)
             assert np.sum((np.array(match_idxs) - exp_matches)**2) < 0.0000000001, \
                 'Match indexes ' + str(match_idxs) + ' not ' + str(exp_matches)
         return
@@ -174,9 +159,11 @@ class MathUtilsUnitTest:
         #  [5 6 7 8 9]]
         x = np.arange(20) % 10
         x.resize((4, 5))
+        nan = np.nan
         self.logger.info('2D test data:\n' + str(x))
+
         for seq, exp_matches in [
-            (np.array([[1, 2], [6, 7]]), np.array([1, 11])),
+            (np.array([[1, 2, nan, nan, nan], [6, 7, nan, nan, nan]]), np.array([1, 11])),
         ]:
             match_idxs = mu.match_template(x=x, seq=seq)
             assert np.sum((np.array(match_idxs) - exp_matches)**2) < 0.0000000001, \
