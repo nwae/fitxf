@@ -105,12 +105,11 @@ class MathUtils:
             match_start_indexes_1d = self.match_template_1d(x=x_1d, seq=seq_1d)
             # self.logger.debug('Match 1d result ' + str(match_start_indexes_1d))
 
-            N = np.prod(x.shape)
             bases = list(x.shape) + [1]
             # self.logger.debug('Base N = ' + str(base))
             converted_bases = []
             for idx in match_start_indexes_1d:
-                nbr_rep = self.convert_to_multibase_number(n=idx, bases=bases, n_digits=x.ndim)
+                nbr_rep = self.convert_to_multibase_number(n=idx, bases=bases, min_digits=x.ndim)
                 converted_bases.append(nbr_rep)
                 # self.logger.debug('Converted idx ' + str(idx) + ' to base ' + str(base) + ' number: ' + str(nbr_rep))
             return converted_bases
@@ -121,7 +120,7 @@ class MathUtils:
             self,
             n: int,      # base 10 number
             bases: list,   # base to convert to, e.g. [6, 11, 1] --> last digit always 1
-            n_digits: int = 0,
+            min_digits: int = 0,
     ):
         assert n >= 0
         nbr_rep = []
@@ -134,7 +133,7 @@ class MathUtils:
             self.logger.debug('idx=' + str(idx) + ', base=' + str(base) + ', remainder=' + str(remainder))
         if n > 0:
             nbr_rep.append(n)
-        while len(nbr_rep) < n_digits:
+        while len(nbr_rep) < min_digits:
             nbr_rep.append(0)
         nbr_rep.reverse()
         return nbr_rep
@@ -164,8 +163,14 @@ class MathUtilsUnitTest:
             (19, [5, 1], [3, 4]),
             (29, [13, 1], [2, 3]),
             (38, [13, 1], [2, 12]),
+            (0, [3, 2, 1], [0, 0]),
+            (1, [3, 2, 1], [0, 1]),
+            (5, [3, 2, 1], [2, 1]),
+            (5, [3, 2, 1, 1], [2, 1, 0]),
+            (5, [3, 2, 1, 1, 1], [2, 1, 0, 0]),
+            (29, [30, 20, 1], [1, 9]),
         ]:
-            res = self.mu.convert_to_multibase_number(n=n, bases=bases)
+            res = self.mu.convert_to_multibase_number(n=n, bases=bases, min_digits=len(bases)-1)
             assert res == exp, \
                 'Test base convertion n=' + str(n) + ', bases=' + str(bases) + ', exp=' + str(exp) + ', res=' + str(res)
 
