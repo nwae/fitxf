@@ -106,28 +106,34 @@ class MathUtils:
             # self.logger.debug('Match 1d result ' + str(match_start_indexes_1d))
 
             N = np.prod(x.shape)
-            base = int(N / x.shape[0])
+            bases = list(x.shape) + [1]
             # self.logger.debug('Base N = ' + str(base))
             converted_bases = []
             for idx in match_start_indexes_1d:
-                nbr_rep = self.convert_to_base(n=idx, base=base, n_digits=x.ndim)
+                nbr_rep = self.convert_to_multibase_number(n=idx, bases=bases, n_digits=x.ndim)
                 converted_bases.append(nbr_rep)
                 # self.logger.debug('Converted idx ' + str(idx) + ' to base ' + str(base) + ' number: ' + str(nbr_rep))
             return converted_bases
         else:
             return self.match_template_1d(x=x, seq=seq)
 
-    def convert_to_base(
+    def convert_to_multibase_number(
             self,
-            n,      # base 10 number
-            base,   # base to convert to
-            n_digits = 0,
+            n: int,      # base 10 number
+            bases: list,   # base to convert to, e.g. [6, 11, 1] --> last digit always 1
+            n_digits: int = 0,
     ):
+        assert n >= 0
         nbr_rep = []
-        while n > 0:
+        base = 1
+        for idx in range(len(bases)-1):
+            base *= bases[-(idx+2)]
             remainder = int(n % base)
             nbr_rep.append(remainder)
             n = (n - remainder) / base
+            self.logger.debug('idx=' + str(idx) + ', base=' + str(base) + ', remainder=' + str(remainder))
+        if n > 0:
+            nbr_rep.append(n)
         while len(nbr_rep) < n_digits:
             nbr_rep.append(0)
         nbr_rep.reverse()
@@ -154,14 +160,14 @@ class MathUtilsUnitTest:
         return
 
     def test(self):
-        for n, base, exp in [
-            (19, 5, [3, 4]),
-            (29, 13, [2, 3]),
-            (38, 13, [2, 12]),
+        for n, bases, exp in [
+            (19, [5, 1], [3, 4]),
+            (29, [13, 1], [2, 3]),
+            (38, [13, 1], [2, 12]),
         ]:
-            res = self.mu.convert_to_base(n=n, base=base)
+            res = self.mu.convert_to_multibase_number(n=n, bases=bases)
             assert res == exp, \
-                'Test base convertion n=' + str(n) + ', base=' + str(base) + ', exp=' + str(exp) + ', res=' + str(res)
+                'Test base convertion n=' + str(n) + ', bases=' + str(bases) + ', exp=' + str(exp) + ', res=' + str(res)
 
         self.test_1d()
         self.logger.info('1-DIMENSION TESTS PASSED')
