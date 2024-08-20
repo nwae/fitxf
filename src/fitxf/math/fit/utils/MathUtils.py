@@ -5,7 +5,7 @@ from fitxf.math.utils.Logging import Logging
 
 # Important Note: Logging commented out in release version as it slows down code by hundreds of milliseconds.
 class MathUtils:
-  
+
     def __init__(
             self,
             logger = None,
@@ -130,7 +130,7 @@ class MathUtils:
             remainder = int(n % base)
             nbr_rep.append(remainder)
             n = (n - remainder) / base
-            self.logger.debug('idx=' + str(idx) + ', base=' + str(base) + ', remainder=' + str(remainder))
+            # self.logger.debug('idx=' + str(idx) + ', base=' + str(base) + ', remainder=' + str(remainder))
         if n > 0:
             nbr_rep.append(n)
         while len(nbr_rep) < min_digits:
