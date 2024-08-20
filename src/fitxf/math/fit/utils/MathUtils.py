@@ -89,75 +89,35 @@ class MathUtils:
         x = np.array(x) if type(x) in (list, tuple) else x
         seq = np.array(seq) if type(seq) in (list, tuple) else seq
         assert x.ndim == seq.ndim, 'Dimensions do not match, x dim ' + str(x.ndim) + ', seq dim ' + str(seq.ndim)
-
         n_dim = x.ndim
 
-        # for dim in range(x.ndim):
-        #     assert len(seq[dim]) <= len(x[dim]), \
-        #         'At dim #' + str(dim) + ', sequence length ' + str(len(seq[dim])) \
-        #         + ' cannot be longer than x length ' + str(len(x[dim]))
+        x_1d = x.flatten()
+        seq_1d = seq.flatten()
+        self.logger.debug('Sequence start: ' + str(seq_1d))
+        l_x_cum = 1
+        for i in range(1, n_dim):
+            l_seq_cum = l_x_cum * seq.shape[-i]
+            l_x_cum = l_x_cum * x.shape[-i]
+            l_append = l_x_cum - l_seq_cum
+            self.logger.debug(
+                'At dim=' + str(-i) + ', len seq cum ' + str(l_seq_cum) + ', len x cum ' + str(l_x_cum)
+                + ' for x shape ' + str(x.shape)
+            )
+            assert l_append >= 0, 'Append length to seq cannot be negative ' + str(l_append)
+            parts = []
+            block_len = int(len(seq_1d) / l_seq_cum)
+            self.logger.debug('Block length ' + str(block_len))
+            for j in range(block_len):
+                parts += seq_1d[(j*l_seq_cum):((j*l_seq_cum) + seq.shape[-i])].tolist()
+                parts += [np.nan] * l_append
+                self.logger.debug('Parts #' + str(j) + ' ' + str(parts))
+            seq_1d = np.array(parts)
+            self.logger.debug('Sequence 1d: ' + str(seq_1d))
 
-        template_shape = [x.shape[i] - seq.shape[i] + 1 for i in range(n_dim)]
-        self.logger.debug(
-            'Template shape ' + str(template_shape) + ', sequence shape ' + str(seq.shape)
-        )
-        # l_x, l_seq = len(x), len(seq)
+        res = self.match_template_1d(x=x_1d, seq=seq_1d)
+        self.logger.debug('Match 1d result ' + str(res))
 
-        # Template for sequence
-        r_seq = np.array( np.arange(seq.shape[0]).tolist() * int(np.prod(seq.shape) / seq.shape[0]) )
-        r_seq.resize(seq.shape)
-        self.logger.debug('Sequence for matching ' + str(r_seq))
-
-        # Create the template matching indices in 2D. e.g.
-        #   [
-        #     [0],
-        #     [1],
-        #     [2],
-        #     ...
-        #     [n],
-        #     ...
-        #   ]
-        template_matching_indices = np.arange(template_shape[-1])
-        new_size = [len(template_matching_indices)]
-        for i in range(n_dim):
-            new_size = new_size + [1]
-            template_matching_indices.resize(new_size)
-            self.logger.debug('New size ' + str(new_size))
-        self.logger.debug('Template matching indices ' + str(n_dim) + 'D structure: ' + str(template_matching_indices))
-        # Create the template matching indices in 2D. e.g. for seq length 3
-        #   [
-        #     [0,1,2],
-        #     [1,2,3],
-        #     [2,3,4],
-        #     ...
-        #     [n,n+1,n+2],
-        #     ...
-        #   ]
-        template_matching_indices = template_matching_indices + r_seq
-        self.logger.debug('Template matching indices final: ' + str(template_matching_indices))
-        # Find matches
-        self.logger.debug('x to index ' + str(x))
-        self.logger.debug('   with template ' + str(x[template_matching_indices]))
-        template_matches = 1 * (x[template_matching_indices] == seq)
-        self.logger.debug('Template matches: ' + str(template_matches))
-        match_start_indexes = 1 * (np.sum(template_matches, axis=-1) == len(seq))
-        self.logger.debug('Match start indexes: ' + str(match_start_indexes))
-
-        # Get the range of those indices as final output
-        if match_start_indexes.any() > 0:
-            res =  np.argwhere(match_start_indexes == 1).flatten().tolist()
-            # return {
-            #     'match_indexes': np.where(match_indexes == 1)[0],
-            #     'match_sequence': np.where(np.convolve(match_indexes, np.ones((Nseq), dtype=int)) > 0)[0]
-            # }
-        else:
-            res = []
-            # return {
-            #     'match_indexes': [],
-            #     'match_sequence': [],  # No match found
-            # }
-        self.logger.info('Match indexes type "' + str(type(res)) + '": ' + str(res))
-        return res
+        return []
 
     def sample_random_no_repeat(
             self,
@@ -180,6 +140,10 @@ class MathUtilsUnitTest:
 
     def test(self):
         self.test_1d()
+        self.logger.info('1-DIMENSION TESTS PASSED')
+        self.test_2d()
+        self.logger.info('2-DIMENSION TESTS PASSED')
+
         self.logger.info('ALL TESTS PASSED')
         return
 
