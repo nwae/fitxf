@@ -1,6 +1,7 @@
 import logging
 import numpy as np
 from fitxf.math.utils.Logging import Logging
+from fitxf.math.utils.Profile import Profiling
 
 
 # Important Note: Logging commented out in release version as it slows down code by hundreds of milliseconds.
@@ -178,13 +179,13 @@ class MathUtilsUnitTest:
         self.logger.info('1-DIMENSION TESTS PASSED')
         self.test_2d()
         self.logger.info('2-DIMENSION TESTS PASSED')
+        self.test_speed()
+        self.logger.info('SPEED TESTS PASSED')
 
         self.logger.info('ALL TESTS PASSED')
         return
 
     def test_1d(self):
-        mu = MathUtils(logger=self.logger)
-
         # Test 1D
         # array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
         x = np.arange(20) % 10
@@ -194,14 +195,12 @@ class MathUtilsUnitTest:
             (np.array([9, 10, 11]), np.array([9])),
             # (np.array([1, 3, 5]), []),
         ]:
-            match_idxs = mu.match_template(x=x, seq=seq)
+            match_idxs = self.mu.match_template(x=x, seq=seq)
             assert np.sum((np.array(match_idxs) - exp_matches)**2) < 0.0000000001, \
                 'Match indexes ' + str(match_idxs) + ' not ' + str(exp_matches)
         return
 
     def test_2d(self):
-        mu = MathUtils(logger=self.logger)
-
         # Test 2D
         # [[0 1 2 3 4]
         #  [5 6 7 8 9]
@@ -216,9 +215,32 @@ class MathUtilsUnitTest:
             (np.array([[1, 2, nan, nan, nan], [6, 7, nan, nan, nan]]), np.array([[0,1], [2,1]])),
             # (np.array([[1, 2], [6, 7]]), np.array([[0, 1], [2, 1]])),
         ]:
-            match_idxs = mu.match_template(x=x, seq=seq)
+            match_idxs = self.mu.match_template(x=x, seq=seq)
             assert np.sum((np.array(match_idxs) - exp_matches)**2) < 0.0000000001, \
                 'Match indexes ' + str(match_idxs) + ' not ' + str(exp_matches)
+        return
+
+    def test_speed(self):
+        profiler = Profiling(logger=self.logger)
+        x = np.arange(20) % 10
+        x.resize((4, 5))
+        nan = np.nan
+        start_time = profiler.start()
+        n = 1000
+        for i in range(n):
+            match_idxs = self.mu.match_template(
+                x = x,
+                seq = np.array([[1, 2, nan, nan, nan], [6, 7, nan, nan, nan]]),
+            )
+        diffsecs = profiler.get_time_dif_secs(start=start_time, stop=profiler.stop())
+        rps = round(n / diffsecs, 3)
+        msec_avg = round(1000 * diffsecs / n, 3)
+        self.logger.info(
+            'RPS match template n=' + str(n) + ', total secs=' + str(diffsecs) + ', rps=' + str(rps)
+            + ', msec avg=' + str(msec_avg)
+        )
+        assert rps > 10000, 'RPS n=' + str(n) + ', total=' + str(diffsecs) + 's, rps=' + str(rps)
+        assert msec_avg < 0.1, 'RPS n=' + str(n) + ', total=' + str(diffsecs) + 's, msec avg=' + str(msec_avg)
         return
 
 
