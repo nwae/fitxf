@@ -4,7 +4,9 @@ from fitxf.math.utils.Logging import Logging
 from fitxf.math.utils.Profile import Profiling
 
 
-# Important Note: Logging commented out in release version as it slows down code by hundreds of milliseconds.
+# Important Note:
+#     Logging of huge pandas/numpy arrays commented out in release version
+#     as it slows down code by hundreds of milliseconds.
 class MathUtils:
 
     def __init__(
@@ -80,7 +82,6 @@ class MathUtils:
             #     'match_indexes': [],
             #     'match_sequence': [],  # No match found
             # }
-        self.logger.info('Match indexes type "' + str(type(res)) + '": ' + str(res))
         return res
 
     def match_template(
