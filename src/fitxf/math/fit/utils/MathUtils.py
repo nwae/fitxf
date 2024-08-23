@@ -1,4 +1,5 @@
 import logging
+import os
 import numpy as np
 from fitxf.math.utils.Logging import Logging
 from fitxf.math.utils.Profile import Profiling
@@ -14,12 +15,16 @@ class MathUtils:
             logger = None,
     ):
         self.logger = logger if logger is not None else logging.getLogger()
+        self.enable_slow_logging_of_numpy = os.environ.get("ENABLE_SLOW_LOGGING", "false").lower() in ["true", "1"]
         return
 
     def match_template_1d(
             self,
             x: np.ndarray,
             seq: np.ndarray,
+            # None: label on start positions of sequences found
+            # "all": label on all positions
+            label_positions = None,
     ) -> list:
         x = np.array(x) if type(x) in (list, tuple) else x
         seq = np.array(seq) if type(seq) in (list, tuple) else seq
@@ -41,7 +46,8 @@ class MathUtils:
         #     ...
         #   ]
         template_matching_indices = np.arange(l_x - l_seq + 1)[:, None]
-        # self.logger.debug('Template matching indices 2D structure: ' + str(template_matching_indices))
+        if self.enable_slow_logging_of_numpy:
+            self.logger.debug('Template matching indices 2D structure: ' + str(template_matching_indices))
         # Create the template matching indices in 2D. e.g. for seq length 3
         #   [
         #     [0,1,2],
@@ -52,29 +58,37 @@ class MathUtils:
         #     ...
         #   ]
         template_matching_indices = template_matching_indices + r_seq
-        # self.logger.debug('Template matching indices final: ' + str(template_matching_indices))
+        if self.enable_slow_logging_of_numpy:
+            self.logger.debug('Template matching indices final: ' + str(template_matching_indices))
         # Find matches
         template_matches = x[template_matching_indices] == seq
-        # self.logger.debug('Template matches for seq ' + str(seq) + ': ' + str(template_matches))
+        if self.enable_slow_logging_of_numpy:
+            self.logger.debug('Template matches for seq ' + str(seq) + ': ' + str(template_matches))
 
         #
         # nan means "*" match like in string regex
         #
         nan_positions = np.isnan(seq)
-        # self.logger.debug('nan positions: ' + str(nan_positions))
+        if self.enable_slow_logging_of_numpy:
+            self.logger.debug('nan positions: ' + str(nan_positions))
         template_matches = 1 * (template_matches | nan_positions)
-        # self.logger.debug('Template matches with nan for seq ' + str(seq) + ': ' + str(template_matches))
+        if self.enable_slow_logging_of_numpy:
+            self.logger.debug('Template matches with nan for seq ' + str(seq) + ': ' + str(template_matches))
 
         # Match is when all are 1's
         match_start_indexes = 1 * (np.sum(template_matches, axis=-1) == len(seq))
-        # self.logger.debug('Match start indexes: ' + str(match_start_indexes))
+        if self.enable_slow_logging_of_numpy:
+            self.logger.debug('Match start indexes: ' + str(match_start_indexes))
+        match_all_indexes = np.convolve(match_start_indexes, np.ones(l_seq, dtype=int), mode='full')
+        if self.enable_slow_logging_of_numpy:
+            self.logger.debug('Match all indexes  : ' + str(match_all_indexes))
 
         # Get the range of those indices as final output
         if match_start_indexes.any() > 0:
             res =  np.argwhere(match_start_indexes == 1).flatten().tolist()
             # return {
-            #     'match_indexes': np.where(match_indexes == 1)[0],
-            #     'match_sequence': np.where(np.convolve(match_indexes, np.ones((Nseq), dtype=int)) > 0)[0]
+            #     'match_indexes': np.where(match_start_indexes == 1).flatten().tolist(),
+            #     'match_sequence': np.where(np.convolve(match_start_indexes, np.ones((l_seq), dtype=int)) > 0)[0]
             # }
         else:
             res = []
@@ -102,18 +116,20 @@ class MathUtils:
             for i in range(len(seq_1d)):
                 if np.isnan(seq_1d[-1]):
                     seq_1d = seq_1d[:-1]
-            # self.logger.debug('Sequence flattened ' + str(seq_1d))
+            if self.enable_slow_logging_of_numpy:
+                self.logger.debug('Sequence flattened ' + str(seq_1d))
 
             match_start_indexes_1d = self.match_template_1d(x=x_1d, seq=seq_1d)
-            # self.logger.debug('Match 1d result ' + str(match_start_indexes_1d))
+            if self.enable_slow_logging_of_numpy:
+                self.logger.debug('Match 1d result ' + str(match_start_indexes_1d))
 
             bases = list(x.shape) + [1]
-            # self.logger.debug('Base N = ' + str(base))
             converted_bases = []
             for idx in match_start_indexes_1d:
                 nbr_rep = self.convert_to_multibase_number(n=idx, bases=bases, min_digits=x.ndim)
                 converted_bases.append(nbr_rep)
-                # self.logger.debug('Converted idx ' + str(idx) + ' to base ' + str(base) + ' number: ' + str(nbr_rep))
+                if self.enable_slow_logging_of_numpy:
+                    self.logger.debug('Converted idx ' + str(idx) + ' to base ' + str(bases) + ' number: ' + str(nbr_rep))
             return converted_bases
         else:
             return self.match_template_1d(x=x, seq=seq)
@@ -132,7 +148,8 @@ class MathUtils:
             remainder = int(n % base)
             nbr_rep.append(remainder)
             n = (n - remainder) / base
-            # self.logger.debug('idx=' + str(idx) + ', base=' + str(base) + ', remainder=' + str(remainder))
+            if self.enable_slow_logging_of_numpy:
+                self.logger.debug('idx=' + str(idx) + ', base=' + str(base) + ', remainder=' + str(remainder))
         if n > 0:
             nbr_rep.append(n)
         while len(nbr_rep) < min_digits:
@@ -180,7 +197,17 @@ class MathUtilsUnitTest:
         self.logger.info('1-DIMENSION TESTS PASSED')
         self.test_2d()
         self.logger.info('2-DIMENSION TESTS PASSED')
-        self.test_speed()
+
+        os.environ["ENABLE_SLOW_LOGGING"] = "false"
+        rps_no_logging = self.test_speed()
+
+        os.environ["ENABLE_SLOW_LOGGING"] = "true"
+        try:
+            self.test_speed()
+        except Exception as ex:
+            self.logger.info(
+                'Expected to fail when slow logging enabled (RPS no logging=' + str(rps_no_logging) + '): ' + str(ex)
+            )
         self.logger.info('SPEED TESTS PASSED')
 
         self.logger.info('ALL TESTS PASSED')
@@ -222,6 +249,7 @@ class MathUtilsUnitTest:
         return
 
     def test_speed(self):
+        new_obj = MathUtils(logger=self.logger)
         profiler = Profiling(logger=self.logger)
         x = np.arange(20) % 10
         x.resize((4, 5))
@@ -229,7 +257,7 @@ class MathUtilsUnitTest:
         start_time = profiler.start()
         n = 1000
         for i in range(n):
-            match_idxs = self.mu.match_template(
+            _ = new_obj.match_template(
                 x = x,
                 seq = np.array([[1, 2, nan, nan, nan], [6, 7, nan, nan, nan]]),
             )
@@ -240,13 +268,13 @@ class MathUtilsUnitTest:
             'RPS match template n=' + str(n) + ', total secs=' + str(diffsecs) + ', rps=' + str(rps)
             + ', msec avg=' + str(msec_avg)
         )
-        assert rps > 10000, 'RPS n=' + str(n) + ', total=' + str(diffsecs) + 's, rps=' + str(rps)
-        assert msec_avg < 0.1, 'RPS n=' + str(n) + ', total=' + str(diffsecs) + 's, msec avg=' + str(msec_avg)
-        return
+        assert rps > 10000, 'FAILED RPS n=' + str(n) + ', total=' + str(diffsecs) + 's, rps=' + str(rps)
+        assert msec_avg < 0.1, 'FAILED RPS n=' + str(n) + ', total=' + str(diffsecs) + 's, msec avg=' + str(msec_avg)
+        return rps
 
 
 if __name__ == '__main__':
-    lgr = Logging.get_default_logger(log_level=logging.DEBUG, propagate=False)
+    lgr = Logging.get_default_logger(log_level=logging.INFO, propagate=False)
     MathUtilsUnitTest(logger=lgr).test()
     mu = MathUtils(logger=lgr)
     res = mu.sample_random_no_repeat(
