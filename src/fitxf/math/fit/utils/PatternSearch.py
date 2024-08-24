@@ -20,15 +20,6 @@ class PatternSearch:
         self.math_utils= MathUtils(logger=self.logger)
         return
 
-    def reverse_string(self, s: str):
-        string_rev = [c for c in s]
-        string_rev.reverse()
-        string_rev = ''.join([c for c in string_rev])
-        return string_rev
-
-    def string_of(self, x: np.ndarray):
-        return str(''.join([chr(o) for o in x]))
-
     def heuristic_guess_start_search_locations(
             self,
             x: np.ndarray,
