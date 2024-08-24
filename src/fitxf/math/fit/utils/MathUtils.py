@@ -25,7 +25,7 @@ class MathUtils:
             # None: label on start positions of sequences found
             # "all": label on all positions
             label_positions = None,
-    ) -> list:
+    ) -> dict:
         x = np.array(x) if type(x) in (list, tuple) else x
         seq = np.array(seq) if type(seq) in (list, tuple) else seq
         assert x.ndim == seq.ndim == 1
@@ -85,24 +85,28 @@ class MathUtils:
 
         # Get the range of those indices as final output
         if match_start_indexes.any() > 0:
-            res =  np.argwhere(match_start_indexes == 1).flatten().tolist()
-            # return {
-            #     'match_indexes': np.where(match_start_indexes == 1).flatten().tolist(),
-            #     'match_sequence': np.where(np.convolve(match_start_indexes, np.ones((l_seq), dtype=int)) > 0)[0]
-            # }
+            # res =  np.argwhere(match_start_indexes == 1).flatten().tolist()
+            res = {
+                'match_indexes': np.argwhere(
+                    match_start_indexes == 1
+                ).flatten().tolist(),
+                'match_sequence': np.argwhere(
+                    np.convolve(match_start_indexes, np.ones((l_seq), dtype=int) > 0)
+                ).flatten().tolist()
+            }
         else:
-            res = []
-            # return {
-            #     'match_indexes': [],
-            #     'match_sequence': [],  # No match found
-            # }
+            # res = []
+            res = {
+                'match_indexes': [],
+                'match_sequence': [],  # No match found
+            }
         return res
 
     def match_template(
             self,
             x: np.ndarray,
             seq: np.ndarray,
-    ) -> list:
+    ) -> dict:
         x = np.array(x) if type(x) in (list, tuple) else x
         seq = np.array(seq) if type(seq) in (list, tuple) else seq
         assert x.ndim == seq.ndim, 'Dimensions do not match, x dim ' + str(x.ndim) + ', seq dim ' + str(seq.ndim)
@@ -119,18 +123,47 @@ class MathUtils:
             if self.enable_slow_logging_of_numpy:
                 self.logger.debug('Sequence flattened ' + str(seq_1d))
 
-            match_start_indexes_1d = self.match_template_1d(x=x_1d, seq=seq_1d)
+            res = self.match_template_1d(x=x_1d, seq=seq_1d)
+            match_start_indexes_1d, match_seq_1d = res['match_indexes'], res['match_sequence']
             if self.enable_slow_logging_of_numpy:
-                self.logger.debug('Match 1d result ' + str(match_start_indexes_1d))
+                self.logger.debug('Match 1d result ' + str(res))
 
             bases = list(x.shape) + [1]
-            converted_bases = []
+            match_indexes = []
+            match_sequence = []
             for idx in match_start_indexes_1d:
                 nbr_rep = self.convert_to_multibase_number(n=idx, bases=bases, min_digits=x.ndim)
-                converted_bases.append(nbr_rep)
+                match_indexes.append(nbr_rep)
                 if self.enable_slow_logging_of_numpy:
-                    self.logger.debug('Converted idx ' + str(idx) + ' to base ' + str(bases) + ' number: ' + str(nbr_rep))
-            return converted_bases
+                    self.logger.debug(
+                        'Match indexes converted idx ' + str(idx) + ' to base ' + str(bases) + ' number: ' + str(nbr_rep)
+                    )
+            for idx in match_seq_1d:
+                nbr_rep = self.convert_to_multibase_number(n=idx, bases=bases, min_digits=x.ndim)
+                match_sequence.append(nbr_rep)
+                if self.enable_slow_logging_of_numpy:
+                    self.logger.debug(
+                        'Match sequence converted idx ' + str(idx) + ' to base ' + str(bases) + ' number: ' + str(nbr_rep)
+                    )
+            # self.logger.info('Converted match seq ' + str(match_seq_1d) + ' to ' + str(match_sequence))
+            shape_len_1d = int( len(match_seq_1d) / len(match_start_indexes_1d) )
+            # self.logger.info('Shape len 1d ' + str(shape_len_1d) + ' for ' + str(seq))
+            # Check if result spans across row/column/etc borders, which is not valid
+            span_min = np.min(np.array(match_sequence[:shape_len_1d]), axis=0)
+            span_max = np.max(np.array(match_sequence[:shape_len_1d]), axis=0)
+            span_shape = span_max - span_min + 1
+            seq_shape = np.array(list(seq.shape))
+            # self.logger.info('Span min: ' + str(span_min) + ' for ' + str(match_sequence[:shape_len_1d]))
+            # self.logger.info('Span max: ' + str(span_max) + ' for ' + str(match_sequence[:shape_len_1d]))
+            # self.logger.info(
+            #     'Span shape ' + str(span_shape) + ', seq shape ' + str(seq_shape) + ', diff ' + str(span_shape - seq_shape)
+            # )
+            not_cross_rows = np.max(span_shape - seq_shape) <= 0
+            #assert not_cross_rows, 'Span shape ' + str(span_shape) + ' cannot be greater ' + str(seq_shape)
+            if not_cross_rows:
+                return {'match_indexes': match_indexes, 'match_sequence': match_sequence}
+            else:
+                return {'match_indexes': [], 'match_sequence': []}
         else:
             return self.match_template_1d(x=x, seq=seq)
 
@@ -148,8 +181,8 @@ class MathUtils:
             remainder = int(n % base)
             nbr_rep.append(remainder)
             n = (n - remainder) / base
-            if self.enable_slow_logging_of_numpy:
-                self.logger.debug('idx=' + str(idx) + ', base=' + str(base) + ', remainder=' + str(remainder))
+            # if self.enable_slow_logging_of_numpy:
+            #     self.logger.debug('idx=' + str(idx) + ', base=' + str(base) + ', remainder=' + str(remainder))
         if n > 0:
             nbr_rep.append(n)
         while len(nbr_rep) < min_digits:
@@ -217,15 +250,19 @@ class MathUtilsUnitTest:
         # Test 1D
         # array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
         x = np.arange(20) % 10
-        for seq, exp_matches in [
-            (np.array([1, 2, 3, 4]), np.array([1, 11])),
-            (np.array([1, np.nan, np.nan, 4]), np.array([1, 11])),
-            (np.array([9, 10, 11]), np.array([9])),
+        for i, (seq, exp_matches, exp_seq) in enumerate([
+            (np.array([1, 2, 3, 4]), np.array([1, 11]), np.array([1,  2,  3,  4, 11, 12, 13, 14])),
+            (np.array([1, np.nan, np.nan, 4]), np.array([1, 11]), np.array([1,  2,  3,  4, 11, 12, 13, 14])),
+            (np.array([9, 10, 11]), np.array([]), np.array([])),
             # (np.array([1, 3, 5]), []),
-        ]:
-            match_idxs = self.mu.match_template(x=x, seq=seq)
+        ]):
+            res = self.mu.match_template(x=x, seq=seq)
+            match_idxs, match_seq = res['match_indexes'], res['match_sequence']
+            self.logger.info('Test result 1D #' + str(i) + ': ' + str(res))
             assert np.sum((np.array(match_idxs) - exp_matches)**2) < 0.0000000001, \
-                'Match indexes ' + str(match_idxs) + ' not ' + str(exp_matches)
+                '#' + str(i) + ' Match indexes ' + str(match_idxs) + ' not ' + str(exp_matches)
+            assert np.sum((np.array(match_seq) - exp_seq)**2) < 0.0000000001, \
+                '#' + str(i) +' Match sequence ' + str(match_seq) + ' not ' + str(exp_seq)
         return
 
     def test_2d(self):
@@ -239,13 +276,21 @@ class MathUtilsUnitTest:
         nan = np.nan
         self.logger.info('2D test data:\n' + str(x))
 
-        for seq, exp_matches in [
-            (np.array([[1, 2, nan, nan, nan], [6, 7, nan, nan, nan]]), np.array([[0,1], [2,1]])),
-            # (np.array([[1, 2], [6, 7]]), np.array([[0, 1], [2, 1]])),
-        ]:
-            match_idxs = self.mu.match_template(x=x, seq=seq)
+        for i, (seq, exp_matches, exp_seq) in enumerate([
+            (np.array([[1, 2, nan, nan, nan], [6, 7, nan, nan, nan]]), np.array([[0,1], [2,1]]),
+             np.array([[0, 1], [0, 2], [0, 3], [0, 4], [1, 0], [1, 1], [1, 2], [2, 1], [2, 2], [2, 3], [2, 4], [3, 0], [3, 1], [3, 2]])),
+            # (np.array([[1, 2], [6, 7]]), np.array([[0, 1], [2, 1]]), np.array([])),
+            # Test invalid of cross rows
+            (np.array([[4, 5, nan, nan, nan], [9, 0, nan, nan, nan]]), np.array([]),
+             np.array([])),
+        ]):
+            res = self.mu.match_template(x=x, seq=seq)
+            match_idxs, match_seq = res['match_indexes'], res['match_sequence']
+            self.logger.info('Test result 2D #' + str(i) + ': ' + str(res))
             assert np.sum((np.array(match_idxs) - exp_matches)**2) < 0.0000000001, \
-                'Match indexes ' + str(match_idxs) + ' not ' + str(exp_matches)
+                '#' + str(i) + ' Match indexes ' + str(match_idxs) + ' not ' + str(exp_matches)
+            assert np.sum((np.array(match_seq) - exp_seq) ** 2) < 0.0000000001, \
+                '#' + str(i) + ' Match sequence ' + str(match_seq) + ' not ' + str(exp_seq)
         return
 
     def test_speed(self):
@@ -274,6 +319,7 @@ class MathUtilsUnitTest:
 
 
 if __name__ == '__main__':
+    # os.environ["ENABLE_SLOW_LOGGING"] = "true"
     lgr = Logging.get_default_logger(log_level=logging.INFO, propagate=False)
     MathUtilsUnitTest(logger=lgr).test()
     mu = MathUtils(logger=lgr)
