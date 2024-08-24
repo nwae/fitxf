@@ -118,7 +118,7 @@ class PatternSearch:
             density_repeat_thr: float = 0.8,
             coverage_thr: float = 0.5,
             # roughly 10 words
-            min_char_len: int = 64,
+            min_seq_len: int = 64,
             hint_separators: list = (".", ":", ";", " "),
             top_k_hints: int = 10,
             stagnant_at_optimal_count_thr: int = 5,
@@ -129,7 +129,7 @@ class PatternSearch:
         hint_prefix_indexes = self.heuristic_guess_start_search_locations(
             x = x,
             possible_start_values = np.array([ord(c) for c in hint_separators]),
-            seq_len = min_char_len,
+            seq_len = min_seq_len,
             top_k = top_k_hints,
         )
 
@@ -138,12 +138,12 @@ class PatternSearch:
             match_indexes_start = np.array(indexes)
             intervals = match_indexes_start[1:] - match_indexes_start[:-1]
             max_interval = np.min(intervals)
-            min_interval = min_char_len
+            min_interval = min_seq_len
             if min_interval > max_interval:
                 continue
             seq_list = [min_interval]
             self.logger.info(
-                'Using min interval ' + str(min_char_len) + ', max interval ' + str(max_interval)
+                'Using min interval ' + str(min_seq_len) + ', max interval ' + str(max_interval)
                 + ' for index intervals: ' + str(intervals)
             )
             ind_optimal = None
@@ -406,7 +406,7 @@ class PatternSearchUnitTest:
         for s, exp_repeats in strings:
             res = patsearch.find_repeat_sequences(
                 x = np.array([ord(c) for c in s]),
-                min_char_len = 3,
+                min_seq_len = 3,
                 density_repeat_thr = 1.0,
                 coverage_thr = 1.0,
                 hint_separators = [" "],
@@ -461,7 +461,7 @@ class PatternSearchUnitTest:
         ]):
             res = patsearch.find_repeat_sequences(
                 x = np.array([ord(c) for c in s]),
-                min_char_len = min_c_len,
+                min_seq_len = min_c_len,
                 hint_separators = hint_sep,
                 density_repeat_thr = den_thr,
                 coverage_thr = cov_thr,
@@ -493,7 +493,7 @@ class PatternSearchUnitTest:
         long_string = long_string + " ".join([str(v) for v in np.arange(10).tolist()])
         res = patsearch.find_repeat_sequences(
             x = np.array([ord(c) for c in long_string]),
-            min_char_len = 11,
+            min_seq_len = 11,
             hint_separators = ["\n"],
             stagnant_at_optimal_count_thr = 100,
             string_convert_result = True,
@@ -516,7 +516,7 @@ class PatternSearchUnitTest:
                 x = np.array([
                     ord(c) for c in "Test 1 Test 1 Test 1 Test 1 Test 1 Test 1 Test 1 Test 1 Test 1 Test 1 Test 1"]
                 ),
-                min_char_len = 4,
+                min_seq_len = 4,
                 hint_separators = ["1", " "],
                 string_convert_result = True,
             )
