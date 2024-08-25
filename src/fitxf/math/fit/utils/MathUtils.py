@@ -22,9 +22,6 @@ class MathUtils:
             self,
             x: np.ndarray,
             seq: np.ndarray,
-            # None: label on start positions of sequences found
-            # "all": label on all positions
-            label_positions = None,
     ) -> dict:
         x = np.array(x) if type(x) in (list, tuple) else x
         seq = np.array(seq) if type(seq) in (list, tuple) else seq
@@ -131,39 +128,39 @@ class MathUtils:
             bases = list(x.shape) + [1]
             match_indexes = []
             match_sequence = []
-            for idx in match_start_indexes_1d:
-                nbr_rep = self.convert_to_multibase_number(n=idx, bases=bases, min_digits=x.ndim)
-                match_indexes.append(nbr_rep)
+            len_cycle = int(len(match_seq_1d) / len(match_start_indexes_1d))
+            if self.enable_slow_logging_of_numpy:
+                self.logger.debug(
+                    'Length of cycle ' + str(len_cycle) + ' for match start indexes 1d ' + str(match_start_indexes_1d)
+                    + ', match seq 1d: ' + str(match_seq_1d)
+                )
+
+            for i, idx_1d in enumerate(match_start_indexes_1d):
+                nbr_rep = self.convert_to_multibase_number(n=idx_1d, bases=bases, min_digits=x.ndim)
                 if self.enable_slow_logging_of_numpy:
                     self.logger.debug(
-                        'Match indexes converted idx ' + str(idx) + ' to base ' + str(bases) + ' number: ' + str(nbr_rep)
+                        'Match indexes converted idx ' + str(idx_1d) + ' to base ' + str(bases) + ' number: ' + str(nbr_rep)
                     )
-            for idx in match_seq_1d:
-                nbr_rep = self.convert_to_multibase_number(n=idx, bases=bases, min_digits=x.ndim)
-                match_sequence.append(nbr_rep)
+                i_start = i*len_cycle
+                match_seq_1d_1cycle = match_seq_1d[i_start:(i_start + len_cycle)]
                 if self.enable_slow_logging_of_numpy:
                     self.logger.debug(
-                        'Match sequence converted idx ' + str(idx) + ' to base ' + str(bases) + ' number: ' + str(nbr_rep)
+                        'Match seq 1d 1 cycle at index ' + str(i_start) + ': ' + str(match_seq_1d_1cycle)
                     )
-            # self.logger.info('Converted match seq ' + str(match_seq_1d) + ' to ' + str(match_sequence))
-            shape_len_1d = int( len(match_seq_1d) / len(match_start_indexes_1d) )
-            # self.logger.info('Shape len 1d ' + str(shape_len_1d) + ' for ' + str(seq))
-            # Check if result spans across row/column/etc borders, which is not valid
-            span_min = np.min(np.array(match_sequence[:shape_len_1d]), axis=0)
-            span_max = np.max(np.array(match_sequence[:shape_len_1d]), axis=0)
-            span_shape = span_max - span_min + 1
-            seq_shape = np.array(list(seq.shape))
-            # self.logger.info('Span min: ' + str(span_min) + ' for ' + str(match_sequence[:shape_len_1d]))
-            # self.logger.info('Span max: ' + str(span_max) + ' for ' + str(match_sequence[:shape_len_1d]))
-            # self.logger.info(
-            #     'Span shape ' + str(span_shape) + ', seq shape ' + str(seq_shape) + ', diff ' + str(span_shape - seq_shape)
-            # )
-            not_cross_rows = np.max(span_shape - seq_shape) <= 0
-            #assert not_cross_rows, 'Span shape ' + str(span_shape) + ' cannot be greater ' + str(seq_shape)
-            if not_cross_rows:
-                return {'match_indexes': match_indexes, 'match_sequence': match_sequence}
-            else:
-                return {'match_indexes': [], 'match_sequence': []}
+                coor, is_valid = self.get_coordinates(
+                    x = x,
+                    match_seq_1d_1cycle = match_seq_1d_1cycle,
+                    seq_original = seq,
+                )
+                if is_valid:
+                    match_indexes.append(nbr_rep)
+                    match_sequence = match_sequence + coor
+                else:
+                    if self.enable_slow_logging_of_numpy:
+                        self.logger.info(
+                            'Invalid match sequence ' + str(match_seq_1d_1cycle) + ', coordinates ' + str(coor)
+                        )
+            return {'match_indexes': match_indexes, 'match_sequence': match_sequence}
         else:
             return self.match_template_1d(x=x, seq=seq)
 
@@ -189,6 +186,40 @@ class MathUtils:
             nbr_rep.append(0)
         nbr_rep.reverse()
         return nbr_rep
+
+    def get_coordinates(
+            self,
+            x: np.ndarray,
+            match_seq_1d_1cycle: list,
+            seq_original: np.ndarray,
+    ) -> (list, bool):
+        assert len(match_seq_1d_1cycle) > 0
+        bases = list(x.shape) + [1]
+        coordinates = []
+        for idx in match_seq_1d_1cycle:
+            nbr_rep = self.convert_to_multibase_number(n=idx, bases=bases, min_digits=x.ndim)
+            coordinates.append(nbr_rep)
+            if self.enable_slow_logging_of_numpy:
+                self.logger.debug(
+                    'Match sequence converted idx ' + str(idx) + ' to base ' + str(bases) + ' number: ' + str(nbr_rep)
+                )
+        if self.enable_slow_logging_of_numpy:
+            self.logger.debug('Converted match seq ' + str(match_seq_1d_1cycle) + ' to ' + str(coordinates))
+        shape_len_1d = len(match_seq_1d_1cycle)
+        # self.logger.info('Shape len 1d ' + str(shape_len_1d) + ' for ' + str(seq))
+        # Check if result spans across row/column/etc borders, which is not valid
+        span_min = np.min(np.array(coordinates[:shape_len_1d]), axis=0)
+        span_max = np.max(np.array(coordinates[:shape_len_1d]), axis=0)
+        span_shape = span_max - span_min + 1
+        seq_shape = np.array(list(seq_original.shape))
+        # self.logger.info('Span min: ' + str(span_min) + ' for ' + str(match_sequence[:shape_len_1d]))
+        # self.logger.info('Span max: ' + str(span_max) + ' for ' + str(match_sequence[:shape_len_1d]))
+        # self.logger.info(
+        #     'Span shape ' + str(span_shape) + ', seq shape ' + str(seq_shape) + ', diff ' + str(span_shape - seq_shape)
+        # )
+        not_cross_rows = np.max(span_shape - seq_shape) <= 0
+        valid = not_cross_rows
+        return coordinates, valid
 
     def sample_random_no_repeat(
             self,
@@ -319,7 +350,7 @@ class MathUtilsUnitTest:
 
 
 if __name__ == '__main__':
-    # os.environ["ENABLE_SLOW_LOGGING"] = "true"
+    os.environ["ENABLE_SLOW_LOGGING"] = "true"
     lgr = Logging.get_default_logger(log_level=logging.INFO, propagate=False)
     MathUtilsUnitTest(logger=lgr).test()
     mu = MathUtils(logger=lgr)
