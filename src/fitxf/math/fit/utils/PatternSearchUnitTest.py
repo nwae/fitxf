@@ -1,4 +1,5 @@
 import logging
+import os
 import numpy as np
 from fitxf.math.fit.utils.PatternSearch import PatternSearch
 from fitxf.math.utils.Pandas import Pandas
@@ -141,6 +142,7 @@ class PatternSearchUnitTest:
 
         # Quiet during speed test
         self.logger.setLevel(level=logging.ERROR)
+        os.environ["ENABLE_SLOW_LOGGING"] = "false"
         obj = PatternSearch(
             logger = self.logger,
         )

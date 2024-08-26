@@ -54,6 +54,7 @@ class PatternSearch:
             match_indexes = self.math_utils.match_template(
                 x = x,
                 seq = seq_i,
+                return_only_start_indexes = True,
             )
             success = len(match_indexes) >= 2
             if not success:
@@ -153,6 +154,7 @@ class PatternSearch:
                 match_indexes_end_tmp = self.math_utils.match_template(
                     x = x,
                     seq = seq_i,
+                    return_only_start_indexes = True,
                 )
                 self.logger.debug(
                     'Match indexes for seq len ' + str(seq_list[-1]) + ' "' + str(''.join([chr(v) for v in seq_i]))

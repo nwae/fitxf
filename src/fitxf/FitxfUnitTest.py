@@ -12,6 +12,7 @@ from fitxf.math.fit.transform.FitXformUnitTest import FitXformUnitTest
 from fitxf.math.fit.utils.FitUtilsUnitTest import FitUtilsUt
 from fitxf.math.fit.utils.TensorUtils import TensorUtilsUnitTest
 from fitxf.math.fit.utils.MathUtils import MathUtilsUnitTest
+from fitxf.math.fit.utils.PatternSearchUnitTest import PatternSearchUnitTest
 from fitxf.math.fit.cluster.ClusterUnitTest import ClusterUnitTest
 from fitxf.math.fit.cluster.ClusterCosineUT import ClusterCosineUnitTest
 # Utils
@@ -51,7 +52,7 @@ class RepoUnitTest:
         for cls in [
             # Math
             FitXformInterfaceUnitTest, FitXformUnitTest, FitUtilsUt, TensorUtilsUnitTest, # HomomorphismUnitTest,
-            MathUtilsUnitTest, ClusterUnitTest, ClusterCosineUnitTest,
+            MathUtilsUnitTest, PatternSearchUnitTest, ClusterUnitTest, ClusterCosineUnitTest,
             # Utils
             LockUnitTest, SingletonUnitTest, StringVarUnitTest,
             UnitTestObjectPersistence,
