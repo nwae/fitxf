@@ -103,6 +103,7 @@ class MathUtils:
             self,
             x: np.ndarray,
             seq: np.ndarray,
+            seq_real_shape: list = None,
     ) -> dict:
         x = np.array(x) if type(x) in (list, tuple) else x
         seq = np.array(seq) if type(seq) in (list, tuple) else seq
@@ -113,6 +114,7 @@ class MathUtils:
         if n_dim > 1:
             x_1d = x.flatten()
             seq_1d = seq.flatten()
+            # count_valid = np.sum(1 * np.logical_not(np.isnan(seq_1d)))
             # Remove ending nan(s)
             for i in range(len(seq_1d)):
                 if np.isnan(seq_1d[-1]):
@@ -137,6 +139,25 @@ class MathUtils:
 
             for i, idx_1d in enumerate(match_start_indexes_1d):
                 nbr_rep = self.convert_to_multibase_number(n=idx_1d, bases=bases, min_digits=x.ndim)
+                assert seq_real_shape is not None
+                border_points = np.array(nbr_rep) + np.array(seq_real_shape) - 1
+                check_if_overflow_x = np.min(np.array(x.shape) - 1 - border_points) < 0
+                if check_if_overflow_x:
+                    if self.enable_slow_logging_of_numpy:
+                        self.logger.debug(
+                            'Start index IGNORE ' + str(nbr_rep) + ', seq: ' + str(seq)
+                            + ', shape real ' + str(seq_real_shape) + ', border points ' + str(border_points)
+                            + ', check overflow ' + str(check_if_overflow_x)
+                        )
+                    continue
+                # else:
+                #     if self.enable_slow_logging_of_numpy:
+                #         self.logger.debug(
+                #             'Start index OK ' + str(nbr_rep) + ', seq: ' + str(seq)
+                #             + ', shape real ' + str(seq_real_shape) + ', border points ' + str(border_points)
+                #             + ', check overflow ' + str(check_if_overflow_x)
+                #         )
+
                 if self.enable_slow_logging_of_numpy:
                     self.logger.debug(
                         'Match indexes converted idx ' + str(idx_1d) + ' to base ' + str(bases) + ' number: ' + str(nbr_rep)
@@ -147,19 +168,19 @@ class MathUtils:
                     self.logger.debug(
                         'Match seq 1d 1 cycle at index ' + str(i_start) + ': ' + str(match_seq_1d_1cycle)
                     )
-                coor, is_valid = self.get_coordinates(
+                coor = self.get_coordinates(
                     x = x,
                     match_seq_1d_1cycle = match_seq_1d_1cycle,
                     seq_original = seq,
                 )
-                if is_valid:
-                    match_indexes.append(nbr_rep)
-                    match_sequence = match_sequence + coor
-                else:
-                    if self.enable_slow_logging_of_numpy:
-                        self.logger.info(
-                            'Invalid match sequence ' + str(match_seq_1d_1cycle) + ', coordinates ' + str(coor)
-                        )
+                # if is_valid:
+                match_indexes.append(nbr_rep)
+                match_sequence = match_sequence + coor
+                # else:
+                #     if self.enable_slow_logging_of_numpy:
+                #         self.logger.info(
+                #             'Invalid match sequence ' + str(match_seq_1d_1cycle) + ', coordinates ' + str(coor)
+                #         )
             return {'match_indexes': match_indexes, 'match_sequence': match_sequence}
         else:
             return self.match_template_1d(x=x, seq=seq)
@@ -205,21 +226,21 @@ class MathUtils:
                 )
         if self.enable_slow_logging_of_numpy:
             self.logger.debug('Converted match seq ' + str(match_seq_1d_1cycle) + ' to ' + str(coordinates))
-        shape_len_1d = len(match_seq_1d_1cycle)
+        # shape_len_1d = len(match_seq_1d_1cycle)
         # self.logger.info('Shape len 1d ' + str(shape_len_1d) + ' for ' + str(seq))
         # Check if result spans across row/column/etc borders, which is not valid
-        span_min = np.min(np.array(coordinates[:shape_len_1d]), axis=0)
-        span_max = np.max(np.array(coordinates[:shape_len_1d]), axis=0)
-        span_shape = span_max - span_min + 1
-        seq_shape = np.array(list(seq_original.shape))
+        # span_min = np.min(np.array(coordinates[:shape_len_1d]), axis=0)
+        # span_max = np.max(np.array(coordinates[:shape_len_1d]), axis=0)
+        # span_shape = span_max - span_min + 1
+        # seq_shape = np.array(list(seq_original.shape))
         # self.logger.info('Span min: ' + str(span_min) + ' for ' + str(match_sequence[:shape_len_1d]))
         # self.logger.info('Span max: ' + str(span_max) + ' for ' + str(match_sequence[:shape_len_1d]))
         # self.logger.info(
         #     'Span shape ' + str(span_shape) + ', seq shape ' + str(seq_shape) + ', diff ' + str(span_shape - seq_shape)
         # )
-        not_cross_rows = np.max(span_shape - seq_shape) <= 0
-        valid = not_cross_rows
-        return coordinates, valid
+        # not_cross_rows = np.max(span_shape - seq_shape) <= 0
+        # valid = not_cross_rows
+        return coordinates
 
     def sample_random_no_repeat(
             self,
@@ -307,15 +328,15 @@ class MathUtilsUnitTest:
         nan = np.nan
         self.logger.info('2D test data:\n' + str(x))
 
-        for i, (seq, exp_matches, exp_seq) in enumerate([
-            (np.array([[1, 2, nan, nan, nan], [6, 7, nan, nan, nan]]), np.array([[0,1], [2,1]]),
+        for i, (seq, seq_ori_shape, exp_matches, exp_seq) in enumerate([
+            (np.array([[1, 2, nan, nan, nan], [6, 7, nan, nan, nan]]), (2, 2), np.array([[0,1], [2,1]]),
              np.array([[0, 1], [0, 2], [0, 3], [0, 4], [1, 0], [1, 1], [1, 2], [2, 1], [2, 2], [2, 3], [2, 4], [3, 0], [3, 1], [3, 2]])),
             # (np.array([[1, 2], [6, 7]]), np.array([[0, 1], [2, 1]]), np.array([])),
             # Test invalid of cross rows
-            (np.array([[4, 5, nan, nan, nan], [9, 0, nan, nan, nan]]), np.array([]),
+            (np.array([[4, 5, nan, nan, nan], [9, 0, nan, nan, nan]]), (2, 2), np.array([]),
              np.array([])),
         ]):
-            res = self.mu.match_template(x=x, seq=seq)
+            res = self.mu.match_template(x=x, seq=seq, seq_real_shape=seq_ori_shape)
             match_idxs, match_seq = res['match_indexes'], res['match_sequence']
             self.logger.info('Test result 2D #' + str(i) + ': ' + str(res))
             assert np.sum((np.array(match_idxs) - exp_matches)**2) < 0.0000000001, \
@@ -336,6 +357,7 @@ class MathUtilsUnitTest:
             _ = new_obj.match_template(
                 x = x,
                 seq = np.array([[1, 2, nan, nan, nan], [6, 7, nan, nan, nan]]),
+                seq_real_shape = [2, 2],
             )
         diffsecs = profiler.get_time_dif_secs(start=start_time, stop=profiler.stop())
         rps = round(n / diffsecs, 3)
@@ -350,7 +372,7 @@ class MathUtilsUnitTest:
 
 
 if __name__ == '__main__':
-    os.environ["ENABLE_SLOW_LOGGING"] = "true"
+    # os.environ["ENABLE_SLOW_LOGGING"] = "true"
     lgr = Logging.get_default_logger(log_level=logging.INFO, propagate=False)
     MathUtilsUnitTest(logger=lgr).test()
     mu = MathUtils(logger=lgr)
