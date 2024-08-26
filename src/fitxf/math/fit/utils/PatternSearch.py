@@ -300,7 +300,7 @@ class PatternSearch:
             self.logger.debug('Repeat indexes: ' + str(df_repeat_indexes))
             final_matches = df_repeat_indexes.to_dict(orient='records')
         except Exception as ex:
-            self.logger.error('Error occurred: ' + str(ex) + ' Stack trace: ' + str(traceback.format_exc()))
+            self.logger.info('Possibly no matches found: ' + str(ex) + ' Stack trace: ' + str(traceback.format_exc()))
             final_matches = None
 
         diff_msecs = round(1000 * self.profiler.get_time_dif_secs(start=start_time, stop=self.profiler.stop()), 2)
