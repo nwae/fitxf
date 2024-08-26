@@ -104,6 +104,7 @@ class MathUtils:
             x: np.ndarray,
             seq: np.ndarray,
             seq_real_shape: list = None,
+            return_only_start_indexes = True,
     ) -> dict:
         x = np.array(x) if type(x) in (list, tuple) else x
         seq = np.array(seq) if type(seq) in (list, tuple) else seq
@@ -181,9 +182,11 @@ class MathUtils:
                 #         self.logger.info(
                 #             'Invalid match sequence ' + str(match_seq_1d_1cycle) + ', coordinates ' + str(coor)
                 #         )
-            return {'match_indexes': match_indexes, 'match_sequence': match_sequence}
+            return match_indexes if return_only_start_indexes else \
+                {'match_indexes': match_indexes, 'match_sequence': match_sequence}
         else:
-            return self.match_template_1d(x=x, seq=seq)
+            res = self.match_template_1d(x=x, seq=seq)
+            return res['match_indexes'] if return_only_start_indexes else res
 
     def convert_to_multibase_number(
             self,
@@ -308,7 +311,11 @@ class MathUtilsUnitTest:
             (np.array([9, 10, 11]), np.array([]), np.array([])),
             # (np.array([1, 3, 5]), []),
         ]):
-            res = self.mu.match_template(x=x, seq=seq)
+            res = self.mu.match_template(
+                x = x,
+                seq = seq,
+                return_only_start_indexes = False,
+            )
             match_idxs, match_seq = res['match_indexes'], res['match_sequence']
             self.logger.info('Test result 1D #' + str(i) + ': ' + str(res))
             assert np.sum((np.array(match_idxs) - exp_matches)**2) < 0.0000000001, \
@@ -336,7 +343,12 @@ class MathUtilsUnitTest:
             (np.array([[4, 5, nan, nan, nan], [9, 0, nan, nan, nan]]), (2, 2), np.array([]),
              np.array([])),
         ]):
-            res = self.mu.match_template(x=x, seq=seq, seq_real_shape=seq_ori_shape)
+            res = self.mu.match_template(
+                x = x,
+                seq = seq,
+                seq_real_shape = seq_ori_shape,
+                return_only_start_indexes = False,
+            )
             match_idxs, match_seq = res['match_indexes'], res['match_sequence']
             self.logger.info('Test result 2D #' + str(i) + ': ' + str(res))
             assert np.sum((np.array(match_idxs) - exp_matches)**2) < 0.0000000001, \
@@ -358,6 +370,7 @@ class MathUtilsUnitTest:
                 x = x,
                 seq = np.array([[1, 2, nan, nan, nan], [6, 7, nan, nan, nan]]),
                 seq_real_shape = [2, 2],
+                return_only_start_indexes = False,
             )
         diffsecs = profiler.get_time_dif_secs(start=start_time, stop=profiler.stop())
         rps = round(n / diffsecs, 3)
