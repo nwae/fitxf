@@ -112,6 +112,7 @@ class MathUtils:
 
         # Convert to ndim, same as converting to a base-N number
         if n_dim > 1:
+            assert seq_real_shape is not None
             x_1d = x.flatten()
             seq_1d = seq.flatten()
             # count_valid = np.sum(1 * np.logical_not(np.isnan(seq_1d)))
@@ -119,8 +120,8 @@ class MathUtils:
             for i in range(len(seq_1d)):
                 if np.isnan(seq_1d[-1]):
                     seq_1d = seq_1d[:-1]
-            if self.enable_slow_logging_of_numpy:
-                self.logger.debug('Sequence flattened ' + str(seq_1d))
+            # if self.enable_slow_logging_of_numpy:
+            #     self.logger.debug('Sequence flattened ' + str(seq_1d))
 
             res = self.match_template_1d(x=x_1d, seq=seq_1d)
             match_start_indexes_1d, match_seq_1d = res['match_indexes'], res['match_sequence']
@@ -139,7 +140,6 @@ class MathUtils:
 
             for i, idx_1d in enumerate(match_start_indexes_1d):
                 nbr_rep = self.convert_to_multibase_number(n=idx_1d, bases=bases, min_digits=x.ndim)
-                assert seq_real_shape is not None
                 border_points = np.array(nbr_rep) + np.array(seq_real_shape) - 1
                 check_if_overflow_x = np.min(np.array(x.shape) - 1 - border_points) < 0
                 if check_if_overflow_x:
