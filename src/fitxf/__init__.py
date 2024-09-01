@@ -8,6 +8,7 @@ from fitxf.math.fit.utils.FitUtilsUnitTest import FitUtils, FitUtilsUt
 from fitxf.math.fit.utils.TensorUtils import TensorUtils, TensorUtilsUnitTest
 from fitxf.math.fit.utils.MathUtils import MathUtils
 from fitxf.math.fit.utils.PatternSearch import PatternSearch
+from fitxf.math.graph.GraphUtils import GraphUtils
 
 # Cluster
 from fitxf.math.fit.cluster.ClusterUnitTest import Cluster, ClusterUnitTest

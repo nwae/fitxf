@@ -15,6 +15,7 @@ from fitxf.math.fit.utils.MathUtils import MathUtilsUnitTest
 from fitxf.math.fit.utils.PatternSearchUnitTest import PatternSearchUnitTest
 from fitxf.math.fit.cluster.ClusterUnitTest import ClusterUnitTest
 from fitxf.math.fit.cluster.ClusterCosineUT import ClusterCosineUnitTest
+from fitxf.math.graph.GraphUtils import GraphUtilsUnitTest
 # Utils
 from fitxf.math.utils.Lock import LockUnitTest
 from fitxf.math.utils.ObjPers import UnitTestObjectPersistence
@@ -53,6 +54,7 @@ class RepoUnitTest:
             # Math
             FitXformInterfaceUnitTest, FitXformUnitTest, FitUtilsUt, TensorUtilsUnitTest, # HomomorphismUnitTest,
             MathUtilsUnitTest, PatternSearchUnitTest, ClusterUnitTest, ClusterCosineUnitTest,
+            GraphUtilsUnitTest,
             # Utils
             LockUnitTest, SingletonUnitTest, StringVarUnitTest,
             UnitTestObjectPersistence,
