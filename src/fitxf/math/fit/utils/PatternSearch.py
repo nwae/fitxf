@@ -161,13 +161,13 @@ class PatternSearch:
                     + '": ' + str(match_indexes_end_tmp)
                 )
 
-                is_success = len(match_indexes_end_tmp) >= 2
+                is_success_match_seq = len(match_indexes_end_tmp) >= 2
                 improve_from_prev_optimal = False
 
                 #
                 # Check to see if we got new optimal if success in matching
                 #
-                if is_success:
+                if is_success_match_seq:
                     ind_tmp = self.get_repeat_indicators(
                         match_indexes = match_indexes_end_tmp,
                         seq_list = seq_list,
@@ -175,27 +175,24 @@ class PatternSearch:
                         string_convert = string_convert_result,
                     )
                     density, coverage, score = ind_tmp["density"], ind_tmp["coverage"], ind_tmp["score"]
-                    if ind_optimal is None:
-                        ind_optimal = ind_tmp
-                        # improve_from_prev_optimal = True
-                    else:
-                        if score > ind_optimal["score"]:
-                            self.logger.info(
-                                'Found new optimal from prev ' + str(ind_optimal)
-                                + '. Improved: ' + str(ind_tmp)
-                            )
-                            improve_from_prev_optimal = True
-                            ind_optimal = ind_tmp
-                        else:
-                            self.logger.info(
-                                'No improve from previous optimal for: '
-                                + str({k: v for k, v in ind_tmp.items() if k not in ["s_parts", "prefix"]})
-                                + ', prev optimal remains as: '
-                                + str({k: v for k, v in ind_optimal.items() if k not in ["s_parts", "prefix"]})
-                            )
-
                     density_cond_met = density >= density_repeat_thr
                     coverage_cond_met = coverage >= coverage_thr
+                    prev_score = ind_optimal['score'] if ind_optimal is not None else -np.inf
+                    improve_from_prev_optimal = (density_cond_met and coverage_cond_met) and (score > prev_score)
+
+                    if improve_from_prev_optimal:
+                        self.logger.info(
+                            'Found new optimal from prev ' + str(ind_optimal) + '. Improved: ' + str(ind_tmp)
+                        )
+                        ind_optimal = ind_tmp
+                    else:
+                        tmp_prev_optimal = {k: v for k, v in ind_optimal.items() if k not in ["s_parts", "prefix"]} \
+                            if ind_optimal is not None else None
+                        self.logger.info(
+                            'No improve from previous optimal ' + str(tmp_prev_optimal) + ' for: '
+                            + str({k: v for k, v in ind_tmp.items() if k not in ["s_parts", "prefix"]})
+                        )
+
                     # if (seq_list[-1] == max_interval):
                     #     self.logger.debug(
                     #         'Found optimal by early condition, max seq len ' + str(seq_list)
@@ -203,7 +200,7 @@ class PatternSearch:
                     #     )
                     #     break_reason = 'hit max interval'
                     #     break
-                    if (density_cond_met and coverage_cond_met):
+                    if improve_from_prev_optimal:
                         self.logger.info(
                             'Found optimal by early condition, max seq len ' + str(seq_list)
                             + ', max interval ' + str(max_interval) + ', density ' + str(density)
@@ -224,7 +221,7 @@ class PatternSearch:
                 #
                 # Adjust new max/min intervals first
                 #
-                if not is_success:
+                if not is_success_match_seq:
                     # The last seq len had no match, means we know now the upper bound is at most 1 less
                     tmp = max_interval
                     max_interval = min(max_interval, seq_list[-1] - 1)
@@ -265,7 +262,7 @@ class PatternSearch:
                 #
                 # Adjust next move
                 #
-                if not is_success:
+                if not is_success_match_seq:
                     stagnant_count = 0
                     # no match, decrease seq len by approx. half
                     seq_len_new = remaining_indexes_to_try[int(len(remaining_indexes_to_try) / 2)]
@@ -302,7 +299,7 @@ class PatternSearch:
             self.logger.debug('Repeat indexes: ' + str(df_repeat_indexes))
             final_matches = df_repeat_indexes.to_dict(orient='records')
         except Exception as ex:
-            self.logger.info('Possibly no matches found: ' + str(ex) + ' Stack trace: ' + str(traceback.format_exc()))
+            self.logger.debug('Possibly no matches found: ' + str(ex) + ' Stack trace: ' + str(traceback.format_exc()))
             final_matches = None
 
         diff_msecs = round(1000 * self.profiler.get_time_dif_secs(start=start_time, stop=self.profiler.stop()), 2)
@@ -365,4 +362,15 @@ if __name__ == '__main__':
     Pandas.increase_display()
     lgr = Logging.get_default_logger(log_level=logging.DEBUG, propagate=False)
     ps = PatternSearch(logger=lgr)
+    res = ps.find_repeat_sequences(
+        x = np.array([
+            ord(c) for c in "pattern 1 pattern 2 pattern 3 pattern 4 ..."]
+        ),
+        min_seq_len = 4,
+        hint_separators = np.array([ord(c) for c in ["1", " "]]),
+        string_convert_result = True,
+        density_repeat_thr = 0.5,
+        coverage_thr = 0.5,
+    )
+    print(res)
     exit(0)
