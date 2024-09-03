@@ -170,6 +170,17 @@ class DatastoreInterface:
     ):
         raise Exception('Must be implemented by derived class')
 
+    def get_column_names(
+            self,
+            tablename,
+    ):
+        records = self.get_all(
+            tablename = tablename,
+            max_records = 1,
+        )
+        assert len(records) > 0, 'Cannot get column names by default method without data for "' + str(tablename) + '"'
+        return [k for k in records[0].keys()]
+
     def get_mapping(
             self,
             tablename = None,
@@ -271,6 +282,10 @@ class DatastoreInterfaceUnitTest:
             {'id': 104, 'text': "this is sentence B", 'answer': ' zz'},
         ]
         ds.add(records=new_records)
+
+        colnames = ds.get_column_names(tablename=tablename)
+        self.logger.info('Column names derived: ' + str(colnames))
+        assert colnames == ['id', 'text', 'answer'], 'Column names ' + str(colnames) + ' not expected'
 
         rows = ds.get_all()
         assert len(rows) == len(new_records), \
