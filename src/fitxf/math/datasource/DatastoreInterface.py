@@ -299,10 +299,12 @@ class DatastoreInterfaceUnitTest:
                 + str(builtins.id(r)) + ' and ' + str(builtins.id(new_records[i])) + ' for record ' + str(r)
 
         for i, (cond, query, len_exp_recs, exp_remaining_ids, exp_remaining_texts) in enumerate([
-            ({'and': True, 'exact': True}, {'id': 101},            1, [100, 102, 103, 103, 104], None),
+            ({'and': True, 'exact': True}, {'id': 101}, 1, [100, 102, 103, 103, 104], None),
             ({'and': True, 'exact': True}, {'text': 'sentence B'}, 2, [100, 103, 104],  ['sentence A', 'sentENce B', 'this is sentence B']),
-            ({'and': True, 'exact': True}, {'id': 104, 'text': 'sentence A'}, 2, [103], ['sentENce B',]),
+            ({'and': False, 'exact': True}, {'id': 104, 'text': 'sentence A'}, 2, [103], ['sentENce B',]),
+            ({'and': False, 'exact': False}, {'text': 'B'}, 1, [], []),
         ]):
+            self.logger.info('Records remaining now ' + str(ds.get_all()))
             recs_to_be_deleted = ds.get(
                 match_phrase = query,
                 match_condition = cond,

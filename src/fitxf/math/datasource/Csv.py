@@ -77,6 +77,21 @@ class Csv(DatastoreInterface):
         assert fullpath == self.filepath
         return fullpath
 
+    def __convert_match_phrase_to_tuples(
+            self,
+            match_phrase,
+    ):
+        if type(match_phrase) is dict:
+            match_phrase_tuples = [(k, v) for k, v in match_phrase.items()]
+        elif type(match_phrase) in [list, tuple]:
+            for pair in match_phrase:
+                assert len(pair) == 2, 'Match phrase tuple must be length 2: ' + str(pair)
+            match_phrase_tuples = match_phrase
+        else:
+            raise Exception('Wrong type for match phrase ' + str(type(match_phrase)))
+
+        return match_phrase_tuples
+
     def get(
             self,
             # e.g. {"answer": "take_seat"}
@@ -87,21 +102,34 @@ class Csv(DatastoreInterface):
     ):
         tablename = self.__get_full_path(tablename=tablename)
 
+        match_phrase_tuples = self.__convert_match_phrase_to_tuples(match_phrase=match_phrase)
+
+        prm_cond_and = match_condition['and']
+        prm_exact_match = match_condition['exact']
+
         try:
             self.__acquire_lock()
             df = pd.read_csv(tablename, index_col=False)
             self.logger.debug('Dataframe read from "' + str(tablename) + '", shape ' + str(df.shape))
-            condition = True if match_condition == 'AND' else False
-            for c,v in match_phrase.items():
-                if match_condition == 'AND':
-                    condition = condition & (df[c] == v)
+            condition = None
+            for c,v in match_phrase_tuples:
+                if prm_exact_match:
+                    condition_part = (df[c] == v)
                 else:
-                    condition = condition | (df[c] == v)
-                # self.logger.info('Condition ' + str(condition) + ' on ' + str(df))
+                    condition_part = df[c].str.contains(str(v), flags=re.IGNORECASE, regex=True, na=False)
+
+                if prm_cond_and:
+                    condition = condition_part if condition is None else (condition & condition_part)
+                else:
+                    condition = condition_part if condition is None else (condition | condition_part)
+
             df_filter = df[condition]
             return df_filter.to_dict(orient='records')
         except Exception as ex:
-            self.logger.error('Error reading data from table/index "' + str(tablename) + '": ' + str(ex))
+            self.logger.error(
+                'Error reading data from table/index "' + str(tablename) + '": ' + str(ex)
+                + ' Stack trace ' + str(traceback.format_exc())
+            )
             return []
         finally:
             self.__release_lock()
@@ -124,7 +152,10 @@ class Csv(DatastoreInterface):
             self.logger.info('Dataframe read from "' + str(tablename) + '", shape ' + str(df.shape))
             return df.to_dict(orient='records')
         except Exception as ex:
-            self.logger.error('Error reading from csv filepath "' + str(tablename) + '": ' + str(ex))
+            self.logger.error(
+                'Error reading from csv filepath "' + str(tablename) + '": ' + str(ex)
+                + ' Stack trace ' + str(traceback.format_exc())
+            )
             return []
         finally:
             self.__release_lock()
@@ -141,7 +172,10 @@ class Csv(DatastoreInterface):
             os.remove(tablename)
             self.logger.info('Deleted CSV index "' + str(tablename) + '"')
         except Exception as ex:
-            self.logger.error('Error deleting CSV index "' + str(tablename) + '": ' + str(ex))
+            self.logger.error(
+                'Error deleting CSV index "' + str(tablename) + '": ' + str(ex)
+                + ' Stack trace ' + str(traceback.format_exc())
+            )
         return True
 
     def atomic_delete_add(
@@ -158,7 +192,7 @@ class Csv(DatastoreInterface):
             for rec in records:
                 self.__delete(
                     match_phrase = rec,
-                    match_condition = 'AND',
+                    match_condition = {'and': True, 'exact': True},
                     tablename = tablename,
                 )
                 return self.__add(
@@ -166,7 +200,7 @@ class Csv(DatastoreInterface):
                     tablename = tablename,
                 )
         except Exception as ex:
-            self.logger.error('Error occurred: ' + str(ex))
+            self.logger.error('Error occurred: ' + str(ex) + ' Stack trace ' + str(traceback.format_exc()))
             raise Exception(ex)
         finally:
             self.__release_lock()
@@ -187,8 +221,8 @@ class Csv(DatastoreInterface):
             )
         except Exception as ex:
             errmsg = \
-                'Error occurred table "' + str(tablename) + '" add records ' + str(records) + ', exception: ' \
-                + str(ex) + ' Stack trace ' + str(traceback.format_exc())
+                'Error occurred table "' + str(tablename) + '" add records ' + str(records) \
+                + ', exception: ' + str(ex) + ' Stack trace ' + str(traceback.format_exc())
             self.logger.error(errmsg)
             raise Exception(errmsg)
         finally:
@@ -231,7 +265,7 @@ class Csv(DatastoreInterface):
     def delete(
             self,
             match_phrase,
-            match_condition: dict = {'and': True, 'exact': True},
+            match_condition = {'and': True, 'exact': True},
             tablename = None,
     ):
         tablename = self.__get_full_path(tablename=tablename)
@@ -242,24 +276,41 @@ class Csv(DatastoreInterface):
                 match_condition = match_condition,
                 tablename = tablename,
             )
+        except Exception as ex:
+            errmsg = \
+                'Error occurred table "' + str(tablename) + '" delete ' + str(match_phrase) \
+                + ', exception: ' + str(ex) + ' Stack trace ' + str(traceback.format_exc())
+            self.logger.error(errmsg)
+            raise Exception(errmsg)
         finally:
             self.__release_lock()
 
     def __delete(
             self,
             match_phrase: dict,
-            match_condition: str,
             tablename: str,
+            match_condition: dict = {'and': True, 'exact': True},
     ):
         df = pd.read_csv(tablename, index_col=False)
         self.logger.debug('Dataframe read from "' + str(tablename) + '", shape ' + str(df.shape))
-        condition = True if match_condition == 'AND' else False
-        for c, v in match_phrase.items():
-            if match_condition == 'AND':
-                condition = condition & (df[c] == v)
+
+        match_phrase_tuples = self.__convert_match_phrase_to_tuples(match_phrase=match_phrase)
+
+        prm_cond_and = match_condition['and']
+        prm_exact_match = match_condition['exact']
+
+        condition = None
+        for c, v in match_phrase_tuples:
+            if prm_exact_match:
+                condition_part = (df[c] == v)
             else:
-                condition = condition | (df[c] == v)
-            # self.logger.info('Condition ' + str(condition) + ' on ' + str(df))
+                condition_part = df[c].str.contains(str(v), flags=re.IGNORECASE, regex=True, na=False)
+
+            if prm_cond_and:
+                condition = condition_part if condition is None else (condition & condition_part)
+            else:
+                condition = condition_part if condition is None else (condition | condition_part)
+
         rows_removed = len(df[condition])
         df_remaining = df[np.logical_not(condition)]
         df_remaining.to_csv(tablename, index=False)
@@ -286,7 +337,7 @@ class Csv(DatastoreInterface):
             df.to_csv(tablename, index=False)
             self.logger.info('Column successfully added "' + str(colnew) + '" as type "' + str(data_type) + '"')
         except Exception as ex:
-            self.logger.error('Error occurred: ' + str(ex))
+            self.logger.error('Error occurred: ' + str(ex) + ' Stack trace ' + str(traceback.format_exc()))
         finally:
             self.__release_lock()
 
