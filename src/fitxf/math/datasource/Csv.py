@@ -1,6 +1,7 @@
 import logging
 import os
 import re
+import traceback
 import numpy as np
 import pandas as pd
 import threading
@@ -80,7 +81,7 @@ class Csv(DatastoreInterface):
             self,
             # e.g. {"answer": "take_seat"}
             match_phrase,
-            match_condition = 'AND',
+            match_condition: dict = {'and': True, 'exact': True},
             tablename = None,
             request_timeout = 20.0,
     ):
@@ -186,7 +187,8 @@ class Csv(DatastoreInterface):
             )
         except Exception as ex:
             errmsg = \
-                'Error occurred table "' + str(tablename) + '" add records ' + str(records) + ', exception: ' + str(ex)
+                'Error occurred table "' + str(tablename) + '" add records ' + str(records) + ', exception: ' \
+                + str(ex) + ' Stack trace ' + str(traceback.format_exc())
             self.logger.error(errmsg)
             raise Exception(errmsg)
         finally:
@@ -229,7 +231,7 @@ class Csv(DatastoreInterface):
     def delete(
             self,
             match_phrase,
-            match_condition = 'AND',
+            match_condition: dict = {'and': True, 'exact': True},
             tablename = None,
     ):
         tablename = self.__get_full_path(tablename=tablename)

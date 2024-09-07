@@ -146,7 +146,7 @@ class DatastoreInterface:
             self,
             # e.g. {"answer": "take_seat"}
             match_phrase,
-            match_condition = 'AND',
+            match_condition: dict = {'and': True, 'exact': True},
             tablename = None,
             request_timeout = 20.0,
     ):
@@ -207,7 +207,7 @@ class DatastoreInterface:
     def delete(
             self,
             match_phrase: dict,
-            match_condition = 'AND',
+            match_condition: dict = {'and': True, 'exact': True},
             tablename: str = None,
     ):
         raise Exception('Must be implemented by derived class')
@@ -299,9 +299,9 @@ class DatastoreInterfaceUnitTest:
                 + str(builtins.id(r)) + ' and ' + str(builtins.id(new_records[i])) + ' for record ' + str(r)
 
         for i, (cond, query, len_exp_recs, exp_remaining_ids, exp_remaining_texts) in enumerate([
-            ('AND', {'id': 101},            1, [100, 102, 103, 103, 104], None),
-            ('AND', {'text': 'sentence B'}, 2, [100, 103, 104],           ['sentence A', 'sentENce B', 'this is sentence B']),
-            ('OR', {'id': 104, 'text': 'sentence A'}, 2, [103], ['sentENce B',]),
+            ({'and': True, 'exact': True}, {'id': 101},            1, [100, 102, 103, 103, 104], None),
+            ({'and': True, 'exact': True}, {'text': 'sentence B'}, 2, [100, 103, 104],  ['sentence A', 'sentENce B', 'this is sentence B']),
+            ({'and': True, 'exact': True}, {'id': 104, 'text': 'sentence A'}, 2, [103], ['sentENce B',]),
         ]):
             recs_to_be_deleted = ds.get(
                 match_phrase = query,
@@ -335,7 +335,7 @@ class DatastoreInterfaceUnitTest:
 
 if __name__ == '__main__':
     er = Env()
-    Env.set_env_vars_from_file(env_filepath= er.REPO_DIR + '/.env.fitxf.math')
+    Env.set_env_vars_from_file(env_filepath= er.REPO_DIR + '/.env.fitxf.math.ut')
     Logging.get_logger_from_env_var()
     dbp = DbParams.get_db_params_from_envvars(
         identifier = 'demo',
