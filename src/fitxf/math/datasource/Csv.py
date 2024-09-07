@@ -92,6 +92,28 @@ class Csv(DatastoreInterface):
 
         return match_phrase_tuples
 
+    def __get_dataframe_condition(
+            self,
+            match_phrase_tuples: list,
+            match_condition: dict,
+            df: pd.DataFrame,
+    ):
+        prm_cond_and = match_condition['and']
+        prm_exact_match = match_condition['exact']
+
+        condition = None
+        for c, v in match_phrase_tuples:
+            if prm_exact_match:
+                condition_part = (df[c] == v)
+            else:
+                condition_part = df[c].str.contains(str(v), flags=re.IGNORECASE, regex=True, na=False)
+
+            if prm_cond_and:
+                condition = condition_part if condition is None else (condition & condition_part)
+            else:
+                condition = condition_part if condition is None else (condition | condition_part)
+        return condition
+
     def get(
             self,
             # e.g. {"answer": "take_seat"}
@@ -104,25 +126,15 @@ class Csv(DatastoreInterface):
 
         match_phrase_tuples = self.__convert_match_phrase_to_tuples(match_phrase=match_phrase)
 
-        prm_cond_and = match_condition['and']
-        prm_exact_match = match_condition['exact']
-
         try:
             self.__acquire_lock()
             df = pd.read_csv(tablename, index_col=False)
             self.logger.debug('Dataframe read from "' + str(tablename) + '", shape ' + str(df.shape))
-            condition = None
-            for c,v in match_phrase_tuples:
-                if prm_exact_match:
-                    condition_part = (df[c] == v)
-                else:
-                    condition_part = df[c].str.contains(str(v), flags=re.IGNORECASE, regex=True, na=False)
-
-                if prm_cond_and:
-                    condition = condition_part if condition is None else (condition & condition_part)
-                else:
-                    condition = condition_part if condition is None else (condition | condition_part)
-
+            condition = self.__get_dataframe_condition(
+                match_phrase_tuples = match_phrase_tuples,
+                match_condition = match_condition,
+                df = df,
+            )
             df_filter = df[condition]
             return df_filter.to_dict(orient='records')
         except Exception as ex:
@@ -296,20 +308,11 @@ class Csv(DatastoreInterface):
 
         match_phrase_tuples = self.__convert_match_phrase_to_tuples(match_phrase=match_phrase)
 
-        prm_cond_and = match_condition['and']
-        prm_exact_match = match_condition['exact']
-
-        condition = None
-        for c, v in match_phrase_tuples:
-            if prm_exact_match:
-                condition_part = (df[c] == v)
-            else:
-                condition_part = df[c].str.contains(str(v), flags=re.IGNORECASE, regex=True, na=False)
-
-            if prm_cond_and:
-                condition = condition_part if condition is None else (condition & condition_part)
-            else:
-                condition = condition_part if condition is None else (condition | condition_part)
+        condition = self.__get_dataframe_condition(
+            match_phrase_tuples = match_phrase_tuples,
+            match_condition = match_condition,
+            df = df,
+        )
 
         rows_removed = len(df[condition])
         df_remaining = df[np.logical_not(condition)]
