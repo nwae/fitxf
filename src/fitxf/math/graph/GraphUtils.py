@@ -191,7 +191,7 @@ class GraphUtils:
             # for each query edge, find best legs
             u = conn[query_col_u]
             v = conn[query_col_v]
-            w_ref = conn.get(query_col_weight, None)
+            w_ref = conn.get(query_col_weight, 0)
             edge = (u, v)
             res = self.get_paths(
                 G = multi_graph,
@@ -205,16 +205,16 @@ class GraphUtils:
                 + ': ' + str(res)
             )
             if len(res) > 0:
-                if w_ref is not None:
-                    i_best = np.argmin([abs(d['weight_total'] -w_ref) for d in res])
-                    best_path_uv = res[i_best]['path']
-                    best_legs_uv = res[i_best]['legs']
-                else:
-                    best_path_uv = res[0]['path']
-                    best_legs_uv = res[0]['legs']
+                # if reference weight exists, take path with closest weight
+                i_best = np.argmin([abs(d['weight_total'] - w_ref) for d in res])
+                self.logger.debug('Best path for method ' + str(path_method) + ': ' + str(res[i_best]))
+                best_path_uv = res[i_best]['path']
+                best_legs_uv = res[i_best]['legs']
+                best_weight_total_uv = res[i_best]['weight_total']
             else:
                 best_path_uv = None
                 best_legs_uv = None
+                best_weight_total_uv = None
             self.logger.debug('Best path for ' + str((u, v)) + ': ' + str(best_path_uv))
             self.logger.info(
                 'Conn #' + str(i) + ' for edge ' + str(edge) + ', best path: ' + str(best_path_uv)
@@ -256,7 +256,7 @@ class GraphUtils:
             ) / len(query_edges_best_paths.keys()), 3
         )
         self.logger.info(
-            'Coverage = ' + str(coverage) + ', path shortest distances ' + str(query_edges_best_paths)
+            'Coverage = ' + str(coverage) + ', path most suitable distances ' + str(query_edges_best_paths)
         )
 
         return {

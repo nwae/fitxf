@@ -116,8 +116,26 @@ class GraphUtilsUnitTest:
         # Search test
         #
         for dir, query_conns, path_method, exp_top_keys in [
+            #
+            # Dijkstra test
+            #
             (
                     False, [{'u': 'Bangkok', 'v': 'Moscow'}, {'u': 'Tokyo', 'v': 'Shanghai'}], 'dijkstra',
+                    {1: [], 2: ['teleport']}
+            ),
+            (
+                    False, [{'u': 'Bangkok', 'v': 'Moscow'}, {'u': 'Moscow', 'v': 'Shanghai'}], 'dijkstra',
+                    {1: [], 2: [], 3: ['plane', 'teleport']},
+            ),
+            (
+                    False, [{'u': 'Antartica', 'v': 'Medellin'}, {'u': 'Beijing', 'v': 'Shanghai'}], 'dijkstra',
+                    {1: ['plane', 'teleport']},
+            ),
+            #
+            # Simple test
+            #
+            (
+                    False, [{'u': 'Bangkok', 'v': 'Moscow'}, {'u': 'Tokyo', 'v': 'Shanghai'}], 'simple',
                     {1: [], 2: ['teleport']}
             ),
             # Simple graph with given query distance that is closer to 'teleport'
@@ -129,14 +147,6 @@ class GraphUtilsUnitTest:
             (
                     False, [{'u': 'Bangkok', 'v': 'Moscow'}, {'u': 'Tokyo', 'v': 'Shanghai', 'distance': 30}], 'simple',
                     {1: ['plane']}
-            ),
-            (
-                    False, [{'u': 'Bangkok', 'v': 'Moscow'}, {'u': 'Moscow', 'v': 'Shanghai'}], 'dijkstra',
-                    {1: [], 2: [], 3: ['plane', 'teleport']},
-            ),
-            (
-                    False, [{'u': 'Antartica', 'v': 'Medellin'}, {'u': 'Beijing', 'v': 'Shanghai'}], 'dijkstra',
-                    {1: ['plane', 'teleport']},
             ),
         ]:
             res = gu.search_top_keys_for_edges(
