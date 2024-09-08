@@ -115,23 +115,37 @@ class GraphUtilsUnitTest:
         #
         # Search test
         #
-        for dir, query_conns, exp_top_keys in [
+        for dir, query_conns, path_method, exp_top_keys in [
             (
-                    False, [{'u': 'Bangkok', 'v': 'Moscow'}, {'u': 'Tokyo', 'v': 'Shanghai'}],
+                    False, [{'u': 'Bangkok', 'v': 'Moscow'}, {'u': 'Tokyo', 'v': 'Shanghai'}], 'dijkstra',
                     {1: [], 2: ['teleport']}
             ),
+            # Simple graph with given query distance that is closer to 'teleport'
             (
-                    False, [{'u': 'Bangkok', 'v': 'Moscow'}, {'u': 'Moscow', 'v': 'Shanghai'}],
+                    False, [{'u': 'Bangkok', 'v': 'Moscow'}, {'u': 'Tokyo', 'v': 'Shanghai', 'distance': 1}], 'simple',
+                    {1: [], 2: ['teleport']}
+            ),
+            # Simple graph with given query distance that is closer to 'plane'
+            (
+                    False, [{'u': 'Bangkok', 'v': 'Moscow'}, {'u': 'Tokyo', 'v': 'Shanghai', 'distance': 30}], 'simple',
+                    {1: ['plane']}
+            ),
+            (
+                    False, [{'u': 'Bangkok', 'v': 'Moscow'}, {'u': 'Moscow', 'v': 'Shanghai'}], 'dijkstra',
                     {1: [], 2: [], 3: ['plane', 'teleport']},
             ),
             (
-                    False, [{'u': 'Antartica', 'v': 'Medellin'}, {'u': 'Beijing', 'v': 'Shanghai'}],
+                    False, [{'u': 'Antartica', 'v': 'Medellin'}, {'u': 'Beijing', 'v': 'Shanghai'}], 'dijkstra',
                     {1: ['plane', 'teleport']},
             ),
         ]:
             res = gu.search_top_keys_for_edges(
                 query_edges = query_conns,
                 ref_multigraph = G_test[dir],
+                path_method = path_method,
+                query_col_u = 'u',
+                query_col_v= 'v',
+                query_col_weight = 'distance',
             )
             self.logger.info('Return search result: ' + str(res))
             top_keys = res['top_keys_by_number_of_edges']

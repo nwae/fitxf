@@ -105,6 +105,7 @@ class GraphUtils:
         paths_by_method = []
         for nodes_traversed_path in nodes_traversed_paths:
             best_legs = []
+            nodes_traversed_weight = 0
             for i_leg in range(1, len(nodes_traversed_path)):
                 leg_u = nodes_traversed_path[i_leg - 1]
                 leg_v = nodes_traversed_path[i_leg]
@@ -127,10 +128,12 @@ class GraphUtils:
                     'leg_key': best_key,
                     'leg_total': len(nodes_traversed_path) - 1,
                 }
+                nodes_traversed_weight += best_edge['weight']
                 best_legs.append(best_leg)
             paths_by_method.append({
                 'path': nodes_traversed_path,
                 'legs': best_legs,
+                'weight_total': nodes_traversed_weight,
             })
         return paths_by_method
 
@@ -175,6 +178,8 @@ class GraphUtils:
             path_agg_weight_by: str = 'min',
             query_col_u = 'u',
             query_col_v = 'v',
+            # query_col_key = 'key',
+            query_col_weight = 'weight',
     ):
         multi_graph = ref_multigraph
         self.logger.debug('Ref graph edges: ' + str(multi_graph.edges))
@@ -186,6 +191,7 @@ class GraphUtils:
             # for each query edge, find best legs
             u = conn[query_col_u]
             v = conn[query_col_v]
+            w_ref = conn.get(query_col_weight, None)
             edge = (u, v)
             res = self.get_paths(
                 G = multi_graph,
@@ -194,9 +200,18 @@ class GraphUtils:
                 method = path_method,
                 agg_weight_by = path_agg_weight_by,
             )
+            self.logger.debug(
+                'Query edge #' + str(i) + ' method ' + str(path_method) + ', best paths for edge ' + str(edge)
+                + ': ' + str(res)
+            )
             if len(res) > 0:
-                best_path_uv = res[0]['path']
-                best_legs_uv = res[0]['legs']
+                if w_ref is not None:
+                    i_best = np.argmin([abs(d['weight_total'] -w_ref) for d in res])
+                    best_path_uv = res[i_best]['path']
+                    best_legs_uv = res[i_best]['legs']
+                else:
+                    best_path_uv = res[0]['path']
+                    best_legs_uv = res[0]['legs']
             else:
                 best_path_uv = None
                 best_legs_uv = None
