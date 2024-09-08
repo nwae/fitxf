@@ -36,6 +36,32 @@ x = np.random.rand(20,3)
 ClusterCosine().kmeans_optimal(x=x)
 
 
+## Graph Wrappers
+
+from fitxf import GraphUtils
+gu = GraphUtils()
+G = gu.create_multi_graph(
+    edges = [
+        {'key': 'plane', 'u': 'Shanghai', 'v': 'Tokyo', 'distance': 10},
+        {'key': 'ship', 'u': 'Shanghai', 'v': 'Tokyo', 'distance': 100},
+        {'key': 'plane', 'u': 'Tokyo', 'v': 'Shanghai', 'distance': 22},
+        {'key': 'plane', 'u': 'Tokyo', 'v': 'Seoul', 'distance': 5},
+        {'key': 'plane', 'u': 'Seoul', 'v': 'Tokyo', 'distance': 6},
+        {'key': 'ship', 'u': 'Seoul', 'v': 'Tokyo', 'distance': 60},
+    ],
+    col_weight = 'distance',
+    directed = True,
+)
+# Shanghai-->Tokyo-->Seoul, total weight 15
+print(gu.get_paths(G=G, source="Shanghai", target="Seoul", method="dijkstra"))
+# Shanghai-->Tokyo-->Seoul, total weight 105
+print(gu.get_paths(G=G, source="Shanghai", target="Seoul", method="simple", agg_weight_by="max"))
+# Seoul-->Tokyo-->Shanghai, total weight 28
+print(gu.get_paths(G=G, source="Seoul", target="Shanghai", method="dijkstra"))
+# Shanghai-->Tokyo-->Seoul, total weight 82
+print(gu.get_paths(G=G, source="Seoul", target="Shanghai", method="simple", agg_weight_by="max"))
+
+
 ## Fit Transform
 
 from fitxf import FitXformPca, FitXformCluster
