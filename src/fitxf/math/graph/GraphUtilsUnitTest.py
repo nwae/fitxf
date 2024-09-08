@@ -112,6 +112,34 @@ class GraphUtilsUnitTest:
             assert best_path == exp_path, \
                 'Best path "' + str(method) + '" ' + str(best_path) + ' not ' + str(exp_path)
 
+        G = gu.create_multi_graph(
+            edges = [
+                {'key': 'plane', 'u': 'Shanghai', 'v': 'Tokyo', 'distance': 10},
+                {'key': 'ship', 'u': 'Shanghai', 'v': 'Tokyo', 'distance': 100},
+                {'key': 'plane', 'u': 'Tokyo', 'v': 'Shanghai', 'distance': 22},
+                {'key': 'plane', 'u': 'Tokyo', 'v': 'Seoul', 'distance': 5},
+                {'key': 'plane', 'u': 'Seoul', 'v': 'Tokyo', 'distance': 6},
+                {'key': 'ship', 'u': 'Seoul', 'v': 'Tokyo', 'distance': 60},
+            ],
+            col_weight = 'distance',
+            directed = True,
+        )
+        for u, v, method, agg, exp_path, exp_weight in [
+            ('Shanghai', 'Seoul', 'dijkstra', 'min', ['Shanghai', 'Tokyo', 'Seoul'], 15),
+            ('Shanghai', 'Seoul', 'simple', 'min', ['Shanghai', 'Tokyo', 'Seoul'], 15),
+            ('Shanghai', 'Seoul', 'simple', 'max', ['Shanghai', 'Tokyo', 'Seoul'], 105),
+            # Reverse trip
+            ('Seoul', 'Shanghai', 'dijkstra', 'min', ['Seoul', 'Tokyo', 'Shanghai'], 28),
+            ('Seoul', 'Shanghai', 'simple', 'min', ['Seoul', 'Tokyo', 'Shanghai'], 28),
+            ('Seoul', 'Shanghai', 'simple', 'max', ['Seoul', 'Tokyo', 'Shanghai'], 82),
+        ]:
+            res = gu.get_paths(G=G, source=u, target=v, method=method, agg_weight_by=agg)
+            best_path, best_weight = res[0]['path'], res[0]['weight_total']
+            assert best_path == exp_path, \
+                'Best path "' + str(method) + '" ' + str(best_path) + ' not ' + str(exp_path)
+            assert best_weight == exp_weight, \
+                'Best weight "' + str(method) + '" ' + str(best_weight) + ' not ' + str(exp_weight)
+
         #
         # Search test
         #

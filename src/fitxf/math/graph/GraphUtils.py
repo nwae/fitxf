@@ -119,8 +119,13 @@ class GraphUtils:
                 self.logger.debug('For leg ' + str((leg_u, leg_v)) + ', edge data ' + str(ep))
                 # convert to convenient tuples instead of key: values
                 ep_edges = [(k, d) for k, d in ep.items()]
-                arg_min_weight = np.argmin([d['weight'] for k, d in ep_edges])
-                best_key, best_edge = ep_edges[arg_min_weight]
+
+                if agg_weight_by == 'min':
+                    arg_best_weight = np.argmin([d['weight'] for k, d in ep_edges])
+                else:
+                    arg_best_weight = np.argmax([d['weight'] for k, d in ep_edges])
+
+                best_key, best_edge = ep_edges[arg_best_weight]
                 best_leg = {
                     'leg_number': i_leg,
                     'leg_u': leg_u, 'leg_v': leg_v,
@@ -168,6 +173,7 @@ class GraphUtils:
         return self.__helper_convert_to_edge_path_dict(paths_dict=sp)
 
     # Given a set of edges, we find the paths traversed
+    # TODO not yet optimized mathematically
     def search_top_keys_for_edges(
             self,
             query_edges: list[dict],
@@ -206,7 +212,10 @@ class GraphUtils:
             )
             if len(res) > 0:
                 # if reference weight exists, take path with closest weight
-                i_best = np.argmin([abs(d['weight_total'] - w_ref) for d in res])
+                if path_agg_weight_by == 'min':
+                    i_best = np.argmin([abs(d['weight_total'] - w_ref) for d in res])
+                else:
+                    i_best = np.argmax([abs(d['weight_total'] - w_ref) for d in res])
                 self.logger.debug('Best path for method ' + str(path_method) + ': ' + str(res[i_best]))
                 best_path_uv = res[i_best]['path']
                 best_legs_uv = res[i_best]['legs']
@@ -282,7 +291,9 @@ class GraphUtils:
                 weights = [d['weight'] for key, d in e_data.items()]
                 w = np.max(weights) if agg_weight_by == 'max' else np.min(weights)
                 G_simple.add_edge(u_of_edge=u, v_of_edge=v, weight=w)
-            self.logger.info('Converted type "' + str(type(G)) + '" to type "' + str(G_simple) + '"')
+            self.logger.info(
+                'Converted type "' + str(type(G)) + '" to type "' + str(G_simple) + '"'
+            )
         else:
             G_simple = G
         return G_simple
