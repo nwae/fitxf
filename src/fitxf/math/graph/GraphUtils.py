@@ -71,6 +71,7 @@ class GraphUtils:
             target,
             # permitted values "simple", "dijkstra", "shortest"
             method = 'dijkstra',
+            # only applicable for "simple" path method
             agg_weight_by: str = 'min',
     ) -> list[dict]:
         assert method in ['simple', 'dijkstra', 'shortest']
@@ -168,6 +169,10 @@ class GraphUtils:
             self,
             query_edges: list[dict],
             ref_multigraph: nx.Graph,
+            # permitted values "simple", "dijkstra", "shortest"
+            path_method = 'dijkstra',
+            # only applicable for "simple" path method
+            path_agg_weight_by: str = 'min',
             query_col_u = 'u',
             query_col_v = 'v',
     ):
@@ -182,7 +187,13 @@ class GraphUtils:
             u = conn[query_col_u]
             v = conn[query_col_v]
             edge = (u, v)
-            res = self.get_paths(G=multi_graph, source=u, target=v, method='dijkstra')
+            res = self.get_paths(
+                G = multi_graph,
+                source = u,
+                target = v,
+                method = path_method,
+                agg_weight_by = path_agg_weight_by,
+            )
             if len(res) > 0:
                 best_path_uv = res[0]['path']
                 best_legs_uv = res[0]['legs']
