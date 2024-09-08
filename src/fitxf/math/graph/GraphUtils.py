@@ -252,10 +252,10 @@ class GraphUtils:
         top_keys_by_number_of_edges = {}
         for i in range(max_legs_total):
             condition = df_all_legs['leg_total'] == i+1
-            docs_unique = list(set(df_all_legs[condition]['leg_key'].tolist()))
-            docs_unique.sort()
+            keys_uniq = list(set(df_all_legs[condition]['leg_key'].tolist()))
+            keys_uniq.sort()
             # key is how many edges required
-            top_keys_by_number_of_edges[i+1] = docs_unique
+            top_keys_by_number_of_edges[i+1] = keys_uniq
         self.logger.info('Top keys by number of edges: ' + str(top_keys_by_number_of_edges))
 
         # Indicators
@@ -272,7 +272,7 @@ class GraphUtils:
             'top_keys_by_number_of_edges': top_keys_by_number_of_edges,
             'indicators': {
                 'coverage': coverage,
-                'shortest_distances': query_edges_best_paths,
+                'best_paths': query_edges_best_paths,
             },
             'leg_details': df_all_legs,
         }
