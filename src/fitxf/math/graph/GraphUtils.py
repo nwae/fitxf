@@ -77,9 +77,15 @@ class GraphUtils:
         func = nx.dijkstra_path if method in ['dijkstra'] else (
             nx.shortest_path if method in ['shortest'] else nx.shortest_simple_paths
         )
+        if method in ['simple']:
+            # "simple" method cannot work with multigraph
+            G__ = self.convert_multigraph_to_simple_graph(G=G, agg_weight_by=agg_weight_by)
+            self.logger.info('Converted graph to non-multigraph for get paths method "' + str(method) + '"')
+        else:
+            G__ = G
         try:
             nodes_traversed_paths = func(
-                G = self.convert_multigraph_to_simple_graph(G=G, agg_weight_by=agg_weight_by),
+                G = G__,
                 source = source,
                 target = target,
             )
