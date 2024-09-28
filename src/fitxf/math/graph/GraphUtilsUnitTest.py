@@ -1,5 +1,6 @@
 import logging
 import pandas as pd
+import numpy as np
 from fitxf.math.graph.GraphUtils import GraphUtils
 from fitxf.math.utils.Logging import Logging
 from fitxf.math.utils.Pandas import Pandas
@@ -140,54 +141,92 @@ class GraphUtilsUnitTest:
             assert best_weight == exp_weight, \
                 'Best weight "' + str(method) + '" ' + str(best_weight) + ' not ' + str(exp_weight)
 
+        # ---------------------------------------------------------------------------------------------- #
+
         #
         # Search test
         #
-        for dir, query_conns, path_method, exp_top_keys in [
+        edge_data_search = [
+            {'key': 'plane', 'u': 'Shanghai', 'v': 'Tokyo', 'cost': 10, 'comment': 'Shanghai-Tokyo flight'},
+            # duplicate (will not be added), order does not matter
+            {'key': 'plane', 'u': 'Tokyo', 'v': 'Shanghai', 'cost': 22, 'comment': 'Tokyo-Shanghai flight'},
+            # teleport path Tokyo --> Beijing --> Shanghai shorter distance than plane Tokyo --> Shanghai
+            {'key': 'teleport', 'u': 'Tokyo', 'v': 'Beijing', 'cost': 2, 'comment': 'Tokyo-Beijing teleport'},
+            {'key': 'teleport-2', 'u': 'Tokyo', 'v': 'Beijing', 'cost': 2, 'comment': 'Tokyo-Beijing teleport'},
+            {'key': 'plane', 'u': 'Tokyo', 'v': 'Beijing', 'cost': 9, 'comment': 'Tokyo-Beijing plane'},
+            {'key': 'teleport', 'u': 'Beijing', 'v': 'Shanghai', 'cost': 1, 'comment': 'Beijing-Shanghai teleport'},
+            # Other paths
+            {'key': 'ship', 'u': 'Shanghai', 'v': 'Xabarovsk', 'cost': 100, 'comment': 'Shanghai-Xabarovsk sea'},
+            {'key': 'plane', 'u': 'Xabarovsk', 'v': 'Moscow', 'cost': 3, 'comment': 'Xabarovsk-Moscow plane'},
+            {'key': 'plane', 'u': 'Xabarovsk', 'v': 'Tokyo', 'cost': 10, 'comment': 'Asia-Russia flight'},
+            {'key': 'train', 'u': 'Xabarovsk', 'v': 'Tokyo', 'cost': 10000, 'comment': 'Asia-Russia train'},
+            {'key': 'ship', 'u': 'Xabarovsk', 'v': 'Tokyo', 'cost': MAX_DIST, 'comment': 'Asia-Russia sea'},
+            {'key': 'plane', 'u': 'Medellin', 'v': 'Antartica', 'cost': 888, 'comment': 'Medellin-Antartica'},
+        ]
+        G_search = {}
+        for directed in [True, False]:
+            G_search[directed] = gu.create_multi_graph(
+                edges = edge_data_search,
+                col_weight = 'cost',
+                directed = directed,
+            )
+        for i, (dir, query_conns, path_method, exp_top_keys, exp_top_keys_agg_w) in enumerate([
             #
             # Dijkstra test
             #
             (
-                    False, [{'u': 'Bangkok', 'v': 'Moscow'}, {'u': 'Tokyo', 'v': 'Shanghai'}], 'dijkstra',
-                    {1: [], 2: ['teleport']}
+                    False, [
+                        {'u': 'Beijing', 'v': 'Moscow'}, {'u': 'Tokyo', 'v': 'Shanghai'},
+                        {'u': 'Medellin', 'v': 'Antartica'}, {'u': 'Vientiane', 'v': 'Bangkok'},
+                    ], 'dijkstra',
+                    {1.0: ['plane'], 2.0: ['teleport'], 3.0: ['plane', 'teleport'], np.inf: [None]},
+                    [{'leg_key': 'teleport', '__weight': 1.933}, {'leg_key': 'plane', '__weight': 895.267}],
             ),
             (
                     False, [{'u': 'Bangkok', 'v': 'Moscow'}, {'u': 'Moscow', 'v': 'Shanghai'}], 'dijkstra',
-                    {1: [], 2: [], 3: ['plane', 'teleport']},
+                    {4.0: ['plane', 'teleport'], np.inf: [None]},
+                    [{'leg_key': 'teleport', '__weight': 0.312}, {'leg_key': 'plane', '__weight': 6.812}],
             ),
             (
                     False, [{'u': 'Antartica', 'v': 'Medellin'}, {'u': 'Beijing', 'v': 'Shanghai'}], 'dijkstra',
                     {1: ['plane', 'teleport']},
+                    [{'leg_key': 'teleport', '__weight': 1.0}, {'leg_key': 'plane', '__weight': 888.0}],
             ),
             #
             # Simple test
             #
             (
                     False, [{'u': 'Bangkok', 'v': 'Moscow'}, {'u': 'Tokyo', 'v': 'Shanghai'}], 'simple',
-                    {1: [], 2: ['teleport']}
+                    {2: ['teleport'], np.inf: [None]},
+                    [{'leg_key': 'teleport', '__weight': 1.667}],
             ),
             # Simple graph with given query distance that is closer to 'teleport'
             (
-                    False, [{'u': 'Bangkok', 'v': 'Moscow'}, {'u': 'Tokyo', 'v': 'Shanghai', 'distance': 1}], 'simple',
-                    {1: [], 2: ['teleport']}
+                    False, [{'u': 'Bangkok', 'v': 'Moscow'}, {'u': 'Tokyo', 'v': 'Shanghai', 'cost': 1}], 'simple',
+                    {2: ['teleport'], np.inf: [None]},
+                    [{'leg_key': 'teleport', '__weight': 1.667}],
             ),
             # Simple graph with given query distance that is closer to 'plane'
             (
-                    False, [{'u': 'Bangkok', 'v': 'Moscow'}, {'u': 'Tokyo', 'v': 'Shanghai', 'distance': 30}], 'simple',
-                    {1: ['plane']}
+                    False, [{'u': 'Bangkok', 'v': 'Moscow'}, {'u': 'Tokyo', 'v': 'Shanghai', 'cost': 30}], 'simple',
+                    {1: ['plane'], np.inf: [None]},
+                    [{'leg_key': 'plane', '__weight': 22.0}],
             ),
-        ]:
+        ]):
             res = gu.search_top_keys_for_edges(
                 query_edges = query_conns,
-                ref_multigraph = G_test[dir],
+                ref_multigraph = G_search[dir],
                 path_method = path_method,
+                path_agg_weight_by = 'min',
                 query_col_u = 'u',
                 query_col_v= 'v',
-                query_col_weight = 'distance',
+                query_col_weight = 'cost',
             )
-            self.logger.info('Return search result: ' + str(res))
+            self.logger.info('Return search result:')
+            [self.logger.info(str(k) + ': ' + str(v)) for k, v in res.items()]
             top_keys = res['top_keys_by_number_of_edges']
-            assert top_keys == exp_top_keys, 'Result top keys ' + str(top_keys) + ' not ' + str(exp_top_keys)
+            assert top_keys == exp_top_keys, \
+                'Result for test #' + str(i) + ' top keys ' + str(top_keys) + ' not ' + str(exp_top_keys)
 
         # gu.draw_graph(G=G_test[False], weight_large_thr=50, agg_weight_by='min')
         self.logger.info('ALL TESTS PASSED')

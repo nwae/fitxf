@@ -64,6 +64,20 @@ class GraphUtils:
     def get_neighbors(self, G: nx.Graph, node: str):
         return nx.neighbors(G=G, n=node)
 
+    def __get_leg_obj(self, src_tgt, leg_count, i_leg, leg_key, leg_a, leg_b, leg_weight):
+        legs_in_start_end = 1*(leg_a in src_tgt) + 1*(leg_b in src_tgt)
+        return {
+            'src_tgt': src_tgt,
+            'leg_total': leg_count,
+            'leg_number': i_leg,
+            'leg_key': leg_key,
+            'leg_a': leg_a,
+            'leg_b': leg_b,
+            'legs_in_srctgt': legs_in_start_end,
+            'leg_weight': leg_weight,
+            'leg_weight_proportion': None,
+        }
+
     def get_paths(
             self,
             G: nx.Graph,
@@ -75,6 +89,8 @@ class GraphUtils:
             agg_weight_by: str = 'min',
     ) -> list[dict]:
         assert method in ['simple', 'dijkstra', 'shortest']
+        source_target = (source, target)
+
         func = nx.dijkstra_path if method in ['dijkstra'] else (
             nx.shortest_path if method in ['shortest'] else nx.shortest_simple_paths
         )
@@ -107,16 +123,17 @@ class GraphUtils:
             best_legs = []
             nodes_traversed_weight = 0
             for i_leg in range(1, len(nodes_traversed_path)):
-                leg_u = nodes_traversed_path[i_leg - 1]
-                leg_v = nodes_traversed_path[i_leg]
-                self.logger.debug('Method "' + str(method) + '" checking leg ' + str((leg_u, leg_v)))
+                leg_a = nodes_traversed_path[i_leg - 1]
+                leg_b = nodes_traversed_path[i_leg]
+                leg_ab = (leg_a, leg_b)
+                self.logger.debug('Method "' + str(method) + '" checking leg ' + str(leg_ab))
                 # if multiple will be by dictionary key: edge, e.g.
                 # {
                 #    'teleport': {'u': 'Tokyo', 'v': 'Beijing', 'weight': 2},
                 #    'plane': {'u': 'Tokyo', 'v': 'Beijing', 'weight': 9}
                 #  }
-                ep = G.get_edge_data(u=leg_u, v=leg_v)
-                self.logger.debug('For leg ' + str((leg_u, leg_v)) + ', edge data ' + str(ep))
+                ep = G.get_edge_data(u=leg_a, v=leg_b)
+                self.logger.debug('For get path leg ' + str(leg_ab) + ', edge data ' + str(ep))
                 # convert to convenient tuples instead of key: values
                 ep_edges = [(k, d) for k, d in ep.items()]
 
@@ -126,20 +143,29 @@ class GraphUtils:
                     arg_best_weight = np.argmax([d['weight'] for k, d in ep_edges])
 
                 best_key, best_edge = ep_edges[arg_best_weight]
-                best_leg = {
-                    'leg_number': i_leg,
-                    'leg_u': leg_u, 'leg_v': leg_v,
-                    'leg_weight': best_edge['weight'],
-                    'leg_key': best_key,
-                    'leg_total': len(nodes_traversed_path) - 1,
-                }
+                best_leg = self.__get_leg_obj(
+                    src_tgt = source_target,
+                    leg_count = len(nodes_traversed_path) - 1,
+                    i_leg = i_leg,
+                    leg_a = leg_a,
+                    leg_b = leg_b,
+                    leg_weight = best_edge['weight'],
+                    leg_key = best_key,
+                )
                 nodes_traversed_weight += best_edge['weight']
                 best_legs.append(best_leg)
+            # Calculate weight proportion
+            for lg in best_legs:
+                lg['leg_weight_proportion'] = lg['leg_weight'] / nodes_traversed_weight
+
             paths_by_method.append({
                 'path': nodes_traversed_path,
                 'legs': best_legs,
                 'weight_total': nodes_traversed_weight,
             })
+        self.logger.debug(
+            'Paths by method ' + str(paths_by_method)
+        )
         return paths_by_method
 
     def __helper_convert_to_edge_path_dict(
@@ -195,6 +221,7 @@ class GraphUtils:
         query_edges_best_paths = {}
         for i, conn in enumerate(query_edges):
             # for each query edge, find best legs
+            self.logger.debug('For conn ' + str(conn))
             u = conn[query_col_u]
             v = conn[query_col_v]
             w_ref = conn.get(query_col_weight, 0)
@@ -222,7 +249,15 @@ class GraphUtils:
                 best_weight_total_uv = res[i_best]['weight_total']
             else:
                 best_path_uv = None
-                best_legs_uv = None
+                best_legs_uv = [self.__get_leg_obj(
+                    src_tgt = edge,
+                    leg_count = np.inf,
+                    i_leg = None,
+                    leg_a = None,
+                    leg_b = None,
+                    leg_weight = None,
+                    leg_key = None,
+                )]
                 best_weight_total_uv = None
             self.logger.debug('Best path for ' + str((u, v)) + ': ' + str(best_path_uv))
             self.logger.info(
@@ -238,25 +273,42 @@ class GraphUtils:
         # Sort by shortest path to longest
         df_all_legs = pd.DataFrame.from_records(all_legs)
         df_all_legs.sort_values(
-            by = ['leg_total', 'leg_number', 'leg_u', 'leg_v', 'leg_weight'],
+            by = ['src_tgt', 'leg_total', 'leg_number', 'leg_a', 'leg_b', 'leg_weight'],
             ascending = True,
             inplace = True,
         )
-        max_legs_total = np.max(df_all_legs['leg_total'])
+        max_legs_uniq = np.unique(df_all_legs['leg_total']).tolist()
+        max_legs_uniq.sort()
         self.logger.info(
-            'Query-collections connections, max leg total=' + str(max_legs_total)
+            'Query-collections connections, max leg unique ' + str(max_legs_uniq)
             + ':\n' + str(df_all_legs)
         )
 
-        # Top paths by number of edges traversed
+        # Top keys by number of edges traversed
         top_keys_by_number_of_edges = {}
-        for i in range(max_legs_total):
-            condition = df_all_legs['leg_total'] == i+1
+        for leg_total in max_legs_uniq:
+            condition = df_all_legs['leg_total'] == leg_total
             keys_uniq = list(set(df_all_legs[condition]['leg_key'].tolist()))
             keys_uniq.sort()
             # key is how many edges required
-            top_keys_by_number_of_edges[i+1] = keys_uniq
+            top_keys_by_number_of_edges[leg_total] = keys_uniq
         self.logger.info('Top keys by number of edges: ' + str(top_keys_by_number_of_edges))
+
+        # Top keys by weight proportion
+        keep_cols = ['leg_key']
+        df_top_keys_by_agg_weight = df_all_legs[keep_cols].reset_index(drop=True)
+        df_top_keys_by_agg_weight['__weight'] = df_all_legs['leg_weight'] * df_all_legs['leg_weight_proportion']
+        df_top_keys_by_agg_weight = df_top_keys_by_agg_weight.groupby(by=['leg_key'], as_index=False).sum()
+        df_top_keys_by_agg_weight.sort_values(
+            by=['__weight'], ascending=True if path_agg_weight_by=='min' else False, inplace=True
+        )
+        self.logger.info(
+            'Top keys by aggregated weight (agg by "' + str(path_agg_weight_by) + '") sum '
+            + str(df_top_keys_by_agg_weight)
+        )
+        top_keys_by_agg_weight = df_top_keys_by_agg_weight.to_dict(orient='records')
+        for r in top_keys_by_agg_weight:
+            r['__weight'] = round(r['__weight'], 3)
 
         # Indicators
         coverage = round(
@@ -269,6 +321,9 @@ class GraphUtils:
         )
 
         return {
+            'method': path_method,
+            'path_agg_weight_by': path_agg_weight_by,
+            'top_keys_by_aggregated_weight': top_keys_by_agg_weight,
             'top_keys_by_number_of_edges': top_keys_by_number_of_edges,
             'indicators': {
                 'coverage': coverage,
