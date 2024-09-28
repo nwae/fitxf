@@ -272,6 +272,8 @@ class GraphUtils:
 
         # Sort by shortest path to longest
         df_all_legs = pd.DataFrame.from_records(all_legs)
+        #cond_na = df_all_legs['leg_weight'].isna()
+        #df_all_legs['leg_weight'][cond_na] = np.inf if path_agg_weight_by == 'min' else 0.
         df_all_legs.sort_values(
             by = ['src_tgt', 'leg_total', 'leg_number', 'leg_a', 'leg_b', 'leg_weight'],
             ascending = True,
@@ -284,7 +286,31 @@ class GraphUtils:
             + ':\n' + str(df_all_legs)
         )
 
+        #
+        # Top keys by weight proportion
+        #
+        keep_cols = ['leg_key', 'leg_weight', 'leg_weight_proportion']
+        df_top_keys_by_agg_weight = df_all_legs[keep_cols].reset_index(drop=True)
+        # MUST convert to numpy ndarray before multiply. pandas will fuck up with nans
+        df_top_keys_by_agg_weight['__weight'] = \
+            np.array(df_all_legs['leg_weight']) * np.array(df_all_legs['leg_weight_proportion'])
+        # self.logger.debug('Dataframe top keys by agg weight\n' + str(df_top_keys_by_agg_weight))
+        keep_cols = ['leg_key', '__weight']
+        df_top_keys_by_agg_weight = df_top_keys_by_agg_weight[keep_cols].groupby(by=['leg_key'], as_index=False).sum()
+        df_top_keys_by_agg_weight.sort_values(
+            by=['__weight'], ascending=True if path_agg_weight_by=='min' else False, inplace=True
+        )
+        self.logger.info(
+            'Top keys by aggregated weight (agg by "' + str(path_agg_weight_by) + '") sum\n'
+            + str(df_top_keys_by_agg_weight)
+        )
+        top_keys_by_agg_weight = df_top_keys_by_agg_weight.to_dict(orient='records')
+        for r in top_keys_by_agg_weight:
+            r['__weight'] = round(r['__weight'], 3)
+
+        #
         # Top keys by number of edges traversed
+        #
         top_keys_by_number_of_edges = {}
         for leg_total in max_legs_uniq:
             condition = df_all_legs['leg_total'] == leg_total
@@ -293,22 +319,6 @@ class GraphUtils:
             # key is how many edges required
             top_keys_by_number_of_edges[leg_total] = keys_uniq
         self.logger.info('Top keys by number of edges: ' + str(top_keys_by_number_of_edges))
-
-        # Top keys by weight proportion
-        keep_cols = ['leg_key']
-        df_top_keys_by_agg_weight = df_all_legs[keep_cols].reset_index(drop=True)
-        df_top_keys_by_agg_weight['__weight'] = df_all_legs['leg_weight'] * df_all_legs['leg_weight_proportion']
-        df_top_keys_by_agg_weight = df_top_keys_by_agg_weight.groupby(by=['leg_key'], as_index=False).sum()
-        df_top_keys_by_agg_weight.sort_values(
-            by=['__weight'], ascending=True if path_agg_weight_by=='min' else False, inplace=True
-        )
-        self.logger.info(
-            'Top keys by aggregated weight (agg by "' + str(path_agg_weight_by) + '") sum '
-            + str(df_top_keys_by_agg_weight)
-        )
-        top_keys_by_agg_weight = df_top_keys_by_agg_weight.to_dict(orient='records')
-        for r in top_keys_by_agg_weight:
-            r['__weight'] = round(r['__weight'], 3)
 
         # Indicators
         coverage = round(

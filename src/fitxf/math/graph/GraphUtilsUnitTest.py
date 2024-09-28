@@ -176,11 +176,19 @@ class GraphUtilsUnitTest:
             #
             (
                     False, [
-                        {'u': 'Beijing', 'v': 'Moscow'}, {'u': 'Tokyo', 'v': 'Shanghai'},
+                        {'u': 'Moscow', 'v': 'Beijing'}, {'u': 'Tokyo', 'v': 'Shanghai'},
                         {'u': 'Medellin', 'v': 'Antartica'}, {'u': 'Vientiane', 'v': 'Bangkok'},
                     ], 'dijkstra',
                     {1.0: ['plane'], 2.0: ['teleport'], 3.0: ['plane', 'teleport'], np.inf: [None]},
                     [{'leg_key': 'teleport', '__weight': 1.933}, {'leg_key': 'plane', '__weight': 895.267}],
+            ),
+            (
+                    True, [
+                        {'u': 'Moscow', 'v': 'Beijing'}, {'u': 'Tokyo', 'v': 'Shanghai'},
+                        {'u': 'Medellin', 'v': 'Antartica'}, {'u': 'Vientiane', 'v': 'Bangkok'},
+                    ], 'dijkstra',
+                    {1.0: ['plane'], 2.0: ['teleport'], np.inf: [None]},
+                    [{'leg_key': 'teleport', '__weight': 1.667}, {'leg_key': 'plane', '__weight': 888.0}],
             ),
             (
                     False, [{'u': 'Bangkok', 'v': 'Moscow'}, {'u': 'Moscow', 'v': 'Shanghai'}], 'dijkstra',
@@ -225,8 +233,12 @@ class GraphUtilsUnitTest:
             self.logger.info('Return search result:')
             [self.logger.info(str(k) + ': ' + str(v)) for k, v in res.items()]
             top_keys = res['top_keys_by_number_of_edges']
+            top_keys_by_agg_weight = res['top_keys_by_aggregated_weight']
             assert top_keys == exp_top_keys, \
                 'Result for test #' + str(i) + ' top keys ' + str(top_keys) + ' not ' + str(exp_top_keys)
+            assert top_keys_by_agg_weight == exp_top_keys_agg_w, \
+                'Result for test #' + str(i) + ' top keys by agg weight' \
+                + str(top_keys_by_agg_weight) + ' not ' + str(exp_top_keys_agg_w)
 
         # gu.draw_graph(G=G_test[False], weight_large_thr=50, agg_weight_by='min')
         self.logger.info('ALL TESTS PASSED')
