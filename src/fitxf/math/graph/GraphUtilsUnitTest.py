@@ -180,7 +180,12 @@ class GraphUtilsUnitTest:
                         {'u': 'Medellin', 'v': 'Antartica'}, {'u': 'Vientiane', 'v': 'Bangkok'},
                     ], 'dijkstra',
                     {1.0: ['plane'], 2.0: ['teleport'], 3.0: ['plane', 'teleport'], np.inf: [None]},
-                    [{'leg_key': 'teleport', '__weight': 1.933}, {'leg_key': 'plane', '__weight': 895.267}],
+                    [
+                        {'src_tgt': ('Moscow', 'Beijing'), 'leg_key': 'teleport', '__weight': 0.267},
+                        {'src_tgt': ('Tokyo', 'Shanghai'), 'leg_key': 'teleport', '__weight': 1.667},
+                        {'src_tgt': ('Moscow', 'Beijing'), 'leg_key': 'plane', '__weight': 7.267},
+                        {'src_tgt': ('Medellin', 'Antartica'), 'leg_key': 'plane', '__weight': 888.0},
+                    ],
             ),
             (
                     True, [
@@ -188,17 +193,26 @@ class GraphUtilsUnitTest:
                         {'u': 'Medellin', 'v': 'Antartica'}, {'u': 'Vientiane', 'v': 'Bangkok'},
                     ], 'dijkstra',
                     {1.0: ['plane'], 2.0: ['teleport'], np.inf: [None]},
-                    [{'leg_key': 'teleport', '__weight': 1.667}, {'leg_key': 'plane', '__weight': 888.0}],
+                    [
+                        {'src_tgt': ('Tokyo', 'Shanghai'), 'leg_key': 'teleport', '__weight': 1.667},
+                        {'src_tgt': ('Medellin', 'Antartica'), 'leg_key': 'plane', '__weight': 888.0},
+                    ],
             ),
             (
                     False, [{'u': 'Bangkok', 'v': 'Moscow'}, {'u': 'Moscow', 'v': 'Shanghai'}], 'dijkstra',
                     {4.0: ['plane', 'teleport'], np.inf: [None]},
-                    [{'leg_key': 'teleport', '__weight': 0.312}, {'leg_key': 'plane', '__weight': 6.812}],
+                    [
+                        {'src_tgt': ('Moscow', 'Shanghai'), 'leg_key': 'teleport', '__weight': 0.312},
+                        {'src_tgt': ('Moscow', 'Shanghai'), 'leg_key': 'plane', '__weight': 6.812},
+                    ],
             ),
             (
                     False, [{'u': 'Antartica', 'v': 'Medellin'}, {'u': 'Beijing', 'v': 'Shanghai'}], 'dijkstra',
                     {1: ['plane', 'teleport']},
-                    [{'leg_key': 'teleport', '__weight': 1.0}, {'leg_key': 'plane', '__weight': 888.0}],
+                    [
+                        {'src_tgt': ('Beijing', 'Shanghai'), 'leg_key': 'teleport', '__weight': 1.0},
+                        {'src_tgt': ('Antartica', 'Medellin'), 'leg_key': 'plane', '__weight': 888.0},
+                    ],
             ),
             #
             # Simple test
@@ -206,19 +220,19 @@ class GraphUtilsUnitTest:
             (
                     False, [{'u': 'Bangkok', 'v': 'Moscow'}, {'u': 'Tokyo', 'v': 'Shanghai'}], 'simple',
                     {2: ['teleport'], np.inf: [None]},
-                    [{'leg_key': 'teleport', '__weight': 1.667}],
+                    [{'src_tgt': ('Tokyo', 'Shanghai'), 'leg_key': 'teleport', '__weight': 1.667}],
             ),
             # Simple graph with given query distance that is closer to 'teleport'
             (
                     False, [{'u': 'Bangkok', 'v': 'Moscow'}, {'u': 'Tokyo', 'v': 'Shanghai', 'cost': 1}], 'simple',
                     {2: ['teleport'], np.inf: [None]},
-                    [{'leg_key': 'teleport', '__weight': 1.667}],
+                    [{'src_tgt': ('Tokyo', 'Shanghai'), 'leg_key': 'teleport', '__weight': 1.667}],
             ),
             # Simple graph with given query distance that is closer to 'plane'
             (
                     False, [{'u': 'Bangkok', 'v': 'Moscow'}, {'u': 'Tokyo', 'v': 'Shanghai', 'cost': 30}], 'simple',
                     {1: ['plane'], np.inf: [None]},
-                    [{'leg_key': 'plane', '__weight': 22.0}],
+                    [{'src_tgt': ('Tokyo', 'Shanghai'), 'leg_key': 'plane', '__weight': 22.0}],
             ),
         ]):
             res = gu.search_top_keys_for_edges(

@@ -287,16 +287,23 @@ class GraphUtils:
         )
 
         #
+        # Top keys by source-target
+        #
+
+        #
         # Top keys by weight proportion
         #
-        keep_cols = ['leg_key', 'leg_weight', 'leg_weight_proportion']
+        keep_cols = ['src_tgt', 'leg_key', 'leg_weight', 'leg_weight_proportion']
         df_top_keys_by_agg_weight = df_all_legs[keep_cols].reset_index(drop=True)
         # MUST convert to numpy ndarray before multiply. pandas will fuck up with nans
-        df_top_keys_by_agg_weight['__weight'] = \
-            np.array(df_all_legs['leg_weight']) * np.array(df_all_legs['leg_weight_proportion'])
-        # self.logger.debug('Dataframe top keys by agg weight\n' + str(df_top_keys_by_agg_weight))
-        keep_cols = ['leg_key', '__weight']
-        df_top_keys_by_agg_weight = df_top_keys_by_agg_weight[keep_cols].groupby(by=['leg_key'], as_index=False).sum()
+        df_top_keys_by_agg_weight['__weight'] = np.array(df_top_keys_by_agg_weight['leg_weight']) \
+                                                * np.array(df_top_keys_by_agg_weight['leg_weight_proportion'])
+        self.logger.debug('Dataframe top keys by agg weight\n' + str(df_top_keys_by_agg_weight))
+        keep_cols = ['src_tgt', 'leg_key', '__weight']
+        df_top_keys_by_agg_weight = df_top_keys_by_agg_weight[keep_cols].groupby(
+            by = ['src_tgt', 'leg_key'],
+            as_index = False,
+        ).sum()
         df_top_keys_by_agg_weight.sort_values(
             by=['__weight'], ascending=True if path_agg_weight_by=='min' else False, inplace=True
         )
