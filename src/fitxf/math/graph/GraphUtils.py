@@ -89,6 +89,8 @@ class GraphUtils:
             agg_weight_by: str = 'min',
     ) -> list[dict]:
         assert method in ['simple', 'dijkstra', 'shortest']
+        if method == 'dijkstra':
+            agg_weight_by = 'min'
         source_target = (source, target)
 
         func = nx.dijkstra_path if method in ['dijkstra'] else (
@@ -216,6 +218,8 @@ class GraphUtils:
         multi_graph = ref_multigraph
         self.logger.debug('Ref graph edges: ' + str(multi_graph.edges))
         self.logger.debug('Ref graph nodes: ' + str(multi_graph.nodes))
+        if path_method == 'dijkstra':
+            path_agg_weight_by = 'min'
 
         all_legs = []
         query_edges_best_paths = {}

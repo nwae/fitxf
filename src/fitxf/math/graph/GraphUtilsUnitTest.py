@@ -155,6 +155,9 @@ class GraphUtilsUnitTest:
             {'key': 'teleport-2', 'u': 'Tokyo', 'v': 'Beijing', 'cost': 2, 'comment': 'Tokyo-Beijing teleport'},
             {'key': 'plane', 'u': 'Tokyo', 'v': 'Beijing', 'cost': 9, 'comment': 'Tokyo-Beijing plane'},
             {'key': 'teleport', 'u': 'Beijing', 'v': 'Shanghai', 'cost': 1, 'comment': 'Beijing-Shanghai teleport'},
+            # car
+            {'key': 'car', 'u': 'Beijing', 'v': 'Moscow', 'cost': 1000000, 'comment': 'Beijing-Moscow car'},
+            {'key': 'ev-car', 'u': 'Beijing', 'v': 'Moscow', 'cost': 100000, 'comment': 'Beijing-Moscow EV car'},
             # Other paths
             {'key': 'ship', 'u': 'Shanghai', 'v': 'Xabarovsk', 'cost': 100, 'comment': 'Shanghai-Xabarovsk sea'},
             {'key': 'plane', 'u': 'Xabarovsk', 'v': 'Moscow', 'cost': 3, 'comment': 'Xabarovsk-Moscow plane'},
@@ -175,6 +178,7 @@ class GraphUtilsUnitTest:
             # Dijkstra test
             #
             (
+                    # Undirected test, dijkstra
                     False, [
                         {'u': 'Moscow', 'v': 'Beijing'}, {'u': 'Tokyo', 'v': 'Shanghai'},
                         {'u': 'Medellin', 'v': 'Antartica'}, {'u': 'Vientiane', 'v': 'Bangkok'},
@@ -188,6 +192,7 @@ class GraphUtilsUnitTest:
                     ],
             ),
             (
+                    # Directed test, dijkstra
                     True, [
                         {'u': 'Moscow', 'v': 'Beijing'}, {'u': 'Tokyo', 'v': 'Shanghai'},
                         {'u': 'Medellin', 'v': 'Antartica'}, {'u': 'Vientiane', 'v': 'Bangkok'},
@@ -196,6 +201,44 @@ class GraphUtilsUnitTest:
                     [
                         {'src_tgt': ('Tokyo', 'Shanghai'), 'leg_key': 'teleport', '__weight': 1.667},
                         {'src_tgt': ('Medellin', 'Antartica'), 'leg_key': 'plane', '__weight': 888.0},
+                    ],
+            ),
+            (
+                    # Undirected test, shortest path, by min weight
+                    False, [
+                        {'u': 'Moscow', 'v': 'Beijing'}, {'u': 'Tokyo', 'v': 'Shanghai'},
+                        {'u': 'Medellin', 'v': 'Antartica'}, {'u': 'Vientiane', 'v': 'Bangkok'},
+                    ], 'shortest///min',
+                    {1.0: ['ev-car', 'plane'], np.inf: [None]},
+                    [
+                        {'src_tgt': ('Tokyo', 'Shanghai'), 'leg_key': 'plane', '__weight': 22.0},
+                        {'src_tgt': ('Medellin', 'Antartica'), 'leg_key': 'plane', '__weight': 888.0},
+                        {'src_tgt': ('Moscow', 'Beijing'), 'leg_key': 'ev-car', '__weight': 100000.0},
+                    ],
+            ),
+            (
+                    # Undirected test, shortest path, by max weight
+                    False, [
+                        {'u': 'Moscow', 'v': 'Beijing'}, {'u': 'Tokyo', 'v': 'Shanghai'},
+                        {'u': 'Medellin', 'v': 'Antartica'}, {'u': 'Vientiane', 'v': 'Bangkok'},
+                    ], 'shortest///max',
+                    {1.0: ['car', 'plane'], np.inf: [None]},
+                    [
+                        {'src_tgt': ('Moscow', 'Beijing'), 'leg_key': 'car', '__weight': 1000000.0},
+                        {'src_tgt': ('Medellin', 'Antartica'), 'leg_key': 'plane', '__weight': 888.0},
+                        {'src_tgt': ('Tokyo', 'Shanghai'), 'leg_key': 'plane', '__weight': 22.0},
+                    ],
+            ),
+            (
+                    # Directed test, shortest path, by max weight
+                    True, [
+                        {'u': 'Moscow', 'v': 'Beijing'}, {'u': 'Tokyo', 'v': 'Shanghai'},
+                        {'u': 'Medellin', 'v': 'Antartica'}, {'u': 'Vientiane', 'v': 'Bangkok'},
+                    ], 'shortest///max',
+                    {1.0: ['plane'], np.inf: [None]},
+                    [
+                        {'src_tgt': ('Medellin', 'Antartica'), 'leg_key': 'plane', '__weight': 888.0},
+                        {'src_tgt': ('Tokyo', 'Shanghai'), 'leg_key': 'plane', '__weight': 22.0},
                     ],
             ),
             (
@@ -218,28 +261,49 @@ class GraphUtilsUnitTest:
             # Simple test
             #
             (
-                    False, [{'u': 'Bangkok', 'v': 'Moscow'}, {'u': 'Tokyo', 'v': 'Shanghai'}], 'simple',
+                    False, [{'u': 'Bangkok', 'v': 'Moscow'}, {'u': 'Tokyo', 'v': 'Shanghai'}],
+                    'simple///min',
                     {2: ['teleport'], np.inf: [None]},
                     [{'src_tgt': ('Tokyo', 'Shanghai'), 'leg_key': 'teleport', '__weight': 1.667}],
             ),
+            (
+                    False, [{'u': 'Bangkok', 'v': 'Moscow'}, {'u': 'Tokyo', 'v': 'Shanghai'}],
+                    'simple///max',
+                    {4.0: ['car', 'plane', 'ship', 'teleport'], np.inf: [None]},
+                    [
+                        {'src_tgt': ('Tokyo', 'Shanghai'), 'leg_key': 'car', '__weight': 499999.25},
+                        {'src_tgt': ('Tokyo', 'Shanghai'), 'leg_key': 'ship', '__weight': 499998.25},
+                        {'src_tgt': ('Tokyo', 'Shanghai'), 'leg_key': 'plane', '__weight': 0.0},
+                        {'src_tgt': ('Tokyo', 'Shanghai'), 'leg_key': 'teleport', '__weight': 0.0},
+                    ],
+            ),
             # Simple graph with given query distance that is closer to 'teleport'
             (
-                    False, [{'u': 'Bangkok', 'v': 'Moscow'}, {'u': 'Tokyo', 'v': 'Shanghai', 'cost': 1}], 'simple',
+                    False, [{'u': 'Bangkok', 'v': 'Moscow'}, {'u': 'Tokyo', 'v': 'Shanghai', 'cost': 1}],
+                    'simple///min',
                     {2: ['teleport'], np.inf: [None]},
                     [{'src_tgt': ('Tokyo', 'Shanghai'), 'leg_key': 'teleport', '__weight': 1.667}],
             ),
             # Simple graph with given query distance that is closer to 'plane'
             (
-                    False, [{'u': 'Bangkok', 'v': 'Moscow'}, {'u': 'Tokyo', 'v': 'Shanghai', 'cost': 30}], 'simple',
+                    False, [{'u': 'Bangkok', 'v': 'Moscow'}, {'u': 'Tokyo', 'v': 'Shanghai', 'cost': 30}],
+                    'simple///min',
                     {1: ['plane'], np.inf: [None]},
                     [{'src_tgt': ('Tokyo', 'Shanghai'), 'leg_key': 'plane', '__weight': 22.0}],
             ),
         ]):
+            self.logger.info('Test #' + str(i) + ': ' + str(query_conns))
+            if path_method != 'dijkstra':
+                path_method, path_agg_wgt_by = path_method.split("///")
+            else:
+                path_method, path_agg_wgt_by = "dijkstra", "min"
+
             res = gu.search_top_keys_for_edges(
                 query_edges = query_conns,
                 ref_multigraph = G_search[dir],
                 path_method = path_method,
-                path_agg_weight_by = 'min',
+                # For dijkstra is always "min", so no effect for dijkstra
+                path_agg_weight_by = path_agg_wgt_by,
                 query_col_u = 'u',
                 query_col_v= 'v',
                 query_col_weight = 'cost',
@@ -249,10 +313,10 @@ class GraphUtilsUnitTest:
             top_keys = res['top_keys_by_number_of_edges']
             top_keys_by_agg_weight = res['top_keys_by_aggregated_weight']
             assert top_keys == exp_top_keys, \
-                'Result for test #' + str(i) + ' top keys ' + str(top_keys) + ' not ' + str(exp_top_keys)
+                'Result for test #' + str(i) + ' top keys\n' + str(top_keys) + ' not\n' + str(exp_top_keys)
             assert top_keys_by_agg_weight == exp_top_keys_agg_w, \
-                'Result for test #' + str(i) + ' top keys by agg weight' \
-                + str(top_keys_by_agg_weight) + ' not ' + str(exp_top_keys_agg_w)
+                'Result for test #' + str(i) + ' top keys by agg weight\n' \
+                + str(top_keys_by_agg_weight) + ' not\n' + str(exp_top_keys_agg_w)
 
         # gu.draw_graph(G=G_test[False], weight_large_thr=50, agg_weight_by='min')
         self.logger.info('ALL TESTS PASSED')
