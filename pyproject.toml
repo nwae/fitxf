@@ -14,6 +14,7 @@ dependencies = [
     'pandas >= 2.0.0',
     'scikit-learn >= 1.2.0',
     'torch >= 2.0.0',
+    'pillow',
 ]
 classifiers = [
     "Programming Language :: Python :: 3",
