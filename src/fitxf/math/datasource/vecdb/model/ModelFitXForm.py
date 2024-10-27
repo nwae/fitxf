@@ -332,10 +332,33 @@ class ModelFitTransform(ModelInterface):
         assert len(records) > 0, 'No records to train'
         self.logger.info('Add records of length ' + str(len(records)))
 
-        txt_encoding = self.calc_embedding(content_list = [r[self.col_content] for r in records])
+        cont_types = list(np.unique([r[self.col_content_type] for r in records]))
+        if len(cont_types) > 1:
+            encodings = []
+            for i, row in enumerate(records):
+                row_encode = self.calc_embedding(
+                    content_list = [row[self.col_content]],
+                    content_type = row[self.col_content_type],
+                )
+                row_encode = self.extend_feature_len(x=row_encode)
+                encodings.append(row_encode)
+            content_encoding = np.vstack(encodings)
+        else:
+            content_encoding = self.calc_embedding(
+                content_list = [r[self.col_content] for r in records],
+                content_type = cont_types[0],
+            )
+            content_encoding = self.extend_feature_len(x=content_encoding)
+        self.logger.info(
+            'Content of types ' + str(cont_types) + ' encoded using lm model "' + str(self.llm_model) + '" with shape '
+            + str(content_encoding.shape if self.return_tensors == 'np' else content_encoding.size())
+        )
+        # txt_encoding = self.calc_embedding(
+        #     content_list = [r[self.col_content] for r in records],
+        # )
         self.logger.info(
             'Text encoded using lm model "' + str(self.llm_model) + '" with shape '
-            + str(txt_encoding.shape if self.return_tensors == 'np' else txt_encoding.size())
+            + str(content_encoding.shape if self.return_tensors == 'np' else content_encoding.size())
         )
 
         required_mutexes = [self.mutex_name_underlying_db]
@@ -346,7 +369,7 @@ class ModelFitTransform(ModelInterface):
             )
             records_with_embedding_and_labelstd = self.update_label_maps_from_new_recs__(
                 records = records,
-                text_encoding_tensor = txt_encoding,
+                text_encoding_tensor = content_encoding,
             )
             mps = [{delete_key: r[delete_key]} for r in records_with_embedding_and_labelstd]
             try:
