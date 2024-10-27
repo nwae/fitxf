@@ -357,15 +357,16 @@ class ModelInterface:
                 self.base64_encoder.decode_base64_string_to_numpy_array(s64=s64, data_type='float64')
                 for s64 in text_encoded
             ]
-        array_lengths = [len(v) for v in text_encoded]
-        self.logger.info('Encoding lengths ' + str(array_lengths))
-        max_l, min_l = np.max(array_lengths), np.min(array_lengths)
-        if max_l != min_l:
-            text_encoded = [np.append(v, np.zeros(max_l - len(v))) for v in text_encoded]
-            self.logger.warning(
-                'Appended all vectors to be same length ' + str(max_l) + ', array lengths now '
-                + str([len(v) for v in text_encoded])
-            )
+        if len(text_encoded) > 0:
+            array_lengths = [len(v) for v in text_encoded]
+            self.logger.info('Encoding lengths ' + str(array_lengths))
+            max_l, min_l = np.max(array_lengths), np.min(array_lengths)
+            if max_l != min_l:
+                text_encoded = [np.append(v, np.zeros(max_l - len(v))) for v in text_encoded]
+                self.logger.warning(
+                    'Appended all vectors to be same length ' + str(max_l) + ', array lengths now '
+                    + str([len(v) for v in text_encoded])
+                )
 
         # not a good idea to record numpy array direct to csv, it will have "\n" everywhere,
         # but we support the conversion anyway
