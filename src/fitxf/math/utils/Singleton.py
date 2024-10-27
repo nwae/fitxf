@@ -281,7 +281,8 @@ class SingletonUnitTest:
 
 
 if __name__ == '__main__':
-    Env.set_env_vars_from_file(env_filepath=os.environ["REPO_DIR"] + '/.env.fitxf.math.ut')
+    e = Env()
+    Env.set_env_vars_from_file(env_filepath=e.REPO_DIR + '/.env.fitxf.math.ut')
     lgr = Logging.get_logger_from_env_var()
     SingletonUnitTest(logger=lgr).test()
     exit(0)
