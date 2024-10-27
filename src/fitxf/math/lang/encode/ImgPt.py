@@ -44,40 +44,31 @@ class ImgPt(LmInterface):
         if self.model_name is None:
             self.model_name = self.DEFAULT_MODEL_NAME
 
-        try:
-            # User may pass in model downloaded path
-            if os.path.isdir(str(self.model_name)):
-                self.model_path = self.model_name
-            else:
-                self.model_path = self.cache_folder + '/' + self.model_name
+        # User may pass in model downloaded path
+        if os.path.isdir(str(self.model_name)):
+            self.model_path = self.model_name
+        else:
+            self.model_path = self.cache_folder + '/' + self.model_name
 
-            assert os.path.isdir(self.model_path), 'Not a directory "' + str(self.model_path) + '"'
-            self.logger.info('Model name "' + str(self.model_name) + '" path "' + str(self.model_path) + '"')
+        assert os.path.isdir(self.model_path), 'Not a directory "' + str(self.model_path) + '"'
+        self.logger.info('Model name "' + str(self.model_name) + '" path "' + str(self.model_path) + '"')
 
-            self.logger.info(
-                'Image model "' + str(self.model_name) + '" with cache folder "' + str(self.cache_folder)
-                + '", name_or_path "' + str(self.model_path) + '", device "' + str(self.device) + '"'
-            )
-            self.processor = AutoImageProcessor.from_pretrained(
-                pretrained_model_name_or_path = self.model_path,
-            )
-            self.logger.info(
-                'OK processor for model "' + str(self.model_path) + '", cache folder "' + str(self.cache_folder) + '"'
-            )
-            self.model = AutoModel.from_pretrained(
-                pretrained_model_name_or_path = self.model_path,
-            ).to(self.device)
-            self.logger.info(
-                'OK Model "' + str(self.model_path) + '", cache folder "' + str(self.cache_folder) + '"'
-            )
-        except Exception as ex:
-            errmsg = 'Fail to instantiate image model for model "' + str(self.model_name) \
-                     + '", path "' + str(self.model_path) + '", cache folder "' + str(self.cache_folder) \
-                     + '": ' + str(ex) + ', stack trace: ' + str(traceback.format_exc())
-            self.logger.error(errmsg)
-            self.logger.info('Trying to load serverless api instead for model name "' + str(self.model_name) + '"...')
-            self.use_serverless = True
-            self.load_serverless_api()
+        self.logger.info(
+            'Image model "' + str(self.model_name) + '" with cache folder "' + str(self.cache_folder)
+            + '", name_or_path "' + str(self.model_path) + '", device "' + str(self.device) + '"'
+        )
+        self.processor = AutoImageProcessor.from_pretrained(
+            pretrained_model_name_or_path = self.model_path,
+        )
+        self.logger.info(
+            'OK processor for model "' + str(self.model_path) + '", cache folder "' + str(self.cache_folder) + '"'
+        )
+        self.model = AutoModel.from_pretrained(
+            pretrained_model_name_or_path = self.model_path,
+        ).to(self.device)
+        self.logger.info(
+            'OK Model "' + str(self.model_path) + '", cache folder "' + str(self.cache_folder) + '"'
+        )
 
         return
 
