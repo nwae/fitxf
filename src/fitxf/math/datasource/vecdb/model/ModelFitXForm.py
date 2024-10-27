@@ -477,8 +477,8 @@ class ModelFitTransform(ModelInterface):
 
 if __name__ == '__main__':
     from fitxf import FitXformClusterCosine, FitXformCluster, FitXformPca
-    from fitxf.math.datasource.vecdb.model.ModelDb import ModelDb
-    from fitxf.math.datasource.vecdb.metadata.Metadata import ModelMetadata
+    from nwae.math.datasource.vecdb.model.ModelDb import ModelDb
+    from nwae.math.datasource.vecdb.metadata.Metadata import ModelMetadata
     lgr = Logging.get_default_logger(log_level=logging.INFO, propagate=False)
     er = Env()
     Env.set_env_vars_from_file(env_filepath=er.REPO_DIR + '/.env.fitxf.math.ut')
@@ -490,21 +490,23 @@ if __name__ == '__main__':
     )
     model_fit = ModelFitTransform(
         user_id = user_id,
-        llm_model = LangModelPt(
-            # model_name = 'intfloat/multilingual-e5-small',
-            # model_name = 'sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2',
-            cache_folder = er.MODELS_PRETRAINED_DIR,
-            logger = lgr,
-        ),
+        llm_model = {
+            ModelInterface.TYPE_TEXT: LangModelPt(
+                # model_name = 'intfloat/multilingual-e5-small',
+                # model_name = 'sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2',
+                cache_folder = er.MODELS_PRETRAINED_DIR,
+                logger = lgr,
+            ),
+        },
         model_db_class = ModelDb,
         model_metadata_class = ModelMetadata,
-        col_content = 'text',
-        col_label_user = 'label',
-        col_label_std = '__label',
-        col_embedding = 'embedding',
-        fit_xform_model = FitXformClusterCosine(
-            logger = lgr,
-        ),
+        col_content = 'c',
+        col_content_type = 't',
+        col_label_user = 'l',
+        col_label_std = '__l',
+        col_embedding = 'e',
+        feature_len = 384,
+        fit_xform_model = FitXformCluster(logger=lgr),
         numpy_to_b64_for_db = True,
         file_temp_dir = er.REPO_DIR + '/tmp',
         cache_tensor_to_file = False,
@@ -512,11 +514,22 @@ if __name__ == '__main__':
         logger = lgr,
     )
     recs_test = [
-        {'label': 'fruits', 'text': 'mango'}, {'label': 'fruits', 'text': 'pineapple'},
-        {'label': 'fruits', 'text': 'apple'}, {'label': 'fruits', 'text': 'orange'},
-        {'label': 'beer', 'text': 'Мюнхенский хеллес или Хелль '}, {'label': 'beer', 'text': 'Грузинский Черный Лев'},
+        {'l': 'fruits', 't': 'text', 'c': 'mango'}, {'l': 'fruits', 't': 'text', 'c': 'pineapple'},
+        {'l': 'fruits',  't': 'text', 'c': 'apple'}, {'l': 'fruits',  't': 'text', 'c': 'orange'},
+        {'l': 'beer',  't': 'text', 'c': 'Мюнхенский хеллес или Хелль '},
+        {'l': 'beer', 't': 'text', 'c': 'Грузинский Черный Лев'},
+        {'l': 'plov', 't': 'image',
+         'c': 'https://img.freepik.com/premium-photo/shakh-plov-cooked-rice-dish-with-raisins-beautiful-plate-islamic-arabic-food_1279579-5074.jpg?w=1800'},
+        {'l': 'plov', 't': 'image',
+         'c': 'https://img.freepik.com/premium-psd/tasty-fried-vegetable-rice-plate-isolated-transparent-background_927015-3126.jpg?w=1480'},
+
     ]
-    # model_fit.atomic_delete_add(records=recs_test, delete_key='text')
-    res = model_fit.predict(text_list_or_embeddings=['давай выпем'], top_k=2)
-    print(res)
+    model_fit.atomic_delete_add(records=recs_test, delete_key='c')
+
+    for test in [
+        'давай выпем',
+        'https://www.alyonascooking.com/wp-content/uploads/2019/05/plov-recipe-6.jpg',
+    ]:
+        res = model_fit.predict(text_list_or_embeddings=[test], top_k=2)
+        print(res)
     exit(0)
