@@ -17,16 +17,25 @@ class ModelInterface:
 
     OLD_DATETIME = datetime(year=1999, month=9, day=9)
 
+    TYPE_TEXT = 'text'
+    TYPE_IMG = 'image'
+    TYPE_VOICE = 'voice'
+    TYPE_SOUND = 'sound'
+    TYPE_VIDEO = 'video'
+
     def __init__(
             self,
             user_id: str,
-            llm_model: ModelEncoderInterface,
+            # e.g. {'text': modeltxt, 'image': modelimg, ...}
+            llm_model: dict[str, ModelEncoderInterface],
             model_db_class: type(ModelDbInterface),
             model_metadata_class: type(MetadataInterface),
             col_content: str,
+            col_content_type: str,
             col_label_user: str,
             col_label_std: str,
             col_embedding: str,
+            feature_len: int,
             numpy_to_b64_for_db: bool,
             fit_xform_model: FitXformInterface,
             cache_tensor_to_file: bool,
@@ -41,9 +50,11 @@ class ModelInterface:
         self.model_db_class = model_db_class
         self.model_metadata_class = model_metadata_class
         self.col_content = col_content
+        self.col_content_type = col_content_type
         self.col_label_user = col_label_user
         self.col_label_standardized = col_label_std
         self.col_embedding = col_embedding
+        self.feature_len = feature_len
         self.numpy_to_b64_for_db = numpy_to_b64_for_db
         self.fit_xform_model = fit_xform_model
         self.cache_tensor_to_file = cache_tensor_to_file
@@ -54,7 +65,7 @@ class ModelInterface:
 
         self.base64_encoder = Base64(logger=self.logger)
         self.tensor_utils = TensorUtils(logger=self.logger)
-        self.llm_model_path = self.llm_model.get_model_path()
+        self.llm_model_path = {k: m.get_model_path() for k, m in self.llm_model.items()}
 
         self.model_db = self.__get_model_db(ModelClass=self.model_db_class)
         self.logger.info('DB params "' + str(self.user_id) +'": ' + str(self.model_db.get_db_params().get_db_info()))
@@ -184,13 +195,14 @@ class ModelInterface:
     def calc_embedding(
             self,
             content_list,
+            content_type,
     ):
         assert self.llm_model is not None, 'LLM model is None'
-        text_encode = self.llm_model.encode(
+        content_encode = self.llm_model[content_type].encode(
                 content_list = content_list,
                 return_tensors = self.return_tensors,
             )
-        return text_encode
+        return content_encode
 
     def get_model_name_from_path(self, model_path):
         parts = [name for name in str(model_path).strip().split(sep=os.sep) if len(name) > 0]
@@ -273,6 +285,7 @@ class ModelInterface:
     def predict(
             self,
             text_list_or_embeddings,
+            content_type: str = TYPE_TEXT,
             # can be cluster numbers to zoom into
             X_embeddings_local_space: np.ndarray = None,
             labels_local_space: list = None,
@@ -344,7 +357,18 @@ class ModelInterface:
                 self.base64_encoder.decode_base64_string_to_numpy_array(s64=s64, data_type='float64')
                 for s64 in text_encoded
             ]
+        array_lengths = [len(v) for v in text_encoded]
+        self.logger.info('Encoding lengths ' + str(array_lengths))
+        max_l, min_l = np.max(array_lengths), np.min(array_lengths)
+        if max_l != min_l:
+            text_encoded = [np.append(v, np.zeros(max_l - len(v))) for v in text_encoded]
+            self.logger.warning(
+                'Appended all vectors to be same length ' + str(max_l) + ', array lengths now '
+                + str([len(v) for v in text_encoded])
+            )
 
+        # not a good idea to record numpy array direct to csv, it will have "\n" everywhere,
+        # but we support the conversion anyway
         if (not self.numpy_to_b64_for_db) and (self.model_db.get_db_params().db_type == 'csv'):
             text_encoded_float = []
             for row in text_encoded:
@@ -359,6 +383,7 @@ class ModelInterface:
     def convert_to_embeddings_if_necessary(
             self,
             text_list_or_embeddings,
+            content_type,
     ):
         txt_lm = None
         if type(text_list_or_embeddings) is np.ndarray:
@@ -373,9 +398,13 @@ class ModelInterface:
                 )
 
         if txt_lm is None:
-            self.logger.info('Passed in data is likely not embedding but text list, calculating embedding..')
+            self.logger.info(
+                'Passed in data is likely not embedding but text list, calculating embedding: '
+                + str(text_list_or_embeddings)
+            )
             txt_lm = self.calc_embedding(
                 content_list = text_list_or_embeddings,
+                content_type = content_type,
             )
         return txt_lm
 

@@ -18,13 +18,16 @@ class ModelFitTransform(ModelInterface):
     def __init__(
             self,
             user_id: str,
-            llm_model: ModelEncoderInterface,
+            # e.g. {'text': modeltxt, 'image': modelimg, ...}
+            llm_model: dict[str, ModelEncoderInterface],
             model_db_class: type(ModelDbInterface),
             model_metadata_class: type(MetadataInterface),
             col_content: str,
+            col_content_type: str,
             col_label_user: str,
             col_label_std: str,
             col_embedding: str,
+            feature_len: int,
             numpy_to_b64_for_db: bool,
             fit_xform_model: FitXformInterface,
             cache_tensor_to_file: bool,
@@ -40,9 +43,11 @@ class ModelFitTransform(ModelInterface):
             model_db_class = model_db_class,
             model_metadata_class = model_metadata_class,
             col_content = col_content,
+            col_content_type = col_content_type,
             col_label_user = col_label_user,
             col_label_std = col_label_std,
             col_embedding = col_embedding,
+            feature_len = feature_len,
             numpy_to_b64_for_db = numpy_to_b64_for_db,
             fit_xform_model = fit_xform_model,
             cache_tensor_to_file = cache_tensor_to_file,
@@ -258,10 +263,22 @@ class ModelFitTransform(ModelInterface):
         finally:
             self.lock_mutexes.release_mutexes(mutexes=required_mutexes)
 
+    def extend_feature_len(
+            self,
+            x: np.ndarray,
+    ):
+        assert x.ndim == 2
+        h, l = x.shape
+        if l < self.feature_len:
+            return np.append(x, np.zeros(shape=(h, self.feature_len - l)), axis=-1)
+        else:
+            return x
+
     # Not necessarily faster, but will reduce RAM footprint
     def predict(
             self,
             text_list_or_embeddings,
+            content_type: str = ModelInterface.TYPE_TEXT,
             # can be cluster numbers to zoom into
             X_embeddings_local_space: np.ndarray = None,
             labels_local_space: list = None,
@@ -285,7 +302,9 @@ class ModelFitTransform(ModelInterface):
 
         txt_lm = self.convert_to_embeddings_if_necessary(
             text_list_or_embeddings = text_list_or_embeddings,
+            content_type = content_type,
         )
+        txt_lm = self.extend_feature_len(x=txt_lm)
 
         #
         # There are 2 possible approaches, after obtaining the PCA segment numbers & relevant reference vectors:
@@ -315,7 +334,7 @@ class ModelFitTransform(ModelInterface):
 
         txt_encoding = self.calc_embedding(content_list = [r[self.col_content] for r in records])
         self.logger.info(
-            'Text encoded using lm model "' + str(self.llm_model.get_model_name()) + '" with shape '
+            'Text encoded using lm model "' + str(self.llm_model) + '" with shape '
             + str(txt_encoding.shape if self.return_tensors == 'np' else txt_encoding.size())
         )
 
@@ -360,11 +379,26 @@ class ModelFitTransform(ModelInterface):
     ):
         assert len(records) > 0, 'No records to train'
         self.logger.info('Add records of length ' + str(len(records)))
-
-        txt_encoding = self.calc_embedding(content_list = [r[self.col_content] for r in records])
+        cont_types = list(np.unique([r[self.col_content_type] for r in records]))
+        if len(cont_types) > 1:
+            encodings = []
+            for i, row in enumerate(records):
+                row_encode = self.calc_embedding(
+                    content_list = [row[self.col_content]],
+                    content_type = row[self.col_content_type],
+                )
+                row_encode = self.extend_feature_len(x=row_encode)
+                encodings.append(row_encode)
+            content_encoding = np.vstack(encodings)
+        else:
+            content_encoding = self.calc_embedding(
+                content_list = [r[self.col_content] for r in records],
+                content_type = cont_types[0],
+            )
+            content_encoding = self.extend_feature_len(x=content_encoding)
         self.logger.info(
-            'Text encoded using lm model "' + str(self.llm_model.get_model_name()) + '" with shape '
-            + str(txt_encoding.shape if self.return_tensors == 'np' else txt_encoding.size())
+            'Content of types ' + str(cont_types) + ' encoded using lm model "' + str(self.llm_model) + '" with shape '
+            + str(content_encoding.shape if self.return_tensors == 'np' else content_encoding.size())
         )
 
         required_mutexes = [self.mutex_name_underlying_db]
@@ -375,7 +409,7 @@ class ModelFitTransform(ModelInterface):
             )
             records_with_embedding_and_labelstd = self.update_label_maps_from_new_recs__(
                 records = records,
-                text_encoding_tensor = txt_encoding,
+                text_encoding_tensor = content_encoding,
             )
             self.add_records_to_underlying_db__(
                 records_with_embedding_and_labelstd = records_with_embedding_and_labelstd,
