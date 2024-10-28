@@ -192,6 +192,17 @@ class ModelInterface:
     ):
         raise Exception('Must be implemented by derived class')
 
+    def extend_feature_len(
+            self,
+            x: np.ndarray,
+    ):
+        assert x.ndim == 2
+        h, l = x.shape
+        if l < self.feature_len:
+            return np.append(x, np.zeros(shape=(h, self.feature_len - l)), axis=-1)
+        else:
+            return x
+
     def calc_embedding(
             self,
             content_list,
@@ -202,7 +213,12 @@ class ModelInterface:
                 content_list = content_list,
                 return_tensors = self.return_tensors,
             )
-        return content_encode
+        content_encode_std_size = self.extend_feature_len(x=content_encode)
+        self.logger.info(
+            'Calculated embeddings for content type "' + str(content_type)
+            + '", size ' + str(content_encode_std_size.shape)
+        )
+        return content_encode_std_size
 
     def get_model_name_from_path(self, model_path):
         parts = [name for name in str(model_path).strip().split(sep=os.sep) if len(name) > 0]

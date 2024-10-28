@@ -263,17 +263,6 @@ class ModelFitTransform(ModelInterface):
         finally:
             self.lock_mutexes.release_mutexes(mutexes=required_mutexes)
 
-    def extend_feature_len(
-            self,
-            x: np.ndarray,
-    ):
-        assert x.ndim == 2
-        h, l = x.shape
-        if l < self.feature_len:
-            return np.append(x, np.zeros(shape=(h, self.feature_len - l)), axis=-1)
-        else:
-            return x
-
     # Not necessarily faster, but will reduce RAM footprint
     def predict(
             self,
@@ -304,7 +293,7 @@ class ModelFitTransform(ModelInterface):
             text_list_or_embeddings = text_list_or_embeddings,
             content_type = content_type,
         )
-        txt_lm = self.extend_feature_len(x=txt_lm)
+        # txt_lm = self.extend_feature_len(x=txt_lm)
 
         #
         # There are 2 possible approaches, after obtaining the PCA segment numbers & relevant reference vectors:
@@ -340,7 +329,7 @@ class ModelFitTransform(ModelInterface):
                     content_list = [row[self.col_content]],
                     content_type = row[self.col_content_type],
                 )
-                row_encode = self.extend_feature_len(x=row_encode)
+                # row_encode = self.extend_feature_len(x=row_encode)
                 encodings.append(row_encode)
             content_encoding = np.vstack(encodings)
         else:
@@ -348,7 +337,7 @@ class ModelFitTransform(ModelInterface):
                 content_list = [r[self.col_content] for r in records],
                 content_type = cont_types[0],
             )
-            content_encoding = self.extend_feature_len(x=content_encoding)
+            # content_encoding = self.extend_feature_len(x=content_encoding)
         self.logger.info(
             'Content of types ' + str(cont_types) + ' encoded using lm model "' + str(self.llm_model) + '" with shape '
             + str(content_encoding.shape if self.return_tensors == 'np' else content_encoding.size())
@@ -410,7 +399,7 @@ class ModelFitTransform(ModelInterface):
                     content_list = [row[self.col_content]],
                     content_type = row[self.col_content_type],
                 )
-                row_encode = self.extend_feature_len(x=row_encode)
+                # row_encode = self.extend_feature_len(x=row_encode)
                 encodings.append(row_encode)
             content_encoding = np.vstack(encodings)
         else:
@@ -418,7 +407,7 @@ class ModelFitTransform(ModelInterface):
                 content_list = [r[self.col_content] for r in records],
                 content_type = cont_types[0],
             )
-            content_encoding = self.extend_feature_len(x=content_encoding)
+            # content_encoding = self.extend_feature_len(x=content_encoding)
         self.logger.info(
             'Content of types ' + str(cont_types) + ' encoded using lm model "' + str(self.llm_model) + '" with shape '
             + str(content_encoding.shape if self.return_tensors == 'np' else content_encoding.size())
