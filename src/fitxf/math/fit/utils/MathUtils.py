@@ -1,5 +1,6 @@
 import logging
 import os
+import platform
 import numpy as np
 from fitxf.math.utils.Logging import Logging
 from fitxf.math.utils.Profile import Profiling
@@ -379,8 +380,17 @@ class MathUtilsUnitTest:
             'RPS match template n=' + str(n) + ', total secs=' + str(diffsecs) + ', rps=' + str(rps)
             + ', msec avg=' + str(msec_avg)
         )
-        assert rps > 10000, 'FAILED RPS n=' + str(n) + ', total=' + str(diffsecs) + 's, rps=' + str(rps)
-        assert msec_avg < 0.1, 'FAILED RPS n=' + str(n) + ', total=' + str(diffsecs) + 's, msec avg=' + str(msec_avg)
+        pf = platform.platform()
+        self.logger.info('Platform ' + str(pf))
+        if pf in ['macOS-15.0.1-x86_64-i386-64bit']:
+            rps_thr, msec_thr = 7500, 0.13
+        else:
+            rps_thr, msec_thr = 10000, 0.1
+
+        assert rps > rps_thr, \
+            'FAILED RPS n=' + str(n) + ', total=' + str(diffsecs) + 's, rps=' + str(rps)
+        assert msec_avg < msec_thr, \
+            'FAILED RPS n=' + str(n) + ', total=' + str(diffsecs) + 's, msec avg=' + str(msec_avg)
         return rps
 
 

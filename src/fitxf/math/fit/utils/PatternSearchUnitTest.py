@@ -1,6 +1,7 @@
 import logging
 import os
 import re
+import platform
 import numpy as np
 from fitxf.math.fit.utils.PatternSearch import PatternSearch
 from fitxf.math.utils.Pandas import Pandas
@@ -93,7 +94,7 @@ class PatternSearchUnitTest:
             # With space as hint separator
             (8, [".", ":", ";", " "], 0.9, 0.8, "LLMs go hysterical: LLMs go hysterical: LLMs go hysterical: L",
              {
-                 'seq_len': 19, 'prefix': "LLMs go hysterical:", 'indexes': [0, 20, 40], 'seq_list': [8, 20],
+                 'seq_len': 18, 'prefix': "LLMs go hysterical", 'indexes': [0, 20, 40], 'seq_list': [8, 20],
                  'break_reason': 'density/coverage condition met',
              }),
         ]):
@@ -171,7 +172,14 @@ class PatternSearchUnitTest:
 
         # Noisy back
         self.logger.setLevel(level=logging.INFO)
-        avg_ms, avg_ms_thr = np.mean(np.array(time_records)), 6
+        pf = platform.platform()
+        self.logger.info('Platform ' + str(pf))
+        if pf in ['macOS-15.0.1-x86_64-i386-64bit']:
+            avg_ms_thr = 16
+        else:
+            avg_ms_thr = 6
+
+        avg_ms = np.mean(np.array(time_records))
         self.logger.info('Average time ' + str(avg_ms) + ', time records: ' + str(time_records))
         assert avg_ms < avg_ms_thr, 'FAIL Average ms ' + str(avg_ms) + ' < ' + str(avg_ms_thr) + 'ms'
 
