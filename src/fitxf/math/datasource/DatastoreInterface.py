@@ -70,7 +70,7 @@ class DbParams:
         mask_len = len(passwd) - hide_len
         mask_len = max(0, mask_len)
         self.db_password_hide = str('*' * mask_len) + str(passwd[-hide_len:])
-        self.logger.info(self.get_db_info())
+        self.logger.info('Initialized DB Params as: ' + str(self.get_db_info()))
         return
 
     def get_db_info(self):
