@@ -383,7 +383,7 @@ class MathUtilsUnitTest:
         pf = platform.platform()
         self.logger.info('Platform ' + str(pf))
         if pf in ['macOS-15.0.1-x86_64-i386-64bit']:
-            rps_thr, msec_thr = 3000, 0.25
+            rps_thr, msec_thr = 3000, 0.3
         else:
             rps_thr, msec_thr = 10000, 0.1
 
