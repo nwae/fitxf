@@ -376,6 +376,10 @@ class FitXformCluster(FitXformInterface):
                 # Include user label info
                 pred_label_and_clusterno = []
                 # map from cluster numbers to actual user labels
+                self.logger.debug(
+                    'Try map cluster numbers ' + str(pred_labels) + ' to actual user labels using map: '
+                    + str(self.cluster_no_map_to_userlabel)
+                )
                 for cluster_numbers in pred_labels:
                     user_labels_cno = []
                     for cno in cluster_numbers:
