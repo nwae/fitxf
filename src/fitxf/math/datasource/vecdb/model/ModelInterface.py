@@ -214,6 +214,9 @@ class ModelInterface:
                 return_tensors = self.return_tensors,
             )
         content_encode_std_size = self.extend_feature_len(x=content_encode)
+        embed_len = content_encode_std_size.shape[-1]
+        assert embed_len <= self.feature_len, \
+            'Embedding length ' + str(embed_len) + ' cannot exceed given fixed feature len ' + str(self.feature_len)
         self.logger.info(
             'Calculated embeddings for content type "' + str(content_type)
             + '", size ' + str(content_encode_std_size.shape)

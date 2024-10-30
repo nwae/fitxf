@@ -6,6 +6,7 @@ from datetime import datetime
 from fitxf.math.datasource.DatastoreInterface import DbParams
 from fitxf import FitXformInterface
 from fitxf.math.lang.encode.LangModelPt import LangModelPt
+from fitxf.math.lang.encode.ImgPt import ImgPt
 from fitxf.math.datasource.vecdb.model.ModelDbInterface import ModelDbInterface
 from fitxf.math.datasource.vecdb.model.ModelInterface import ModelInterface, ModelEncoderInterface
 from fitxf.math.datasource.vecdb.metadata.MetadataInterface import MetadataInterface
@@ -486,6 +487,10 @@ if __name__ == '__main__':
                 cache_folder = er.MODELS_PRETRAINED_DIR,
                 logger = lgr,
             ),
+            ModelInterface.TYPE_IMG: ImgPt(
+                cache_folder = er.MODELS_PRETRAINED_DIR,
+                logger = lgr,
+            )
         },
         model_db_class = ModelDb,
         model_metadata_class = ModelMetadata,
