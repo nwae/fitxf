@@ -377,7 +377,8 @@ class ModelInterface:
             array_lengths = [len(v) for v in text_encoded]
             self.logger.info('Encoding lengths ' + str(array_lengths))
             max_l, min_l = np.max(array_lengths), np.min(array_lengths)
-            if max_l != min_l:
+            assert self.feature_len >= max_l
+            if self.feature_len != min_l:
                 text_encoded = [np.append(v, np.zeros(max_l - len(v))) for v in text_encoded]
                 self.logger.warning(
                     'Appended all vectors to be same length ' + str(max_l) + ', array lengths now '
