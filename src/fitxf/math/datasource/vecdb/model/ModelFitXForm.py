@@ -511,7 +511,6 @@ if __name__ == '__main__':
          'c': 'https://img.freepik.com/premium-photo/shakh-plov-cooked-rice-dish-with-raisins-beautiful-plate-islamic-arabic-food_1279579-5074.jpg?w=1800'},
         {'l': 'plov', 't': 'image',
          'c': 'https://img.freepik.com/premium-psd/tasty-fried-vegetable-rice-plate-isolated-transparent-background_927015-3126.jpg?w=1480'},
-
     ]
     model_fit.atomic_delete_add(records=recs_test, delete_key='c')
 
