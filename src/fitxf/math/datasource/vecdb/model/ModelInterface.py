@@ -35,6 +35,7 @@ class ModelInterface:
             col_label_user: str,
             col_label_std: str,
             col_embedding: str,
+            # <=0 means no check
             feature_len: int,
             numpy_to_b64_for_db: bool,
             fit_xform_model: FitXformInterface,
@@ -196,12 +197,26 @@ class ModelInterface:
             self,
             x: np.ndarray,
     ):
-        assert x.ndim == 2
-        h, l = x.shape
-        if l < self.feature_len:
-            return np.append(x, np.zeros(shape=(h, self.feature_len - l)), axis=-1)
-        else:
+        # no check whatsoever if set to <= 0
+        if self.feature_len <= 0:
             return x
+
+        start_dim = x.ndim
+        assert start_dim in [1, 2]
+
+        x_tmp = x if start_dim==2 else np.resize(a=x, new_shape=(1, len(x)))
+        assert x_tmp.ndim == 2
+
+        h, l = x_tmp.shape
+        if l < self.feature_len:
+            x_ret = np.append(x_tmp, np.zeros(shape=(h, self.feature_len - l)), axis=-1)
+        elif l > self.feature_len:
+            raise Exception('Length of array ' + str(l) + ' longer than preset feature length ' + str(self.feature_len))
+        else:
+            x_ret = x_tmp
+        x_final = x_ret if start_dim==2 else x_ret[0]
+        # self.logger.debug('Returning extended vector of shape ' + str(x_final.shape))
+        return x_final
 
     def calc_embedding(
             self,
@@ -381,8 +396,8 @@ class ModelInterface:
             self.logger.info('Encoding lengths ' + str(array_lengths))
             max_l, min_l = np.max(array_lengths), np.min(array_lengths)
             assert self.feature_len >= max_l
-            if self.feature_len != min_l:
-                text_encoded = [np.append(v, np.zeros(max_l - len(v))) for v in text_encoded]
+            if (self.feature_len >= 0) and ((self.feature_len != max_l) or (max_l != min_l)):
+                text_encoded = [self.extend_feature_len(x=v) for v in text_encoded]
                 self.logger.warning(
                     'Appended all vectors to be same length ' + str(max_l) + ', array lengths now '
                     + str([len(v) for v in text_encoded])
