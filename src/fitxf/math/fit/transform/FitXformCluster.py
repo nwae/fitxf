@@ -1,7 +1,7 @@
 import logging
 import os
-import ast
 import json
+import pickle
 import numpy as np
 from fitxf.math.fit.transform.FitXformInterface import FitXformInterface
 from fitxf.math.fit.utils.FitUtils import FitUtils
@@ -421,7 +421,9 @@ class FitXformCluster(FitXformInterface):
         # Add more info
         # Keep dictionary as string, because json cannot dump or load np.int32, and that problem is hard
         # to trace where the int32 comes from, so keep the whole dict as string and load back later by literal_eval
-        base_model_dict[self.KEY_CLUSTERNO_TO_USERLABELS_INFO] = str(self.cluster_no_map_to_userlabel)
+        base_model_dict[self.KEY_CLUSTERNO_TO_USERLABELS_INFO] = self.base64.encode(
+            b = pickle.dumps(self.cluster_no_map_to_userlabel),
+        )
         if dump_to_b64json_str:
             # retain UTF-8 if any
             return self.base64.encode(b=json.dumps(base_model_dict, ensure_ascii=False).encode(encoding='utf-8'))
@@ -431,13 +433,19 @@ class FitXformCluster(FitXformInterface):
     def load_model_from_b64json(
             self,
             model_b64json,
-    ):
+    ) -> dict:
         model_dict = super().load_model_from_b64json(
             model_b64json = model_b64json,
         )
+        self.logger.info('Loaded model dict from base class as: ' + str(model_dict))
+        [self.logger.info('Key "' + str(k) + '": Value ' + str(v)) for k, v in model_dict.items()]
+
         # Load back dict using literal_eval, to avoid int32 json problems
         self.cluster_labels = list(self.X_transform)
-        self.cluster_no_map_to_userlabel = ast.literal_eval(model_dict[self.KEY_CLUSTERNO_TO_USERLABELS_INFO])
+        self.cluster_no_map_to_userlabel = pickle.loads(
+            self.base64.decode(s=model_dict[self.KEY_CLUSTERNO_TO_USERLABELS_INFO]),
+        )
+        model_dict[self.KEY_CLUSTERNO_TO_USERLABELS_INFO] = self.cluster_no_map_to_userlabel
         self.logger.info(
             'Loaded model from saved base64-json string, for cluster class "' + str(self.cluster.__class__)
             + ' data length ' + str(len(self.X_transform))
@@ -445,7 +453,7 @@ class FitXformCluster(FitXformInterface):
             + ', centers ' + str(len(self.model_centers))
             + ', model base64-json string: ' + str(model_b64json)
         )
-        return
+        return model_dict
 
 
 class FitXformClusterCosine(FitXformCluster):

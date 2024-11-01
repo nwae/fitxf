@@ -197,35 +197,50 @@ class FitXformInterface:
     def load_model_from_b64json(
             self,
             model_b64json,
-    ):
+    ) -> dict:
+        self.logger.debug('Loading model b64: ' + str(model_b64json))
         model_dict_json = self.base64.decode(s=model_b64json)
         model_dict = json.loads(model_dict_json)
+
+        self.logger.debug('Loading model b64 json: ' + str(model_dict))
         self.X_transform = self.base64.decode_base64_string_to_numpy_array_multidim(
             string = model_dict[self.KEY_X_TRANSFORM],
             data_type = np.float64,
         )
+        self.logger.debug('Loaded X_transform as: ' + str(self.X_transform))
+
         self.X_labels = model_dict[self.KEY_X_LABELS]
         self.model_centroid = self.base64.decode_base64_string_to_numpy_array_multidim(
             string = model_dict[self.KEY_CENTROID],
             data_type = np.float64,
         )
+        self.logger.debug('Loaded X_labels as: ' + str(self.X_labels))
+
         self.model_n_components_or_centers = model_dict[self.KEY_N_COMPONENTS_OR_CENTERS]
         self.model_principal_components = self.base64.decode_base64_string_to_numpy_array_multidim(
             string = model_dict[self.KEY_PRINCIPAL_COMPONENTS],
             data_type = np.float64,
         )
+        self.logger.debug('Loaded model_principal_components as: ' + str(self.model_principal_components))
+
         self.model_centers = self.base64.decode_base64_string_to_numpy_array_multidim(
             string = model_dict[self.KEY_CENTERS],
             data_type = np.float64,
         )
+        self.logger.debug('Loaded model_centers as: ' + str(self.model_centers))
+
         self.X_grid_vectors = self.base64.decode_base64_string_to_numpy_array_multidim(
             string = model_dict[self.KEY_GRID_VECTORS],
             data_type = np.int64,
         )
+        self.logger.debug('Loaded X_grid_vectors as: ' + str(self.X_grid_vectors))
+
         self.X_grid_numbers = self.base64.decode_base64_string_to_numpy_array_multidim(
             string = model_dict[self.KEY_GRID_NUMBERS],
             data_type = np.int64,
         )
+        self.logger.debug('Loaded X_grid_numbers as: ' + str(self.X_grid_numbers))
+
         return model_dict
 
     def predict(

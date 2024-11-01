@@ -25,16 +25,20 @@ class Base64:
     def encode(
             self,
             b,
-    ):
+    ) -> str:
         b = bytes(b, self.text_encoding) if type(b) is str else b
+        assert type(b) is bytes
         e_bytes = b64encode(s=b)
-        return e_bytes.decode(encoding=self.text_encoding)
+        b64_str = e_bytes.decode(encoding=self.text_encoding)
+        assert type(b64_str) is str
+        return b64_str
 
     def decode(
             self,
-            s,
-    ):
+            s: str,
+    ) -> bytes:
         d_bytes = b64decode(s.encode(encoding=self.text_encoding))
+        assert type(d_bytes) is bytes
         return d_bytes
 
     #
