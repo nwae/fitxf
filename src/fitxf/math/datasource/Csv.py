@@ -9,6 +9,7 @@ from fitxf.math.utils.LockF import LockFile
 from fitxf.math.datasource.DatastoreInterface import DatastoreInterface, DbParams, DatastoreInterfaceUnitTest
 from fitxf.math.utils.Logging import Logging
 from fitxf.math.utils.Env import Env
+from fitxf.math.utils.PkgVersion import PkgVersion
 
 
 class Csv(DatastoreInterface):
@@ -24,6 +25,9 @@ class Csv(DatastoreInterface):
             ignore_warnings = ignore_warnings,
             logger = logger,
         )
+
+        pkg_utils = PkgVersion(logger=self.logger)
+        verdict, (self.py_maj_ver, self.py_min_ver)= pkg_utils.check_python(version="3.12", return_version=True)
 
         self.filepath = self.db_params.db_root_folder + os.sep + self.db_params.db_table
 
@@ -353,7 +357,10 @@ class Csv(DatastoreInterface):
     ):
         value = string_array.strip()
         # remove front/end brackets "[" and "]"
-        value = re.sub(pattern="[\[\]]", repl="", string=value)
+        if (self.py_maj_ver == 3) and (self.py_min_ver <= 11):
+            value = re.sub(pattern="[\[\]]", repl="", string=value)
+        else:
+            value = re.sub(pattern="[[]]", repl="", string=value)
         # replace all tabs, newline, etc with space
         value = re.sub(pattern="[ \t\n\r]", repl=" ", string=value)
         # replace multiple spaces with a single space

@@ -16,6 +16,7 @@ from fitxf.math.fit.utils.PatternSearchUnitTest import PatternSearchUnitTest
 from fitxf.math.fit.cluster.ClusterUnitTest import ClusterUnitTest
 from fitxf.math.fit.cluster.ClusterCosineUT import ClusterCosineUnitTest
 from fitxf.math.graph.GraphUtilsUnitTest import GraphUtilsUnitTest
+from fitxf.math.utils.PkgVersion import PkgVersion
 # Utils
 from fitxf.math.utils.Lock import LockUnitTest
 from fitxf.math.utils.ObjPers import UnitTestObjectPersistence
@@ -38,7 +39,14 @@ class RepoUnitTest:
         self.tmp_dir = os.environ["TEMP_DIR"]
         self.logger = Logging.get_logger_from_env_var()
 
-        rand_str = re.sub(pattern=".*[\-]", repl="", string=str(uuid.uuid4()))
+        pkg_utils = PkgVersion(logger=self.logger)
+        verdict, (self.py_maj_ver, self.py_min_ver)= pkg_utils.check_python(version="3.12", return_version=True)
+
+        rand_str_uuid = str(uuid.uuid4())
+        if (self.py_maj_ver == 3) and (self.py_min_ver <= 11):
+            rand_str = re.sub(pattern=".*[\-]", repl="", string=rand_str_uuid)
+        else:
+            rand_str = re.sub(pattern=".*[-]", repl="", string=rand_str_uuid)
         self.db_test_table_or_index = 'nwae-math.repo-unit-test.' + str(rand_str)
 
         warnings.filterwarnings("ignore", message="Unverified HTTPS request")

@@ -402,18 +402,6 @@ class ModelInterface:
                     'Appended all vectors to be same length ' + str(max_l) + ', array lengths now '
                     + str([len(v) for v in text_encoded])
                 )
-
-        # not a good idea to record numpy array direct to csv, it will have "\n" everywhere,
-        # but we support the conversion anyway
-        if (not self.numpy_to_b64_for_db) and (self.model_db.get_db_params().db_type == 'csv'):
-            text_encoded_float = []
-            for row in text_encoded:
-                float_array = self.model_db.convert_csv_string_array_to_float_array(
-                    string_array = row,
-                    custom_chars_remove = [','],
-                )
-                text_encoded_float.append(float_array)
-            text_encoded = text_encoded_float
         return np.array(text_encoded)
 
     def convert_to_embeddings_if_necessary(
