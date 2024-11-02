@@ -92,7 +92,7 @@ class ImgPt(LmInterface):
 
     def encode(
             self,
-            text_list,
+            content_list,
             # max length has got no meaning
             maxlen = None,
             return_tensors = 'pt',
@@ -101,7 +101,7 @@ class ImgPt(LmInterface):
             params_other = None,
     ):
         embeddings = []
-        for img_xxx in text_list:
+        for img_xxx in content_list:
             if type(img_xxx) is str:
                 if re.match(pattern="^http", string=img_xxx, flags=re.IGNORECASE):
                     img_file_type = 'url'
