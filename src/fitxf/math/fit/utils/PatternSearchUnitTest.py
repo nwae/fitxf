@@ -173,11 +173,16 @@ class PatternSearchUnitTest:
         # Noisy back
         self.logger.setLevel(level=logging.INFO)
         pf = platform.platform()
-        self.logger.info('Platform ' + str(pf))
-        if pf in ['macOS-15.0.1-x86_64-i386-64bit']:
+        pf_info = pf.split("-")
+        processor = pf_info[2]
+        if processor in ['x86_64']:
             avg_ms_thr = 32
         else:
             avg_ms_thr = 6
+        self.logger.info(
+            'Platform processor "' + str(processor) + '", "' + str(pf) + '": ' + str(pf_info)
+            + ', avg ms thr ' + str(avg_ms_thr)
+        )
 
         avg_ms = np.mean(np.array(time_records))
         self.logger.info('Average time ' + str(avg_ms) + ', time records: ' + str(time_records))

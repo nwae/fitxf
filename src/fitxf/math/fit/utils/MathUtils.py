@@ -381,11 +381,16 @@ class MathUtilsUnitTest:
             + ', msec avg=' + str(msec_avg)
         )
         pf = platform.platform()
-        self.logger.info('Platform ' + str(pf))
-        if pf in ['macOS-15.0.1-x86_64-i386-64bit']:
+        pf_info = pf.split("-")
+        processor = pf_info[2]
+        if processor in ['x86_64']:
             rps_thr, msec_thr = 3000, 0.3
         else:
             rps_thr, msec_thr = 10000, 0.1
+        self.logger.info(
+            'Platform processor "' + str(processor) + '", "' + str(pf) + '": ' + str(pf_info)
+            + ', rps thr ' + str(rps_thr)
+        )
 
         assert rps > rps_thr, \
             'FAILED RPS n=' + str(n) + ', total=' + str(diffsecs) + 's, rps=' + str(rps)
