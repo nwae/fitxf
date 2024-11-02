@@ -301,7 +301,8 @@ class ClusterCosine(Cluster):
         # minus 1 back
         clusters_corrected = []
         for s in clusters:
-            clusters_corrected.append([element-1 for element in s])
+            # minus 1 and also convert back to int from numpy type int32 or int64
+            clusters_corrected.append([int(element-1) for element in s])
 
         union_all = set()
         for s in clusters_corrected:
@@ -313,6 +314,10 @@ class ClusterCosine(Cluster):
         cluster_numbers, centroids = self.get_cluster_numbers_and_centroids(
             x = x_norm,
             clusters = clusters_corrected,
+        )
+        self.logger.info(
+            'Done cluster: ' + str(clusters_corrected) + ', cluster numbers: ' + str(cluster_numbers)
+            + ', centroids: ' + str(centroids)
         )
 
         diff_secs = self.profiler.get_time_dif_secs(start=start_time, stop=self.profiler.stop(), decimals=4)
