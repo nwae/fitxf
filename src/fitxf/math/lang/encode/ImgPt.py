@@ -97,7 +97,7 @@ class ImgPt(LmInterface):
             maxlen = None,
             return_tensors = 'pt',
             # does not apply here since we can't see the tokenization
-            return_attnmasks = True,
+            return_attnmasks = False,
             params_other = None,
     ):
         embeddings = []
