@@ -225,13 +225,14 @@ class ModelInterface:
     ):
         assert self.llm_model is not None, 'LLM model is None'
         content_encode = self.llm_model[content_type].encode(
-                content_list = content_list,
-                return_tensors = self.return_tensors,
-            )
+            content_list = content_list,
+            return_tensors = self.return_tensors,
+        )
         content_encode_std_size = self.extend_feature_len(x=content_encode)
         embed_len = content_encode_std_size.shape[-1]
-        assert embed_len <= self.feature_len, \
-            'Embedding length ' + str(embed_len) + ' cannot exceed given fixed feature len ' + str(self.feature_len)
+        if self.feature_len > 0:
+            assert embed_len <= self.feature_len, \
+                'Embedding length ' + str(embed_len) + ' cannot exceed given fixed feature len ' + str(self.feature_len)
         self.logger.info(
             'Calculated embeddings for content type "' + str(content_type)
             + '", size ' + str(content_encode_std_size.shape)
@@ -395,13 +396,14 @@ class ModelInterface:
             array_lengths = [len(v) for v in text_encoded]
             self.logger.info('Encoding lengths ' + str(array_lengths))
             max_l, min_l = np.max(array_lengths), np.min(array_lengths)
-            assert self.feature_len >= max_l
-            if (self.feature_len >= 0) and ((self.feature_len != max_l) or (max_l != min_l)):
-                text_encoded = [self.extend_feature_len(x=v) for v in text_encoded]
-                self.logger.warning(
-                    'Appended all vectors to be same length ' + str(max_l) + ', array lengths now '
-                    + str([len(v) for v in text_encoded])
-                )
+            if self.feature_len > 0:
+                assert self.feature_len >= max_l
+                if (self.feature_len != max_l) or (max_l != min_l):
+                    text_encoded = [self.extend_feature_len(x=v) for v in text_encoded]
+                    self.logger.warning(
+                        'Appended all vectors to be same length ' + str(max_l) + ', array lengths now '
+                        + str([len(v) for v in text_encoded])
+                    )
         return np.array(text_encoded)
 
     def convert_to_embeddings_if_necessary(
