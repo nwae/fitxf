@@ -33,6 +33,8 @@ class ModelFitTransform(ModelInterface):
             fit_xform_model: FitXformInterface,
             cache_tensor_to_file: bool,
             file_temp_dir: str,
+            # turn off any fitting or transform if False
+            in_plain_or_test_mode: bool,
             # allowed values: "np", "torch"
             return_tensors: str = 'np',
             enable_bg_thread_for_training: bool = False,
@@ -53,6 +55,7 @@ class ModelFitTransform(ModelInterface):
             fit_xform_model = fit_xform_model,
             cache_tensor_to_file = cache_tensor_to_file,
             file_temp_dir = file_temp_dir,
+            in_plain_or_test_mode = in_plain_or_test_mode,
             return_tensors = return_tensors,
             enable_bg_thread_for_training = enable_bg_thread_for_training,
             logger = logger,

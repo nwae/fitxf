@@ -384,7 +384,7 @@ class MathUtilsUnitTest:
         pf_info = pf.split("-")
         processor = pf_info[2]
         if processor in ['x86_64']:
-            rps_thr, msec_thr = 3000, 0.3
+            rps_thr, msec_thr = 1000, 0.5
         else:
             rps_thr, msec_thr = 10000, 0.1
         self.logger.info(

@@ -41,6 +41,8 @@ class ModelInterface:
             fit_xform_model: FitXformInterface,
             cache_tensor_to_file: bool,
             file_temp_dir: str,
+            # turn off any fitting or transform if False
+            in_plain_or_test_mode: bool,
             # allowed values: "np", "torch"
             return_tensors: str = 'np',
             enable_bg_thread_for_training: bool = False,
@@ -60,16 +62,23 @@ class ModelInterface:
         self.fit_xform_model = fit_xform_model
         self.cache_tensor_to_file = cache_tensor_to_file
         self.file_temp_dir = file_temp_dir
+        self.in_plain_or_test_mode = in_plain_or_test_mode
         self.return_tensors = return_tensors
         self.enable_bg_thread_for_training = enable_bg_thread_for_training
         self.logger = logger if logger is not None else logging.getLogger()
+
+        self.logger.info(
+            'Model in plain/test mode set to "' + str(self.in_plain_or_test_mode) + '"'
+        )
 
         self.base64_encoder = Base64(logger=self.logger)
         self.tensor_utils = TensorUtils(logger=self.logger)
         self.llm_model_path = {k: m.get_model_path() for k, m in self.llm_model.items()}
 
         self.model_db = self.__get_model_db(ModelClass=self.model_db_class)
-        self.logger.info('DB params "' + str(self.user_id) +'": ' + str(self.model_db.get_db_params().get_db_info()))
+        self.logger.info(
+            'DB params "' + str(self.user_id) +'": ' + str(self.model_db.get_db_params().get_db_info())
+        )
 
         self.vec_db_metadata = self.__get_model_metadata(MetadataClass=self.model_metadata_class)
 
@@ -94,10 +103,7 @@ class ModelInterface:
             'LLM model path "' + str(self.llm_model_path)
             + '", encode numpy to base 64 in DB = ' + str(self.numpy_to_b64_for_db)
         )
-        self.in_plain_or_test_mode = \
-            os.environ.get("VECDB_FIT_XFORM_MODEL_TEST_MODE", '0').lower() in ['1', 'true', 'yes']
-        self.logger.info('Model in plain/test mode set to "' + str(self.in_plain_or_test_mode) + '"')
-        
+
         self.bg_thread = threading.Thread(target=self.run_bg_thread)
         self.bg_thread_sleep_secs = float(os.environ.get("VECDB_BG_SLEEP_SECS", "10."))
         self.clear_memory_secs_inactive = float(os.environ.get("VECDB_CLEAR_MEMORY_SECS_INACTIVE", "30."))
