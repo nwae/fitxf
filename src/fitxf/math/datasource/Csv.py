@@ -323,6 +323,39 @@ class Csv(DatastoreInterface):
         df_remaining.to_csv(tablename, index=False)
         return {'deleted': rows_removed}
 
+    def delete_all(
+            self,
+            tablename: str = None,
+    ):
+        tablename = self.__get_full_path(tablename=tablename)
+        try:
+            self.__acquire_lock()
+            self.__delete_all(
+                tablename = tablename,
+            )
+        except Exception as ex:
+            errmsg = \
+                ('Error occurred table "' + str(tablename) + '" delete all, exception: ' + str(ex)
+                 + ' Stack trace ' + str(traceback.format_exc()))
+            self.logger.error(errmsg)
+            raise Exception(errmsg)
+        finally:
+            self.__release_lock()
+
+    def __delete_all(
+            self,
+            tablename: str,
+    ):
+        df = pd.read_csv(tablename, index_col=False)
+        self.logger.debug('Dataframe read from "' + str(tablename) + '", shape ' + str(df.shape))
+
+        condition = np.array([True]*len(df))
+
+        rows_removed = len(df[condition])
+        df_remaining = df[np.logical_not(condition)]
+        df_remaining.to_csv(tablename, index=False)
+        return {'deleted': rows_removed}
+
     def add_column(
             self,
             colnew,

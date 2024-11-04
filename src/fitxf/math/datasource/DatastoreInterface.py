@@ -219,6 +219,12 @@ class DatastoreInterface:
     ):
         raise Exception('Must be implemented by derived class')
 
+    def delete_all(
+            self,
+            tablename = None,
+    ):
+        raise Exception('Must be implemented by derived class')
+
     def add_column(
             self,
             colnew,
