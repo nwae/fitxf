@@ -29,10 +29,12 @@ class Env:
         env_lines = FileUtils(filepath=env_filepath).read_text_file()
         env_lines_cleaned = [line for line in env_lines if line.strip()]
         env_lines_cleaned = [line for line in env_lines_cleaned if not re.match(pattern="^#", string=line)]
+        print('Set environment variables from file "' + str(env_filepath) + '"')
         for line in env_lines_cleaned:
             varname, value = line.split(sep="=", maxsplit=1)
             os.environ[varname] = value
             print('Set env var ' + str(varname) + ' = "' + str(value) + '"')
+        return
 
     def __init__(
             self,
@@ -54,7 +56,7 @@ class Env:
         if self.in_google_colab:
             self.REPO_DIR = '/content/drive/My Drive/colab/poc'
         else:
-            self.REPO_DIR = self.guess_repo_dir()
+            self.REPO_DIR = self.guess_repo_dir(use_cwd_as_ref=True)
             self.logger.info('Not in any special environment, using repo dir "' + str(self.REPO_DIR) + '"')
 
         self.logger.info('Set to different environment, REPO_DIR "' + str(self.REPO_DIR))
@@ -65,12 +67,18 @@ class Env:
         # ----- NLP DATASETS -----
         self.NLP_DATASET_DIR = self.REPO_DIR + r'/data/nlp-datasets'
 
-    def guess_repo_dir(self):
+    def guess_repo_dir(
+            self,
+            # Use current working directory as reference is more accurate since external non-related
+            # projects can use this code and guess their directories correctly.
+            # Otherwise if use source code, will only be correct for internal projects.
+            use_cwd_as_ref = True,
+    ):
         try:
             repo_dir = os.environ['REPO_DIR']
         except Exception as ex:
             self.logger.info('Failed to get repo directory from env var "REPO_DIR", got exception ' + str(ex))
-            src_code_path = self.get_source_code_path()
+            src_code_path = os.getcwd() if use_cwd_as_ref else self.get_source_code_path()
             self.logger.info('Try to guess repo dir from cwd "' + str(src_code_path) + '"')
             # Look "/src/" in Linux or "\src\" in Windows
             repo_dir = re.sub(pattern="(/src/.*)|([\\\\]src[\\\\].*)", repl="", string=src_code_path)
