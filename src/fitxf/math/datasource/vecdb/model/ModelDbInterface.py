@@ -9,6 +9,7 @@ class ModelDbInterface:
             self,
             tablename: str,
             col_content: str,
+            col_content_type: str,
             col_label_user: str,
             col_label_standardized: str,
             col_embedding: str,
@@ -17,13 +18,14 @@ class ModelDbInterface:
     ):
         self.tablename = tablename
         self.col_content = col_content
+        self.col_content_type = col_content_type
         self.col_label_user = col_label_user
         self.col_label_standardized = col_label_standardized
         self.col_embedding = col_embedding
         self.max_records = max_records
         self.logger = logger if logger is not None else logging.getLogger()
 
-        create_tbl_sql = self.get_create_table_db_cmd(db_type=os.environ["DB_TYPE"]),
+        create_tbl_sql = self.get_create_table_db_cmd(db_type=os.environ["DB_TYPE"])
         self.db_params = DbParams.get_db_params_from_envvars(
             identifier = tablename,
             db_create_tbl_sql = create_tbl_sql,

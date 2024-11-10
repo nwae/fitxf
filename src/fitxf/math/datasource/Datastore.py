@@ -2,6 +2,10 @@ import logging
 import re
 from fitxf.math.datasource.DatastoreInterface import DbParams
 from fitxf.math.datasource.Csv import Csv
+try:
+    from fitxf.math.datasource.MySql import MySql
+except Exception as __ex_import:
+    print('Error importing library: ' + str(__ex_import))
 from fitxf.math.utils.Env import Env
 
 
@@ -23,9 +27,14 @@ class Datastore:
             assert not re.match(pattern="/", string=self.db_params.db_table), \
                 'Must not contain full path in table name or index "' + str(self.db_params.db_table) + '"'
             DbClass = Csv
+        elif self.db_params.db_type == 'mysql':
+            DbClass = MySql
         else:
             raise Exception('Not supported data store type "' + str(self.db_params.db_type) + '"')
 
+        self.logger.info(
+            'Try to instantiate DB class with db params ' + str(self.db_params.get_db_info()) + ''
+        )
         return DbClass(
             db_params = self.db_params,
             logger = self.logger,

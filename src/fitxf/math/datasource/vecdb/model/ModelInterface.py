@@ -3,6 +3,7 @@ import os
 import re
 import torch
 import threading
+import json
 import numpy as np
 from datetime import datetime
 from fitxf import TensorUtils, FitXformInterface
@@ -121,6 +122,7 @@ class ModelInterface:
         return ModelClass(
             tablename = self.user_id,
             col_content = self.col_content,
+            col_content_type = self.col_content_type,
             col_label_user = self.col_label_user,
             col_label_standardized = self.col_label_standardized,
             col_embedding = self.col_embedding,
@@ -157,7 +159,7 @@ class ModelInterface:
             name_cur = self.get_model_name_from_path(model_path=self.llm_model_path)
             assert name_prev == name_cur, \
                 'Previous model different "' + str(model_prev) + '" (type "' + str(type(model_prev)) + \
-                '") from new "' + str(self.llm_model_path) + '" (type "' + str(self.llm_model_path) \
+                '") from new "' + str(self.llm_model_path) + '" (type "' + str(type(self.llm_model_path)) \
                 + '")'
             self.logger.info(
                 'Model consistency check ok, cur/prev name same "' + str(name_cur)
@@ -255,9 +257,16 @@ class ModelInterface:
             model_save_b64json_string = None,
     ):
         for id, val in (('model', model_save_b64json_string), ('llm', self.llm_model_path)):
+            if type(val) is dict:
+                try:
+                    val_str = json.dumps(val)
+                except:
+                    val_str = str(val)
+            else:
+                val_str = val
             self.vec_db_metadata.update_metadata_identifier_value(
                 identifier = id,
-                value = val,
+                value = val_str,
             )
         return
 
