@@ -20,6 +20,7 @@ from fitxf.math.algo.encoding.Base64 import Base64, Base64UnitTest
 # VecDB
 from fitxf.math.datasource.DatastoreInterface import DatastoreInterface, DbParams, DatastoreInterfaceUnitTest
 from fitxf.math.datasource.Datastore import Datastore
+from fitxf.math.datasource.DbLang import DbLang
 from fitxf.math.datasource.vecdb.metadata.MetadataInterface import MetadataInterface
 from fitxf.math.datasource.vecdb.model.ModelDbInterface import ModelDbInterface
 from fitxf.math.datasource.vecdb.model.ModelEncoderInterface import ModelEncoderInterface

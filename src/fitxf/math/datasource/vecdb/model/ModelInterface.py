@@ -257,16 +257,9 @@ class ModelInterface:
             model_save_b64json_string = None,
     ):
         for id, val in (('model', model_save_b64json_string), ('llm', self.llm_model_path)):
-            if type(val) is dict:
-                try:
-                    val_str = json.dumps(val)
-                except:
-                    val_str = str(val)
-            else:
-                val_str = val
             self.vec_db_metadata.update_metadata_identifier_value(
                 identifier = id,
-                value = val_str,
+                value = val,
             )
         return
 

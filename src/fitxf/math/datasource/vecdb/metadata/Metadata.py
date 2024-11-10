@@ -5,8 +5,7 @@ import threading
 import numpy as np
 from datetime import datetime
 from fitxf import MetadataInterface
-from fitxf import DbParams
-from fitxf import Datastore
+from fitxf import DbParams, Datastore, DbLang
 from fitxf.math.utils.Logging import Logging
 from fitxf.math.utils.Env import Env
 
@@ -37,14 +36,15 @@ class ModelMetadata(MetadataInterface):
         # For metadata
         # Change create table syntax
         if self.db_params_metadata.db_type in ('mysql',):
-            self.db_params_metadata.db_create_table_sql = \
-                "CREATE TABLE `<TABLENAME>` " \
-                + "(`" \
-                + str(self.COL_METADATA_USERID) + "` varchar(255) NOT NULL" \
-                + ", `" + str(self.COL_METADATA_IDENTIFIER) + "` varchar(255) NOT NULL" \
-                + ", `" + str(self.COL_METADATA_TIMESTAMP) + "` double DEFAULT NULL" \
-                + ", `" + str(self.COL_METADATA_VALUE) + "` varchar(5000) DEFAULT NULL" \
-                + ")"
+            self.db_params_metadata.db_create_table_sql = DbLang.get_db_syntax_create_table_mysql(
+                tablename = "<TABLENAME>",
+                columns = [
+                    "`" + str(self.COL_METADATA_USERID) + "` varchar(255) NOT NULL",
+                    "`" + str(self.COL_METADATA_IDENTIFIER) + "` varchar(255) NOT NULL",
+                    "`" + str(self.COL_METADATA_TIMESTAMP) + "` double DEFAULT NULL",
+                    "`" + str(self.COL_METADATA_VALUE) + "` varchar(5000) DEFAULT NULL",
+                ],
+            )
         # + ', PRIMARY KEY (' + str(self.COL_METADATA_INDEX) + ', ' + str(self.COL_METADATA_IDENTIFIER) + ')' \
         self.logger.info(
             'Using DB create table sql syntax as "' + str(self.db_params_metadata.db_create_table_sql)
@@ -126,12 +126,27 @@ class ModelMetadata(MetadataInterface):
             identifier: str,
             value: str,
     ):
+        if type(value) is dict:
+            self.logger.warning(
+                'Value for metadata identifier "' + str(identifier)
+                + '" is not str but dict. Will try to convert value: ' + str(value)
+            )
+            try:
+                value_str = json.dumps(value)
+            except Exception as ex:
+                self.logger.error(
+                    'Failed to convert value for metadata identifier "' + str(identifier) + '", value ' + str(value)
+                    + ', exception: ' + str(ex)
+                )
+                value_str = str(value)
+        else:
+            value_str = value
         insert_records = [
             {
                 self.COL_METADATA_USERID: self.user_id,
                 self.COL_METADATA_IDENTIFIER: identifier,
                 self.COL_METADATA_TIMESTAMP: self.get_timestamp(),
-                self.COL_METADATA_VALUE: value,
+                self.COL_METADATA_VALUE: value_str,
             }
         ]
         self.logger.debug('Try to update metadata with records: ' + str(insert_records))
@@ -208,9 +223,15 @@ class ModelMetadata(MetadataInterface):
 
 if __name__ == '__main__':
     er = Env()
-    Env.set_env_vars_from_file(env_filepath=er.REPO_DIR + '/.env.fitxf.math.ut')
-    ModelMetadata(
+    Env.set_env_vars_from_file(env_filepath=er.REPO_DIR + '/.env.fitxf.math.ut.mysql')
+    md = ModelMetadata(
         user_id = 'test',
         logger = Logging.get_default_logger(log_level=logging.INFO, propagate=False)
     )
+    for id, val in [('test', '123'), ('test_dict', {'name': 'jane', 'age': 55})]:
+        res = md.update_metadata_identifier_value(
+            identifier = id,
+            value = val,
+        )
+        print('Wrote id ' + str(id) + ', val ' + str(val) + ', res: ' + str(res))
     exit(0)
