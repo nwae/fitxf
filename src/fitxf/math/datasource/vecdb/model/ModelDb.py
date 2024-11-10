@@ -49,25 +49,16 @@ class ModelDb(ModelDbInterface):
             db_type = db_type,
             tablename = "<TABLENAME>",
             columns = [
-                "`<CONTENT>` TEXT NOT NULL",
-                "`<CONTENT_TYPE>` varchar(32) NOT NULL DEFAULT 'text'",
-                "`<LABEL_USER>` varchar(255) NOT NULL",
-                "`<LABEL_NUMBER>` int NOT NULL",
-                "`<ENCODING_B64>` TEXT NOT NULL",
+                "`" + str(self.col_content) + "` TEXT NOT NULL",
+                "`" + str(self.col_content_type) + "` varchar(32) NOT NULL DEFAULT 'text'",
+                "`" + str(self.col_label_user) + "` varchar(255) NOT NULL",
+                "`" + str(self.col_label_standardized) + "` int NOT NULL",
+                "`" + str(self.col_embedding) + "` TEXT NOT NULL",
             ],
         )
         self.logger.info('DB create table template for "' + str(db_type) + '": ' + str(template))
         if template is None:
             return None
-        for placeholder, value in [
-            ('<CONTENT>', self.col_content),
-            ('<CONTENT_TYPE>', self.col_content_type),
-            ('<LABEL_USER>', self.col_label_user),
-            ('<LABEL_NUMBER>', self.col_label_standardized),
-            ('<ENCODING_B64>', self.col_embedding),
-        ]:
-            template = re.sub(pattern=placeholder, repl=value, string=template)
-        self.logger.info('Create table DB cmd for type "' + str(db_type) + '": ' + str(template))
         return template
 
     def get_db_params(self) -> DbParams:
