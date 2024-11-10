@@ -208,7 +208,7 @@ class ModelMetadata(MetadataInterface):
 
 if __name__ == '__main__':
     er = Env()
-    Env.set_env_vars_from_file(env_filepath=er.REPO_DIR + '/.env.nwae.math.ut')
+    Env.set_env_vars_from_file(env_filepath=er.REPO_DIR + '/.env.fitxf.math.ut')
     ModelMetadata(
         user_id = 'test',
         logger = Logging.get_default_logger(log_level=logging.INFO, propagate=False)

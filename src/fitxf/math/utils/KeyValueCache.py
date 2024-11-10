@@ -1,6 +1,6 @@
 import logging
 import threading
-from fitxf.math.utils import Profiling
+from fitxf.math.utils.Profile import Profiling
 
 
 #
