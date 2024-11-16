@@ -132,7 +132,10 @@ class FitUtils:
             model,
             loss_func,
             optimizer,
-            # torch DataLoader
+            # just an array of batch tuples, not necessarily the stupid overcomplicated torch DataLoader
+            #    e.g. [(X_batch_1, y_batch_1), (X_batch_2, y_batch_2), ...]
+            # or if attention masks included
+            #    e.g. [(X_batch_1, attn_mask_batch_1, y_batch_1), (X_batch_2, attn_mask_batch_2, y_batch_2), ...]
             train_dataloader,
             epochs,
             accum_steps = 1,
