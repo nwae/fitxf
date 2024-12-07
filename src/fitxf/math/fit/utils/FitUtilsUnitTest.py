@@ -434,12 +434,13 @@ class FitUtilsUt:
 
             losses = fu.torch_train(
                 train_dataloader = dl,
-                model            = model,
-                loss_func        = torch.nn.MSELoss(),
-                optimizer        = torch.optim.SGD(model.parameters(), lr=0.005),
-                epochs           = epochs,
-                accum_steps      = acc_steps,
-                plot_losses      = plot_graph,
+                model = model,
+                loss_func = torch.nn.MSELoss(),
+                optimizer = torch.optim.SGD(model.parameters(), lr=0.005),
+                regularization_type = None,
+                epochs = epochs,
+                accum_steps = acc_steps,
+                plot_losses = plot_graph,
             )
             # Final loss must not exceed difference of 0.01 per data
             tol = 7*(0.1**2)

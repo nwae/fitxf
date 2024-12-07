@@ -2,7 +2,7 @@ import logging
 import numpy as np
 import torch
 import matplotlib.pyplot as mplt
-from torch.utils.data import TensorDataset, DataLoader, RandomSampler
+from torch.utils.data import TensorDataset
 from sklearn.model_selection import train_test_split
 from sklearn.cluster import KMeans
 from fitxf.math.fit.utils.TensorUtils import TensorUtils
@@ -138,6 +138,8 @@ class FitUtils:
             #    e.g. [(X_batch_1, attn_mask_batch_1, y_batch_1), (X_batch_2, attn_mask_batch_2, y_batch_2), ...]
             train_dataloader,
             epochs,
+            regularization_type = None,
+            regularization_lambda = 0.01,
             accum_steps = 1,
             plot_losses = False,
     ):
@@ -156,6 +158,8 @@ class FitUtils:
                 dataloader = train_dataloader,
                 model = model,
                 loss_func = loss_func,
+                regularization_type = regularization_type,
+                regularization_lambda = regularization_lambda,
                 optimizer = optimizer,
                 accum_steps = accum_steps,
             )
@@ -182,6 +186,8 @@ class FitUtils:
             model,
             loss_func,
             optimizer,
+            regularization_type = None,
+            regularization_lambda = 0.01,
             # gradient accumulation steps
             # see https://wandb.ai/wandb_fc/tips/reports/How-To-Implement-Gradient-Accumulation-in-PyTorch--VmlldzoyMjMwOTk5
             accum_steps = 1,
@@ -203,6 +209,25 @@ class FitUtils:
             pred_batch_y = model(b_input_ids)
             loss = loss_func(pred_batch_y, b_labels)
             loss = loss / accum_steps
+
+            # Regularization
+            # Apply L1 regularization
+            if regularization_type == 'L1':
+                l1_norm = sum(p.abs().sum() for p in model.parameters())
+                reg_penalty = regularization_lambda * l1_norm
+            # Apply L2 regularization
+            elif regularization_type == 'L2':
+                l2_norm = sum(p.pow(2).sum() for p in model.parameters())
+                reg_penalty = regularization_lambda * l2_norm
+            else:
+                reg_penalty = 0
+            self.logger.debug(
+                '"' + str(regularization_type) + '" regularization penalty ' + str(reg_penalty) + ', loss from '
+                + str(loss) + ' to new loss ' + str(loss+reg_penalty) + ', model parameters: '
+                + str([p for p in model.parameters()])
+            )
+            loss += reg_penalty
+
             # Backward pass
             loss.backward()
 
