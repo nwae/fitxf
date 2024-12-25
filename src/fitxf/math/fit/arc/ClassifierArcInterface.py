@@ -128,26 +128,32 @@ class ClassifierArcUnitTest:
             test_function: str = 'max',
     ):
         X = torch.rand(size=(1024, 4))
+
         if test_function == 'max':
             # category is just the largest index
-            y, n_cat = torch.argmax(X, dim=-1), 4
+            y, n_cat = torch.argmax(X, dim=-1), X.shape[-1]
             # for max function, it can be any function that is always increasing, thus we choose
             # Tanh() function since it is nicely bounded & satisfies always increasing
             activation_functions = (torch.nn.Tanh, torch.nn.Tanh)
+            dropout = 0.2
+            learn_rate = 0.001
             regularization_type = 0
         else:
             # category is the sum of the rounded X
-            y, n_cat = torch.sum(torch.round(X), dim=-1), 5
+            y, n_cat = torch.sum(torch.round(X), dim=-1), X.shape[-1] + 1
             # since summation is a linear function, any non-linear activation will cause problems
             activation_functions = (None, None)
-            regularization_type = 5
+            dropout = 0.
+            learn_rate = 0.001
+            regularization_type = 0
+
         assert len(X) == len(y)
         clf = self.child_class(
             in_features = X.shape[-1],
             out_features = n_cat,
             n_hidden_features = 100,
-            dropout_rate = 0.2,
-            learning_rate = 0.001,
+            dropout_rate = dropout,
+            learning_rate = learn_rate,
             # since we are testing linear functions that depend on the value of the input,
             # don't put an activation layer
             activation_functions = activation_functions,
