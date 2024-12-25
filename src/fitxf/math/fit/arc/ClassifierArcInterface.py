@@ -189,7 +189,10 @@ class ClassifierArcUnitTest:
                 regularization_type = regularization_type,
             )
             acc = res['eval_accuracy']
-        self.logger.info('Child class "' + str(self.child_class.__name__) + '" accuracy ' + str(acc))
+        self.logger.info(
+            'Child class "' + str(self.child_class.__name__) + '" accuracy ' + str(acc)
+            + ' for test "' + str(test_function) + '"'
+        )
         assert acc > acc_thr, \
             'Child class "' + str(self.child_class.__name__) + '" Accuracy from evaluation ' \
             + str(acc) + ' not > ' + str(acc_thr) + ' for test "' + str(test_function) + '"'
