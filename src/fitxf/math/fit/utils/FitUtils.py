@@ -211,19 +211,25 @@ class FitUtils:
             loss = loss / accum_steps
 
             # Regularization
+            if type(regularization_type) in [int, float]:
+                reg_pwr = regularization_type
             # Apply L1 regularization
-            if regularization_type == 'L1':
-                l1_norm = sum(p.abs().sum() for p in model.parameters())
-                reg_penalty = regularization_lambda * l1_norm
+            elif regularization_type == 'L1':
+                reg_pwr = 1
             # Apply L2 regularization
             elif regularization_type == 'L2':
-                l2_norm = sum(p.pow(2).sum() for p in model.parameters())
-                reg_penalty = regularization_lambda * l2_norm
+                reg_pwr = 2
+            else:
+                reg_pwr = 0
+
+            if reg_pwr > 0:
+                l_norm = sum(p.abs().pow(reg_pwr).sum() for p in model.parameters())
+                reg_penalty = regularization_lambda * l_norm
             else:
                 reg_penalty = 0
             self.logger.debug(
-                '"' + str(regularization_type) + '" regularization penalty ' + str(reg_penalty) + ', loss from '
-                + str(loss) + ' to new loss ' + str(loss+reg_penalty) + ', model parameters: '
+                'Regularization "' + str(regularization_type) + '" regularization penalty ' + str(reg_penalty)
+                + ', loss from ' + str(loss) + ' to new loss ' + str(loss+reg_penalty) + ', model parameters: '
                 + str([p for p in model.parameters()])
             )
             loss += reg_penalty
