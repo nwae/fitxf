@@ -138,7 +138,7 @@ class ClassifierArcUnitTest:
             dropout = 0.2
             learn_rate = 0.001
             regularization_type = 0
-            acc_thr = 0.8
+            acc_thr = 0.90
         else:
             # category is the sum of the rounded X
             y, n_cat = torch.sum(torch.round(X), dim=-1), X.shape[-1] + 1
@@ -147,7 +147,7 @@ class ClassifierArcUnitTest:
             dropout = 0.
             learn_rate = 0.001
             regularization_type = 0
-            acc_thr = 0.5
+            acc_thr = 0.55
 
         assert len(X) == len(y)
         clf = self.child_class(
