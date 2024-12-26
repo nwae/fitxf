@@ -212,19 +212,24 @@ class ClassifierArc(torch.nn.Module, ClassifierArcInterface):
         # Important! Set back to eval mode, so subsequent forwards won't affect any weights or gradients
         self.eval()
 
-        out = self(X[n_cutoff_train:])
-        self.logger.debug('Out for eval test: ' + str(out))
-        out_cat = torch.argmax(out, dim=-1)
-        self.logger.debug('Out categories for eval test: ' + str(out_cat))
-        assert len(out) == len(out_cat)
-        correct = 1 * (y[n_cutoff_train:] - out_cat == 0)
-        eval_accuracy = torch.sum(correct) / len(correct)
-        self.logger.info(
-            'Evaluation results: Total correct ' + str(torch.sum(correct).item()) + ' from length ' + str(len(correct))
-            + ', accuracy ' + str(eval_accuracy.item())
-        )
+        if eval_percent > 0:
+            out = self(X[n_cutoff_train:])
+            self.logger.debug('Out for eval test: ' + str(out))
+            out_cat = torch.argmax(out, dim=-1)
+            self.logger.debug('Out categories for eval test: ' + str(out_cat))
+            assert len(out) == len(out_cat)
+            correct = 1 * (y[n_cutoff_train:] - out_cat == 0)
+            eval_accuracy = torch.sum(correct) / len(correct)
+            eval_accuracy = eval_accuracy.item()
+            self.logger.info(
+                'Evaluation results: Total correct ' + str(torch.sum(correct).item()) + ' from length ' + str(len(correct))
+                + ', accuracy ' + str(eval_accuracy)
+            )
+        else:
+            eval_accuracy = None
+
         return {
-            'eval_accuracy': eval_accuracy.item(),
+            'eval_accuracy': eval_accuracy,
             'losses': losses,
             'dataloader_train': dl_trn,
             'dataloader_eval': dl_val,
@@ -237,7 +242,7 @@ class ClassifierArc(torch.nn.Module, ClassifierArcInterface):
     ):
         self.eval()
         out = self(X)
-        self.logger.debug('Out for predict: ' + str(out))
+        # self.logger.debug('Predict input X:\n' + str(X[:,:8]) + '\nOut for predict:\n' + str(out))
         out_arg_sorted = torch.argsort(out, descending=True, dim=-1)
         # out_cat = torch.argmax(out, dim=-1)
         self.logger.debug('Out arg sorted for predict: ' + str(out_arg_sorted))
