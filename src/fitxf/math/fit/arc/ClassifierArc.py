@@ -1,7 +1,7 @@
 import logging
 import torch
 from fitxf.math.fit.arc.ClassifierArcInterface import ClassifierArcInterface
-from fitxf.math.fit.arc.ClassifierUnitTest import ClassifierArcUnitTest
+from fitxf.math.fit.arc.ClassifierArcUnitTest import ClassifierArcUnitTest
 from fitxf import FitUtils
 from fitxf.math.utils.Logging import Logging
 
