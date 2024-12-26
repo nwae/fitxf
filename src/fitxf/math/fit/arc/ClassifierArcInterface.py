@@ -147,7 +147,7 @@ class ClassifierArcUnitTest:
             dropout = 0.
             learn_rate = 0.001
             regularization_type = 0
-            acc_thr = 0.55
+            acc_thr = 0.60
 
         assert len(X) == len(y)
         clf = self.child_class(
