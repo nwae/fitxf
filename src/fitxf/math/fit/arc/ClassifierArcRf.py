@@ -2,7 +2,8 @@ import logging
 import numpy as np
 import torch
 import joblib
-from fitxf.math.fit.arc.ClassifierArcInterface import ClassifierArcInterface, ClassifierArcUnitTest
+from fitxf.math.fit.arc.ClassifierArcInterface import ClassifierArcInterface
+from fitxf.math.fit.arc.ClassifierUnitTest import ClassifierArcUnitTest
 from sklearn.ensemble import RandomForestClassifier
 from fitxf.math.utils.Logging import Logging
 
