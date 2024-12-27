@@ -24,9 +24,12 @@ class ClassifierArcRf(ClassifierArcInterface):
             logger = None,
     ):
         super().__init__(
+            model_filepath = model_filepath,
             logger = logger,
         )
         self.model_rf = None
+        if self.model_filepath is not None:
+            self.from_old_states(model_filepath=self.model_filepath)
         return
 
     def from_old_states(
@@ -34,6 +37,7 @@ class ClassifierArcRf(ClassifierArcInterface):
             model_filepath: str,
     ):
         self.model_rf = joblib.load(model_filepath)
+        self.logger.info('Loaded old state for random forest model from file "' + str(self.model_filepath) + '"')
         return self.model_rf
 
     def save_states(
