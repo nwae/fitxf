@@ -14,6 +14,7 @@ class ClassifierArcRf(ClassifierArcInterface):
 
     def __init__(
             self,
+            model_filepath: str = None,
             in_features: int = None,
             out_features: int = None,
             n_hidden_features: int = 100,
