@@ -251,8 +251,5 @@ class ClassifierArc(torch.nn.Module, ClassifierArcInterface):
 if __name__ == '__main__':
     lgr = Logging.get_default_logger(log_level=logging.INFO, propagate=False)
     ut = ClassifierArcUnitTest(child_class=ClassifierArc, logger=lgr)
-    for test in ['max', 'sum']:
-        ut.test(
-            test_function = test,
-        )
+    ut.test()
     exit(0)

@@ -18,6 +18,18 @@ class ClassifierArcUnitTest:
 
     def test(
             self,
+    ):
+        accuracies = {}
+        for f in ['max', 'sum']:
+            accuracies[f] = self.test_by_func(
+                load_state_if_exists = False,
+                test_function = f,
+            )
+        self.logger.info('Tests passed with accuracies ' + str(accuracies))
+        return
+
+    def test_by_func(
+            self,
             load_state_if_exists = False,
             # max, sum
             test_function: str = 'max',
@@ -98,7 +110,7 @@ class ClassifierArcUnitTest:
                 additional_info = {},
             )
         self.logger.info('TEST PASSED FOR "' + str(test_function) + '"')
-        return
+        return acc
 
 
 if __name__ == '__main__':
