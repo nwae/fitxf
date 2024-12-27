@@ -8,6 +8,8 @@ class ClassifierArcInterface:
 
     def __init__(
             self,
+            # old state
+            model_filepath: str = None,
             in_features: int = None,
             out_features: int = None,
             n_hidden_features: int = 100,
@@ -16,6 +18,7 @@ class ClassifierArcInterface:
             learning_rate: float = 0.0001,
             logger = None,
     ):
+        self.model_filepath = model_filepath
         self.in_features = in_features
         self.out_features = out_features
         self.n_hidden_features = n_hidden_features if type(n_hidden_features) is list else\
