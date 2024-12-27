@@ -69,24 +69,26 @@ class ClassifierArc(torch.nn.Module, ClassifierArcInterface):
                 in_features = self.in_features,
                 out_features = self.n_hidden_features[0],
             )
-            self.layer_fc1_norm = torch.nn.LayerNorm(
-                normalized_shape = self.n_hidden_features[0],
-            )
             if self.activation_functions[0] is not None:
                 self.layer_hidden_fc1_act = self.activation_functions[0]()
-                self.layer_dropout_fc1_drop = torch.nn.Dropout(p=self.dropout_rate)
+            else:
+                self.layer_fc1_norm = torch.nn.LayerNorm(
+                    normalized_shape = self.n_hidden_features[0],
+                )
+            self.layer_dropout_fc1_drop = torch.nn.Dropout(p=self.dropout_rate)
 
             n_out_last = self.n_hidden_features[1]
             self.layer_hidden_fc2 = torch.nn.Linear(
                 in_features = self.n_hidden_features[1-1],
                 out_features = n_out_last,
             )
-            self.layer_fc2_norm = torch.nn.LayerNorm(
-                normalized_shape = self.n_hidden_features[1],
-            )
             if self.activation_functions[1] is not None:
                 self.layer_hidden_fc2_act = self.activation_functions[1]()
-                self.layer_dropout_fc2_drop = torch.nn.Dropout(p=self.dropout_rate)
+            else:
+                self.layer_fc2_norm = torch.nn.LayerNorm(
+                    normalized_shape = self.n_hidden_features[1],
+                )
+            self.layer_dropout_fc2_drop = torch.nn.Dropout(p=self.dropout_rate)
 
         self.layer_classify = torch.nn.Linear(
             in_features = n_out_last,
@@ -151,23 +153,19 @@ class ClassifierArc(torch.nn.Module, ClassifierArcInterface):
             h2_out = h_out
         else:
             h1 = self.layer_hidden_fc1(x)
-            h1_norm = self.layer_fc1_norm(h1)
             # self.logger.debug('Linear layer shape ' + str(h1.shape))
             if self.activation_functions[0] is not None:
-                h1_act = self.layer_hidden_fc1_act(h1_norm)
-                h1_act_drop = self.layer_dropout_fc1_drop(h1_act)
-                h1_out = h1_act_drop
+                h1_act_or_norm = self.layer_hidden_fc1_act(h1)
             else:
-                h1_out = h1_norm
+                h1_act_or_norm = self.layer_fc1_norm(h1)
+            h1_out = self.layer_dropout_fc1_drop(h1_act_or_norm)
 
             h2 = self.layer_hidden_fc2(h1_out)
-            h2_norm = self.layer_fc2_norm(h2)
             if self.activation_functions[1] is not None:
-                h2_act = self.layer_hidden_fc2_act(h2_norm)
-                h2_act_drop = self.layer_dropout_fc2_drop(h2_act)
-                h2_out = h2_act_drop
+                h2_act_or_norm = self.layer_hidden_fc2_act(h2)
             else:
-                h2_out = h2_norm
+                h2_act_or_norm = self.layer_fc2_norm(h2)
+        h2_out = self.layer_dropout_fc2_drop(h2_act_or_norm)
 
         h_last = self.layer_classify(h2_out)
         # self.logger.debug('Sentiment linear layer shape ' + str(senti.shape))
