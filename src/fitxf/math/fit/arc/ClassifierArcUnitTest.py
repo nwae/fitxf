@@ -31,7 +31,7 @@ class ClassifierArcUnitTest:
             activation_functions = (torch.nn.Tanh, torch.nn.Tanh)
             dropout = 0.2
             learn_rate = 0.001
-            regularization_type = 0
+            regularization_type = 0.
             acc_thr = 0.90
         else:
             # category is the sum of the rounded X
@@ -40,7 +40,7 @@ class ClassifierArcUnitTest:
             activation_functions = (None, None)
             dropout = 0.
             learn_rate = 0.001
-            regularization_type = 0
+            regularization_type = 0.
             acc_thr = 0.60
 
         assert len(X) == len(y)
@@ -96,6 +96,7 @@ class ClassifierArcUnitTest:
                 model_filepath = model_filepath,
                 additional_info = {},
             )
+        self.logger.info('TEST PASSED FOR "' + str(test_function) + '"')
         return
 
 
