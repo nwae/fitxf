@@ -13,6 +13,7 @@ class ClassifierArc(torch.nn.Module, ClassifierArcInterface):
 
     def __init__(
             self,
+            model_filepath: str = None,
             in_features: int = None,
             out_features: int = None,
             n_hidden_features: int = 100,
@@ -24,6 +25,7 @@ class ClassifierArc(torch.nn.Module, ClassifierArcInterface):
         torch.nn.Module.__init__(self)
         ClassifierArcInterface.__init__(
             self = self,
+            model_filepath = model_filepath,
             in_features = in_features,
             out_features = out_features,
             n_hidden_features = n_hidden_features,
@@ -32,17 +34,12 @@ class ClassifierArc(torch.nn.Module, ClassifierArcInterface):
             learning_rate = learning_rate,
             logger = logger,
         )
-        self.in_features = in_features
-        self.out_features = out_features
-        self.n_hidden_features = n_hidden_features if type(n_hidden_features) is list else\
-            [n_hidden_features, int(round(n_hidden_features / 2))]
-        self.activation_functions = activation_functions
-        self.dropout_rate = dropout_rate
-        self.learning_rate = learning_rate
-        self.logger = logger if logger is not None else logging.getLogger()
 
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.__init_neural_network_arc()
+        if self.model_filepath is not None:
+            # if loading from filepath, will overwrite the above neural network params (if different)
+            self.__load_from_model_filepath(model_filepath=self.model_filepath)
         return
 
     def __init_neural_network_arc(
@@ -110,7 +107,7 @@ class ClassifierArc(torch.nn.Module, ClassifierArcInterface):
         self.logger.info('Network initialized successfully')
         return
 
-    def from_old_states(
+    def __load_from_model_filepath(
             self,
             model_filepath: str,
     ):
@@ -165,7 +162,7 @@ class ClassifierArc(torch.nn.Module, ClassifierArcInterface):
                 h2_act_or_norm = self.layer_hidden_fc2_act(h2)
             else:
                 h2_act_or_norm = self.layer_fc2_norm(h2)
-        h2_out = self.layer_dropout_fc2_drop(h2_act_or_norm)
+            h2_out = self.layer_dropout_fc2_drop(h2_act_or_norm)
 
         h_last = self.layer_classify(h2_out)
         # self.logger.debug('Sentiment linear layer shape ' + str(senti.shape))
