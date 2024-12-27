@@ -39,7 +39,7 @@ class ClassifierArc(torch.nn.Module, ClassifierArcInterface):
         self.__init_neural_network_arc()
         if self.model_filepath is not None:
             # if loading from filepath, will overwrite the above neural network params (if different)
-            self.__load_from_model_filepath(model_filepath=self.model_filepath)
+            self.from_old_states(model_filepath=self.model_filepath)
         return
 
     def __init_neural_network_arc(
@@ -107,7 +107,7 @@ class ClassifierArc(torch.nn.Module, ClassifierArcInterface):
         self.logger.info('Network initialized successfully')
         return
 
-    def __load_from_model_filepath(
+    def from_old_states(
             self,
             model_filepath: str,
     ):
