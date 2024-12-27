@@ -6,6 +6,7 @@ from fitxf.math.utils.Logging import Logging
 
 
 class ClassifierArcUnitTest:
+
     def __init__(
             self,
             child_class: type(ClassifierArcInterface),
