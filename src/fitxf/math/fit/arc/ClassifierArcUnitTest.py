@@ -41,7 +41,7 @@ class ClassifierArcUnitTest:
             y, n_cat = torch.argmax(X, dim=-1), X.shape[-1]
             # for max function, it can be any function that is always increasing, thus we choose
             # Tanh() function since it is nicely bounded & satisfies always increasing
-            activation_functions = (torch.nn.Tanh, torch.nn.Tanh)
+            activation_functions = (torch.nn.Tanh, torch.nn.Tanh, torch.nn.Softmax)
             dropout = 0.2
             learn_rate = 0.001
             regularization_type = 0.
@@ -50,7 +50,7 @@ class ClassifierArcUnitTest:
             # category is the sum of the rounded X
             y, n_cat = torch.sum(torch.round(X), dim=-1), X.shape[-1] + 1
             # since summation is a linear function, any non-linear activation will cause problems
-            activation_functions = (None, None)
+            activation_functions = (None, None, None)
             dropout = 0.
             learn_rate = 0.001
             regularization_type = 0.
