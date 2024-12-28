@@ -21,7 +21,9 @@ class ClassifierArc(torch.nn.Module, ClassifierArcInterface):
             in_features: int = None,
             out_features: int = None,
             n_hidden_features: int = 100,
+            hidden_functions: list = (torch.nn.Linear, torch.nn.Linear, torch.nn.Linear),
             activation_functions: list = (torch.nn.ReLU, torch.nn.ReLU, torch.nn.Softmax),
+            loss_function = torch.nn.CrossEntropyLoss,
             dropout_rate: float = 0.2,
             learning_rate: float = 0.0001,
             logger = None,
@@ -33,7 +35,9 @@ class ClassifierArc(torch.nn.Module, ClassifierArcInterface):
             in_features = in_features,
             out_features = out_features,
             n_hidden_features = n_hidden_features,
+            hidden_functions = hidden_functions,
             activation_functions = activation_functions,
+            loss_function = loss_function,
             dropout_rate = dropout_rate,
             learning_rate = learning_rate,
             logger = logger,
@@ -49,81 +53,75 @@ class ClassifierArc(torch.nn.Module, ClassifierArcInterface):
     def __init_neural_network_arc(
             self,
     ):
-        if self.USE_ARRAY:
-            # Hidden layer to auto discover features
-            n_all = [self.in_features] + self.n_hidden_features
-            self.config_hidden_layers = [
-                {'in': n_all[i], 'out': n_all[i+1], 'act': self.activation_functions[i]}
-                for i in range(len(self.n_hidden_features))
-            ]
-            self.layers_hidden = []
-            n_out_last = self.config_hidden_layers[-1]["out"]
+        assert len(self.hidden_functions) == 3, \
+            'Expect 3 hidden functions but got ' + str(len(self.hidden_functions))
+        assert self.hidden_functions[0] is not None
 
-            for hl in self.config_hidden_layers:
-                in_f, out_f, act_func = hl['in'], hl['out'], hl['act']
-                self.layers_hidden.append(torch.nn.Linear(in_features=in_f, out_features=out_f))
-                if act_func is not None:
-                    self.layers_hidden.append(act_func())
-                    self.layers_hidden.append(torch.nn.Dropout(self.dropout_rate))
+        n_out_1 = self.n_hidden_features[0]
+        self.layer_hidden_fc1 = self.hidden_functions[0](
+            in_features = self.in_features,
+            out_features = n_out_1,
+        )
+        if self.activation_functions[0] in self.ACT_FUNCS:
+            self.layer_hidden_fc1_act = self.activation_functions[0]()
+        elif self.activation_functions[0] == torch.nn.LayerNorm:
+            self.layer_hidden_fc1_act = torch.nn.LayerNorm(
+                normalized_shape = n_out_1,
+            )
         else:
-            self.layer_hidden_fc1 = torch.nn.Linear(
-                in_features = self.in_features,
-                out_features = self.n_hidden_features[0],
+            self.layer_hidden_fc1_act = None
+            self.logger.warning(
+                'Ignore non-recognized activation function "'
+                + str(self.activation_functions[0]) + '"'
             )
-            if type(self.activation_functions[0]) in self.ACT_FUNCS:
-                self.layer_hidden_fc1_act = self.activation_functions[0]()
-            elif type(self.activation_functions[0]) is torch.nn.LayerNorm:
-                self.layer_hidden_fc1_act = torch.nn.LayerNorm(
-                    normalized_shape = self.n_hidden_features[0],
-                )
-            else:
-                self.layer_hidden_fc1_act = None
-                self.logger.warning(
-                    'Ignore non-recognized activation function "'
-                    + str(self.activation_functions[0]) + '"'
-                )
-            self.layer_dropout_fc1_drop = torch.nn.Dropout(p=self.dropout_rate)
+        self.layer_dropout_fc1_drop = torch.nn.Dropout(p=self.dropout_rate)
 
-            n_out_last = self.n_hidden_features[1]
-            self.layer_hidden_fc2 = torch.nn.Linear(
-                in_features = self.n_hidden_features[1-1],
-                out_features = n_out_last,
+        self.layer_hidden_fc2 = None
+        self.layer_hidden_fc2_act = None
+        self.layer_dropout_fc2_drop = None
+        if self.hidden_functions[1] is not None:
+            n_out_2 = self.n_hidden_features[1]
+            self.layer_hidden_fc2 = self.hidden_functions[1](
+                in_features = n_out_1,
+                out_features = n_out_2,
             )
-            if type(self.activation_functions[1]) in self.ACT_FUNCS:
+            if self.activation_functions[1] in self.ACT_FUNCS:
                 self.layer_hidden_fc2_act = self.activation_functions[1]()
-            elif type(self.activation_functions[1]) is torch.nn.LayerNorm:
+            elif self.activation_functions[1] == torch.nn.LayerNorm:
                 self.layer_hidden_fc2_act = torch.nn.LayerNorm(
-                    normalized_shape = self.n_hidden_features[1],
+                    normalized_shape = n_out_2,
                 )
             else:
-                self.layer_hidden_fc2_act = None
                 self.logger.warning(
                     'Ignore non-recognized activation function "'
                     + str(self.activation_functions[0]) + '"'
                 )
             self.layer_dropout_fc2_drop = torch.nn.Dropout(p=self.dropout_rate)
-
-        self.layer_classify = torch.nn.Linear(
-            in_features = n_out_last,
-            out_features = self.out_features,
-        )
-        if self.activation_functions[2] is not None:
-            self.layer_last = torch.nn.Softmax(dim=-1)
         else:
-            self.layer_last = None
+            n_out_2 = n_out_1
+
+        self.layer_hidden_last = None
+        self.layer_act_last = None
+        if self.hidden_functions[2] is not None:
+            self.layer_hidden_last = torch.nn.Linear(
+                in_features = n_out_2,
+                out_features = self.out_features,
+            )
+            if self.activation_functions[2] is not None:
+                self.layer_act_last = torch.nn.Softmax(dim=-1)
 
         # Random initialization of model parameters if not loading from a previous state
         for p in self.parameters():
             if p.dim() > 1:
                 torch.nn.init.xavier_uniform_(p)
-        self.loss_func = torch.nn.CrossEntropyLoss()
+        self.loss_func = self.loss_function()
         self.optimizer = torch.optim.Adam(
             self.parameters(),
             lr = self.learning_rate,
             betas = (0.9, 0.98),
             eps = 1e-9
         )
-        self.logger.info('Network initialized successfully')
+        self.logger.info('Network initialized successfully ' + str(self))
         return
 
     def from_old_states(
@@ -162,34 +160,34 @@ class ClassifierArc(torch.nn.Module, ClassifierArcInterface):
             self,
             x: torch.Tensor,
     ):
-        if self.USE_ARRAY:
-            h_out = x
-            for layer in self.layers_hidden:
-                h_out = layer(h_out)
-            h2_out = h_out
+        h1 = self.layer_hidden_fc1(x)
+        # self.logger.debug('Linear layer shape ' + str(h1.shape))
+        if self.layer_hidden_fc1_act is not None:
+            h1_act_or_norm = self.layer_hidden_fc1_act(h1)
         else:
-            h1 = self.layer_hidden_fc1(x)
-            # self.logger.debug('Linear layer shape ' + str(h1.shape))
-            if self.layer_hidden_fc1_act is not None:
-                h1_act_or_norm = self.layer_hidden_fc1_act(h1)
-            else:
-                h1_act_or_norm = h1
-            h1_out = self.layer_dropout_fc1_drop(h1_act_or_norm)
+            h1_act_or_norm = h1
+        h1_out = self.layer_dropout_fc1_drop(h1_act_or_norm)
 
+        if self.layer_hidden_fc2 is not None:
             h2 = self.layer_hidden_fc2(h1_out)
             if self.layer_hidden_fc2_act is not None:
                 h2_act_or_norm = self.layer_hidden_fc2_act(h2)
             else:
                 h2_act_or_norm = h2
             h2_out = self.layer_dropout_fc2_drop(h2_act_or_norm)
-
-        h_last = self.layer_classify(h2_out)
-        # self.logger.debug('Sentiment linear layer shape ' + str(senti.shape))
-        if self.layer_last is not None:
-            category_prob = self.layer_last(h_last)
         else:
-            category_prob = h_last
-        return category_prob
+            h2_out = h1_out
+
+        if self.layer_hidden_last is not None:
+            h_last = self.layer_hidden_last(h2_out)
+            # self.logger.debug('Sentiment linear layer shape ' + str(senti.shape))
+            if self.layer_act_last is not None:
+                last_out = self.layer_act_last(h_last)
+            else:
+                last_out = h_last
+        else:
+            last_out = h2_out
+        return last_out
 
     def fit(
             self,

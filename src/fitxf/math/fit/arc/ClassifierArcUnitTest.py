@@ -39,9 +39,12 @@ class ClassifierArcUnitTest:
         if test_function == 'max':
             # category is just the largest index
             y, n_cat = torch.argmax(X, dim=-1), X.shape[-1]
+            n_hidden_features = (100, 50,)
+            hidden_functions = (torch.nn.Linear, torch.nn.Linear, torch.nn.Linear)
             # for max function, it can be any function that is always increasing, thus we choose
             # Tanh() function since it is nicely bounded & satisfies always increasing
             activation_functions = (torch.nn.Tanh, torch.nn.Tanh, torch.nn.Softmax)
+            loss_f = torch.nn.CrossEntropyLoss
             dropout = 0.2
             learn_rate = 0.001
             regularization_type = 0.
@@ -49,23 +52,29 @@ class ClassifierArcUnitTest:
         else:
             # category is the sum of the rounded X
             y, n_cat = torch.sum(torch.round(X), dim=-1), X.shape[-1] + 1
+            n_hidden_features = (100, None)
+            hidden_functions = (torch.nn.Linear, None, torch.nn.Linear)
             # since summation is a linear function, any non-linear activation will cause problems
-            activation_functions = (None, None, None)
+            activation_functions = (torch.nn.LayerNorm, None, torch.nn.LayerNorm)
+            loss_f = torch.nn.MSELoss
             dropout = 0.
             learn_rate = 0.001
             regularization_type = 0.
             acc_thr = 0.60
 
         assert len(X) == len(y)
+        self.logger.info(
+            'X input:\n' + str(X) + '\ny output:\n' + str(y)
+        )
         clf = self.child_class(
             in_features = X.shape[-1],
             out_features = n_cat,
-            n_hidden_features = 100,
+            n_hidden_features = n_hidden_features,
             dropout_rate = dropout,
             learning_rate = learn_rate,
-            # since we are testing linear functions that depend on the value of the input,
-            # don't put an activation layer
+            hidden_functions = hidden_functions,
             activation_functions = activation_functions,
+            loss_function = loss_f,
             logger = self.logger,
         )
         model_filepath = 'ut.' + str(self.child_class.__name__) + '.bin'

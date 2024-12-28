@@ -13,7 +13,9 @@ class ClassifierArcInterface:
             in_features: int = None,
             out_features: int = None,
             n_hidden_features: int = 100,
-            activation_functions: list = (torch.nn.ReLU, torch.nn.ReLU),
+            hidden_functions: list = (torch.nn.Linear, torch.nn.Linear, torch.nn.Linear),
+            activation_functions: list = (torch.nn.ReLU, torch.nn.ReLU, torch.nn.Softmax),
+            loss_function = torch.nn.CrossEntropyLoss,
             dropout_rate: float = 0.2,
             learning_rate: float = 0.0001,
             logger = None,
@@ -21,9 +23,11 @@ class ClassifierArcInterface:
         self.model_filepath = model_filepath
         self.in_features = in_features
         self.out_features = out_features
-        self.n_hidden_features = n_hidden_features if type(n_hidden_features) is list else\
-            [n_hidden_features, int(round(n_hidden_features / 2))]
+        self.n_hidden_features = n_hidden_features if type(n_hidden_features) in [list, tuple] \
+            else [n_hidden_features, int(round(n_hidden_features / 2))]
+        self.hidden_functions = hidden_functions
         self.activation_functions = activation_functions
+        self.loss_function = loss_function
         self.dropout_rate = dropout_rate
         self.learning_rate = learning_rate
         self.logger = logger if logger is not None else logging.getLogger()
