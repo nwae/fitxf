@@ -18,7 +18,9 @@ class ClassifierArcRf(ClassifierArcInterface):
             in_features: int = None,
             out_features: int = None,
             n_hidden_features: int = 100,
-            activation_functions: list = (torch.nn.ReLU, torch.nn.ReLU),
+            hidden_functions: list = (torch.nn.Linear, torch.nn.Linear, torch.nn.Linear),
+            activation_functions: list = (torch.nn.ReLU, torch.nn.ReLU, torch.nn.Softmax),
+            loss_function = torch.nn.CrossEntropyLoss,
             dropout_rate: float = 0.2,
             learning_rate: float = 0.0001,
             logger = None,
@@ -59,7 +61,9 @@ class ClassifierArcRf(ClassifierArcInterface):
             self,
             X: torch.Tensor,
             y: torch.Tensor,
-            num_categories: int,
+            is_categorical: bool = True,
+            # if None, means we don't convert to onehot (possibly caller already done that, or not required)
+            num_categories: int = None,
             # the smaller the batch size, the smaller the losses will be during training
             batch_size: int = 32,
             epochs: int = 100,
@@ -79,7 +83,7 @@ class ClassifierArcRf(ClassifierArcInterface):
         # Validate back
         out_cat, out_prob = self.predict(X[n_cutoff_x_train:])
         out_cat = out_cat.flatten()
-        self.logger.debug('Out cat shape ' + str(out_cat.shape) + ', y shape ' + str(y.shape))
+        self.logger.info('Out cat shape ' + str(out_cat.shape) + ', y shape ' + str(y.shape))
         correct = 1 * (y[n_cutoff_x_train:] - out_cat == 0)
         eval_accuracy = torch.sum(correct) / len(correct)
         self.logger.info(

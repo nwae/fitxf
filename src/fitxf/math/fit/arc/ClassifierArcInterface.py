@@ -54,15 +54,20 @@ class ClassifierArcInterface:
             self,
             X: torch.Tensor,
             y: torch.Tensor,
-            y_num_classes: int,
+            # if None, means we don't convert to onehot (possibly caller already done that, or not required)
+            y_num_classes: int = None,
             batch_size: int = 32,
             eval_percent: float = 0.2,
             include_attn_mask: bool = False,
     ):
-        y_onehot = torch.nn.functional.one_hot(
-            y.to(torch.int64),
-            num_classes = y_num_classes,
-        ).to(torch.float)
+        if y_num_classes is not None:
+            y_onehot_or_value = torch.nn.functional.one_hot(
+                y.to(torch.int64),
+                num_classes = y_num_classes,
+            ).to(torch.float)
+        else:
+            y_onehot_or_value = y
+
         dataloader_train = []
         idx_batch = 0
         while True:
@@ -70,7 +75,7 @@ class ClassifierArcInterface:
             if j-1 > len(X):
                 break
             X_batch = X[idx_batch:j]
-            y_onehot_batch = y_onehot[idx_batch:j]
+            y_onehot_batch = y_onehot_or_value[idx_batch:j]
             if include_attn_mask:
                 attn_mask = torch.ones(size=X_batch.shape)
                 dataloader_train.append((X_batch, attn_mask, y_onehot_batch))
@@ -90,6 +95,20 @@ class ClassifierArcInterface:
         trn_eval_cutoff_idx = cutoff_batch_idx * batch_size
         return dataloader_train, dataloader_eval, trn_eval_cutoff_idx
 
+    def to_onehot(
+            self,
+            y: torch.Tensor,
+    ):
+        n_values = torch.max(y.to(torch.int)) + 1
+        onehot = torch.eye(n_values)[y.to(torch.int)]
+        onehot_f = onehot.to(torch.float)
+        return onehot_f
+        # alternatively, can also use the torch builtin function
+        # return torch.nn.functional.one_hot(
+        #     y.to(torch.int64),
+        #     num_classes = y_num_classes,
+        # ).to(torch.float)
+
     def forward(
             self,
             x: torch.Tensor,
@@ -100,7 +119,9 @@ class ClassifierArcInterface:
             self,
             X: torch.Tensor,
             y: torch.Tensor,
-            num_categories: int,
+            is_categorical: bool = True,
+            # if None, means we don't convert to onehot (possibly caller already done that, or not required)
+            num_categories: int = None,
             # the smaller the batch size, the smaller the losses will be during training
             batch_size: int = 32,
             epochs: int = 100,

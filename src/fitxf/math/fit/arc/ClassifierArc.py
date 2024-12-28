@@ -12,7 +12,7 @@ class ClassifierArc(torch.nn.Module, ClassifierArcInterface):
     USE_ARRAY = False
 
     ACT_FUNCS = (
-        torch.nn.Tanh, torch.nn.ReLU, torch.nn.Sigmoid, torch.nn.LogSigmoid,
+        torch.nn.Tanh, torch.nn.ReLU, torch.nn.Sigmoid, torch.nn.LogSigmoid, torch.nn.Softmax,
     )
 
     def __init__(
@@ -107,8 +107,17 @@ class ClassifierArc(torch.nn.Module, ClassifierArcInterface):
                 in_features = n_out_2,
                 out_features = self.out_features,
             )
-            if self.activation_functions[2] is not None:
-                self.layer_act_last = torch.nn.Softmax(dim=-1)
+            if self.activation_functions[2] in self.ACT_FUNCS:
+                self.layer_act_last = self.activation_functions[2]()
+            elif self.activation_functions[2] == torch.nn.LayerNorm:
+                self.layer_act_last = torch.nn.LayerNorm(
+                    normalized_shape = self.out_features,
+                )
+            else:
+                self.logger.warning(
+                    'Ignore non-recognized activation function "'
+                    + str(self.activation_functions[2]) + '"'
+                )
 
         # Random initialization of model parameters if not loading from a previous state
         for p in self.parameters():
@@ -193,7 +202,9 @@ class ClassifierArc(torch.nn.Module, ClassifierArcInterface):
             self,
             X: torch.Tensor,
             y: torch.Tensor,
-            num_categories: int,
+            is_categorical: bool = True,
+            # if None, means we don't convert to onehot (possibly caller already done that, or not required)
+            num_categories: int = None,
             # the smaller the batch size, the smaller the losses will be during training
             batch_size: int = 32,
             epochs: int = 100,
@@ -229,11 +240,20 @@ class ClassifierArc(torch.nn.Module, ClassifierArcInterface):
 
         if eval_percent > 0:
             out = self(X[n_cutoff_train:])
-            self.logger.debug('Out for eval test: ' + str(out))
-            out_cat = torch.argmax(out, dim=-1)
-            self.logger.debug('Out categories for eval test: ' + str(out_cat))
+            self.logger.debug(
+                'Out for eval test (shape ' + str(out.shape) + ', y shape ' + str(y.shape) + '): ' + str(out)
+            )
+            y_expected = y[n_cutoff_train:]
+            if is_categorical:
+                out_cat = torch.argmax(out, dim=-1)
+                if num_categories is None:
+                    y_expected = torch.argmax(y[n_cutoff_train:], dim=-1)
+            else:
+                out_cat = out
+            self.logger.debug('Out categories for eval test:\n' + str(out_cat) + '\nfor y:\n' + str(y_expected))
+            # raise Exception('asdf')
             assert len(out) == len(out_cat)
-            correct = 1 * (y[n_cutoff_train:] - out_cat == 0)
+            correct = 1 * (y_expected - out_cat == 0)
             eval_accuracy = torch.sum(correct) / len(correct)
             eval_accuracy = eval_accuracy.item()
             self.logger.info(

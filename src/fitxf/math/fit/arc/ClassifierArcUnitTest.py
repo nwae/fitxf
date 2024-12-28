@@ -1,4 +1,6 @@
 import logging
+from types import NoneType
+
 import torch
 import os
 from fitxf.math.fit.arc.ClassifierArcInterface import ClassifierArcInterface
@@ -20,7 +22,10 @@ class ClassifierArcUnitTest:
             self,
     ):
         accuracies = {}
-        for f in ['max', 'sum']:
+        for f in [
+            'max',
+            'sum',
+        ]:
             accuracies[f] = self.test_by_func(
                 load_state_if_exists = False,
                 test_function = f,
@@ -37,8 +42,10 @@ class ClassifierArcUnitTest:
         X = torch.rand(size=(1024, 4))
 
         if test_function == 'max':
+            is_categorical = True
             # category is just the largest index
             y, n_cat = torch.argmax(X, dim=-1), X.shape[-1]
+            # y_onehot_or_value = torch.nn.functional.one_hot(y, num_classes=n_cat).to(torch.float)
             n_hidden_features = (100, 50,)
             hidden_functions = (torch.nn.Linear, torch.nn.Linear, torch.nn.Linear)
             # for max function, it can be any function that is always increasing, thus we choose
@@ -50,12 +57,15 @@ class ClassifierArcUnitTest:
             regularization_type = 0.
             acc_thr = 0.90
         else:
+            is_categorical = True
             # category is the sum of the rounded X
-            y, n_cat = torch.sum(torch.round(X), dim=-1), X.shape[-1] + 1
+            y, n_cat = torch.sum(torch.round(X).to(torch.int), dim=-1), X.shape[-1] + 1
+            # y_onehot_or_value = torch.unsqueeze(y_onehot_or_value, dim=1)
+            # y_onehot_or_value = torch.nn.functional.one_hot(y, num_classes=n_cat).to(torch.float)
             n_hidden_features = (100, None)
             hidden_functions = (torch.nn.Linear, None, torch.nn.Linear)
             # since summation is a linear function, any non-linear activation will cause problems
-            activation_functions = (torch.nn.LayerNorm, None, torch.nn.LayerNorm)
+            activation_functions = (None, None, torch.nn.Softmax)
             loss_f = torch.nn.MSELoss
             dropout = 0.
             learn_rate = 0.001
@@ -64,7 +74,8 @@ class ClassifierArcUnitTest:
 
         assert len(X) == len(y)
         self.logger.info(
-            'X input:\n' + str(X) + '\ny output:\n' + str(y)
+            'X input (shape ' + str(X.shape) + '):\n' + str(X) + '\ny output (shape ' + str(y.shape)
+            + '):\n' + str(y)
         )
         clf = self.child_class(
             in_features = X.shape[-1],
@@ -99,6 +110,8 @@ class ClassifierArcUnitTest:
             res = clf.fit(
                 X = X,
                 y = y,
+                is_categorical = is_categorical,
+                # we already calculated onehot ourselves
                 num_categories = n_cat,
                 batch_size = 16,
                 epochs = 10,
