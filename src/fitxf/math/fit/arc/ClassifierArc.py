@@ -239,26 +239,11 @@ class ClassifierArc(torch.nn.Module, ClassifierArcInterface):
         self.eval()
 
         if eval_percent > 0:
-            out = self(X[n_cutoff_train:])
-            self.logger.debug(
-                'Out for eval test (shape ' + str(out.shape) + ', y shape ' + str(y.shape) + '): ' + str(out)
-            )
-            y_expected = y[n_cutoff_train:]
-            if is_categorical:
-                out_cat = torch.argmax(out, dim=-1)
-                if num_categories is None:
-                    y_expected = torch.argmax(y[n_cutoff_train:], dim=-1)
-            else:
-                out_cat = out
-            self.logger.debug('Out categories for eval test:\n' + str(out_cat) + '\nfor y:\n' + str(y_expected))
-            # raise Exception('asdf')
-            assert len(out) == len(out_cat)
-            correct = 1 * (y_expected - out_cat == 0)
-            eval_accuracy = torch.sum(correct) / len(correct)
-            eval_accuracy = eval_accuracy.item()
-            self.logger.info(
-                'Evaluation results: Total correct ' + str(torch.sum(correct).item()) + ' from length ' + str(len(correct))
-                + ', accuracy ' + str(eval_accuracy)
+            eval_accuracy = self.evaluate_accuracy(
+                X_eval = X[n_cutoff_train:],
+                y_eval = y[n_cutoff_train:],
+                is_categorical = is_categorical,
+                num_categories = num_categories,
             )
         else:
             eval_accuracy = None
@@ -270,6 +255,33 @@ class ClassifierArc(torch.nn.Module, ClassifierArcInterface):
             'dataloader_eval': dl_val,
             'index_cutoff_train': n_cutoff_train,
         }
+
+    def evaluate_accuracy(
+            self,
+            X_eval: torch.Tensor,
+            y_eval: torch.Tensor,
+            is_categorical: bool = True,
+            # if None, means we don't convert to onehot (possibly caller already done that, or not required)
+            num_categories: int = None,
+    ):
+        assert len(X_eval) == len(y_eval)
+        out_sorted, _ = self.predict(X=X_eval)
+        self.logger.debug(
+            'Out for eval test (shape ' + str(out_sorted.shape) + ', y shape ' + str(y_eval.shape)
+            + '): ' + str(out_sorted)
+        )
+        out_top = out_sorted[:,0]
+        y_expected = y_eval
+
+        self.logger.debug('Out categories for eval test:\n' + str(out_top) + '\nfor y:\n' + str(y_expected))
+        correct = 1 * (y_expected - out_top == 0)
+        eval_accuracy = torch.sum(correct) / len(correct)
+        eval_accuracy = eval_accuracy.item()
+        self.logger.info(
+            'Evaluation results: Total correct ' + str(torch.sum(correct).item()) + ' from length ' + str(len(correct))
+            + ', accuracy ' + str(eval_accuracy)
+        )
+        return eval_accuracy
 
     def predict(
             self,
@@ -289,7 +301,7 @@ class ClassifierArc(torch.nn.Module, ClassifierArcInterface):
 
 
 if __name__ == '__main__':
-    lgr = Logging.get_default_logger(log_level=logging.INFO, propagate=False)
+    lgr = Logging.get_default_logger(log_level=logging.DEBUG, propagate=False)
     ut = ClassifierArcUnitTest(child_class=ClassifierArc, logger=lgr)
     ut.test()
     exit(0)
