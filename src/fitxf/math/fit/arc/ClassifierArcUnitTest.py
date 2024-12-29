@@ -74,6 +74,7 @@ class ClassifierArcUnitTest:
             dropout = 0.
             learn_rate = 0.001
             regularization_type = 0.
+            # for summation, need smaller batch sizes, otherwise can't converge
             num_epochs, batch_sz = 10, 4
             acc_thr = 0.60
 
