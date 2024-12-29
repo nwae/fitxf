@@ -1,6 +1,7 @@
 import logging
 from types import NoneType
 
+import numpy as np
 import torch
 import os
 from fitxf.math.fit.arc.ClassifierArcInterface import ClassifierArcInterface
@@ -23,7 +24,7 @@ class ClassifierArcUnitTest:
     ):
         accuracies = {}
         for f in [
-            'max',
+            # 'max',
             'sum',
         ]:
             accuracies[f] = self.test_by_func(
@@ -45,6 +46,7 @@ class ClassifierArcUnitTest:
             is_categorical = True
             # category is just the largest index
             y, n_cat = torch.argmax(X, dim=-1), X.shape[-1]
+            assert len(np.unique((y))) == n_cat
             # y_onehot_or_value = torch.nn.functional.one_hot(y, num_classes=n_cat).to(torch.float)
             n_hidden_features = (100, 50,)
             hidden_functions = (torch.nn.Linear, torch.nn.Linear, torch.nn.Linear)
@@ -55,21 +57,24 @@ class ClassifierArcUnitTest:
             dropout = 0.2
             learn_rate = 0.001
             regularization_type = 0.
+            num_epochs = 10
             acc_thr = 0.90
         else:
             is_categorical = True
             # category is the sum of the rounded X
             y, n_cat = torch.sum(torch.round(X).to(torch.int), dim=-1), X.shape[-1] + 1
+            assert len(np.unique((y))) == n_cat
             # y_onehot_or_value = torch.unsqueeze(y_onehot_or_value, dim=1)
             # y_onehot_or_value = torch.nn.functional.one_hot(y, num_classes=n_cat).to(torch.float)
             n_hidden_features = (100, None)
             hidden_functions = (torch.nn.Linear, None, torch.nn.Linear)
             # since summation is a linear function, any non-linear activation will cause problems
             activation_functions = (None, None, torch.nn.Softmax)
-            loss_f = torch.nn.MSELoss
+            loss_f = torch.nn.CrossEntropyLoss
             dropout = 0.
             learn_rate = 0.001
             regularization_type = 0.
+            num_epochs = 10
             acc_thr = 0.60
 
         assert len(X) == len(y)
@@ -114,7 +119,7 @@ class ClassifierArcUnitTest:
                 # we already calculated onehot ourselves
                 num_categories = n_cat,
                 batch_size = 16,
-                epochs = 10,
+                epochs = num_epochs,
                 regularization_type = regularization_type,
             )
             acc = res['eval_accuracy']

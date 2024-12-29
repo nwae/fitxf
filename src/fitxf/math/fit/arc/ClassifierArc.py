@@ -273,7 +273,9 @@ class ClassifierArc(torch.nn.Module, ClassifierArcInterface):
         out_top = out_sorted[:,0]
         y_expected = y_eval
 
-        self.logger.debug('Out categories for eval test:\n' + str(out_top) + '\nfor y:\n' + str(y_expected))
+        self.logger.debug(
+            'Out categories for eval test:\n' + str(list(zip(out_top.tolist(), y_expected.tolist())))
+        )
         correct = 1 * (y_expected - out_top == 0)
         eval_accuracy = torch.sum(correct) / len(correct)
         eval_accuracy = eval_accuracy.item()
@@ -301,7 +303,7 @@ class ClassifierArc(torch.nn.Module, ClassifierArcInterface):
 
 
 if __name__ == '__main__':
-    lgr = Logging.get_default_logger(log_level=logging.DEBUG, propagate=False)
+    lgr = Logging.get_default_logger(log_level=logging.INFO, propagate=False)
     ut = ClassifierArcUnitTest(child_class=ClassifierArc, logger=lgr)
     ut.test()
     exit(0)
