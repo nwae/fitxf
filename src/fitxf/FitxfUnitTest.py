@@ -2,6 +2,8 @@ import warnings
 import uuid
 import os
 import re
+from venv import logger
+
 from fitxf.utils import Logging, Profiling, Env
 #----------------------------------------------------------------------------------
 # IC Section
@@ -10,6 +12,8 @@ from fitxf.utils import Logging, Profiling, Env
 from fitxf.math.fit.transform.FitXformInterface import FitXformInterfaceUnitTest
 from fitxf.math.fit.transform.FitXformUnitTest import FitXformUnitTest
 from fitxf.math.fit.utils.FitUtilsUnitTest import FitUtilsUt
+from fitxf.math.fit.arc.ClassifierArcUnitTest import ClassifierArcUnitTest
+from fitxf.math.fit.arc.ClassifierArcRf import ClassifierArcRf
 from fitxf.math.fit.utils.TensorUtils import TensorUtilsUnitTest
 from fitxf.math.fit.utils.MathUtils import MathUtilsUnitTest
 from fitxf.math.fit.utils.PatternSearchUnitTest import PatternSearchUnitTest
@@ -63,6 +67,7 @@ class RepoUnitTest:
             FitXformInterfaceUnitTest, FitXformUnitTest, FitUtilsUt, TensorUtilsUnitTest, # HomomorphismUnitTest,
             MathUtilsUnitTest, PatternSearchUnitTest, ClusterUnitTest, ClusterCosineUnitTest,
             GraphUtilsUnitTest,
+            ClassifierArcUnitTest,
             # Utils
             LockUnitTest, SingletonUnitTest, StringVarUnitTest,
             UnitTestObjectPersistence,
@@ -88,27 +93,27 @@ class RepoUnitTest:
             # if cls not in [VecDbCcrcyTest]:
             #     continue
 
+            self.logger.info('BEGIN TESTING ' + str(cls))
             if cls == FitUtilsUt:
-                self.logger.info('BEGIN TESTING ' + str(cls))
                 ut = FitUtilsUt(logger=self.logger)
                 ut.test_map_to_connbr()
                 # TODO Uncomment these when we use them
                 # ut.test_nn(epochs=5000, plot_graph=False, tol_dif=0.1)
                 # ut.test_dist()
             elif cls == FitXformUnitTest:
-                self.logger.info('BEGIN TESTING ' + str(cls))
                 ut = FitXformUnitTest(
                     lm_cache_folder = self.lm_cache_folder,
                     logger = self.logger,
                 )
                 ut.test()
             elif cls == TensorUtilsUnitTest:
-                self.logger.info('BEGIN TESTING ' + str(cls))
                 ut = TensorUtilsUnitTest()
                 ut.test_norm()
                 ut.test_similarity_cosine_and_similarity_distance()
+            elif cls == ClassifierArcUnitTest:
+                ut = ClassifierArcUnitTest(child_class=ClassifierArcRf, logger=self.logger)
+                ut.test()
             else:
-                self.logger.info('BEGIN TESTING ' + str(cls))
                 cls(logger=self.logger).test()
 
             t1 = profiler.stop()
