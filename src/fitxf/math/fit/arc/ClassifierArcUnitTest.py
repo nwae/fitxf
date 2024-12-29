@@ -57,7 +57,7 @@ class ClassifierArcUnitTest:
             dropout = 0.2
             learn_rate = 0.001
             regularization_type = 0.
-            num_epochs = 10
+            num_epochs, batch_sz = 10, 16
             acc_thr = 0.90
         else:
             is_categorical = True
@@ -74,7 +74,7 @@ class ClassifierArcUnitTest:
             dropout = 0.
             learn_rate = 0.001
             regularization_type = 0.
-            num_epochs = 10
+            num_epochs, batch_sz = 10, 4
             acc_thr = 0.60
 
         assert len(X) == len(y)
@@ -118,11 +118,12 @@ class ClassifierArcUnitTest:
                 is_categorical = is_categorical,
                 # we already calculated onehot ourselves
                 num_categories = n_cat,
-                batch_size = 16,
+                batch_size = batch_sz,
                 epochs = num_epochs,
                 regularization_type = regularization_type,
             )
             acc = res['eval_accuracy']
+        # [self.logger.info(p) for p in clf.parameters()]
         self.logger.info(
             'Child class "' + str(self.child_class.__name__) + '" accuracy ' + str(acc)
             + ' for test "' + str(test_function) + '"'
