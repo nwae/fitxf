@@ -9,6 +9,9 @@ from fitxf.math.fit.utils.TensorUtils import TensorUtils, TensorUtilsUnitTest
 from fitxf.math.fit.utils.MathUtils import MathUtils
 from fitxf.math.fit.utils.PatternSearch import PatternSearch
 from fitxf.math.graph.GraphUtils import GraphUtils
+from fitxf.math.fit.arc.ClassifierArcInterface import ClassifierArcInterface
+from fitxf.math.fit.arc.ClassifierArc import ClassifierArc
+from fitxf.math.fit.arc.ClassifierArcRf import ClassifierArcRf
 
 # Cluster
 from fitxf.math.fit.cluster.ClusterUnitTest import Cluster, ClusterUnitTest
