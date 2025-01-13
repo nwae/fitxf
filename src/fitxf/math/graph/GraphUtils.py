@@ -39,7 +39,10 @@ class GraphUtils:
             other_params = {k: v for k, v in edge_rec.items() if k not in [col_u, col_v, col_key, col_weight]}
             edge_key = (u, v, key)
             if multi_g.edges.get(edge_key) is not None:
-                self.logger.warning(str(i) + '. Edge exists ' + str(edge_key) + ': ' + str(multi_g.edges.get(edge_key)))
+                self.logger.warning(
+                    str(i) + '. Edge already exists ' + str(edge_key) + ': ' + str(multi_g.edges.get(edge_key))
+                    + '. Existing edge will be replaced with new edge with new weight ' + str(weight) + '.'
+                )
             else:
                 self.logger.debug(str(i) + '. New edge ' + str(edge_key))
             # There will be no duplicate edges, just overwritten by the last one
@@ -87,6 +90,7 @@ class GraphUtils:
             method = 'dijkstra',
             # only applicable for "simple" path method
             agg_weight_by: str = 'min',
+            randomize_edge_if_weights_same = False,
     ) -> list[dict]:
         assert method in ['simple', 'dijkstra', 'shortest']
         if method == 'dijkstra':
@@ -120,6 +124,10 @@ class GraphUtils:
             )
             return []
 
+        #
+        # Although the shortest/longest/etc paths have been found above, they only have the nodes information
+        # We need to fill in the edge(s) information like weights, comments, etc.
+        #
         paths_by_method = []
         for nodes_traversed_path in nodes_traversed_paths:
             best_legs = []
@@ -134,15 +142,29 @@ class GraphUtils:
                 #    'teleport': {'u': 'Tokyo', 'v': 'Beijing', 'weight': 2},
                 #    'plane': {'u': 'Tokyo', 'v': 'Beijing', 'weight': 9}
                 #  }
+                # This will return all edges with different keys, even with exactly same weight
                 ep = G.get_edge_data(u=leg_a, v=leg_b)
                 self.logger.debug('For get path leg ' + str(leg_ab) + ', edge data ' + str(ep))
                 # convert to convenient tuples instead of key: values
                 ep_edges = [(k, d) for k, d in ep.items()]
 
-                if agg_weight_by == 'min':
-                    arg_best_weight = np.argmin([d['weight'] for k, d in ep_edges])
-                else:
-                    arg_best_weight = np.argmax([d['weight'] for k, d in ep_edges])
+                # ! Must not use numpy argmin/argmax to get the single index, these functions cannot
+                # return multiple min/max with tied weights
+                v_weights_tmp = np.array([d['weight'] for k, d in ep_edges])
+                arg_best_weight = np.argmin(v_weights_tmp) if agg_weight_by == 'min' else np.argmax(v_weights_tmp)
+                if randomize_edge_if_weights_same:
+                    args_best_weight_if_ties_exist = np.array([
+                        i_tmp for i_tmp, v in enumerate(v_weights_tmp) if v == v_weights_tmp[arg_best_weight]]
+                    )
+                    if len(args_best_weight_if_ties_exist) > 1:
+                        arg_best_weight = args_best_weight_if_ties_exist[
+                            np.random.randint(low=0, high=len(args_best_weight_if_ties_exist))
+                        ]
+                        self.logger.debug(
+                            'Arg best weight aggregate by "' + str(agg_weight_by) + '" picked randomly from index '
+                            + str(arg_best_weight) + ' for ep edges ' + str(ep_edges)
+                            + '. Ties for best weight from: ' + str(args_best_weight_if_ties_exist)
+                        )
 
                 best_key, best_edge = ep_edges[arg_best_weight]
                 best_leg = self.__get_leg_obj(
@@ -156,6 +178,9 @@ class GraphUtils:
                 )
                 nodes_traversed_weight += best_edge['weight']
                 best_legs.append(best_leg)
+                self.logger.debug(
+                    'Best leg for path ' + str(nodes_traversed_path) + ': ' + str(best_leg)
+                )
             # Calculate weight proportion
             for lg in best_legs:
                 lg['leg_weight_proportion'] = lg['leg_weight'] / nodes_traversed_weight
@@ -214,6 +239,7 @@ class GraphUtils:
             query_col_v = 'v',
             # query_col_key = 'key',
             query_col_weight = 'weight',
+            randomize_edge_if_weights_same = False,
     ):
         multi_graph = ref_multigraph
         self.logger.debug('Ref graph edges: ' + str(multi_graph.edges))
@@ -223,6 +249,7 @@ class GraphUtils:
 
         all_legs = []
         query_edges_best_paths = {}
+        self.logger.debug('Start search query edges total ' + str(len(query_edges)) + ' edges: ' + str(query_edges))
         for i, conn in enumerate(query_edges):
             # for each query edge, find best legs
             self.logger.debug('For conn ' + str(conn))
@@ -236,6 +263,7 @@ class GraphUtils:
                 target = v,
                 method = path_method,
                 agg_weight_by = path_agg_weight_by,
+                randomize_edge_if_weights_same = randomize_edge_if_weights_same,
             )
             self.logger.debug(
                 'Query edge #' + str(i) + ' method ' + str(path_method) + ', best paths for edge ' + str(edge)
@@ -283,7 +311,7 @@ class GraphUtils:
             ascending = True,
             inplace = True,
         )
-        max_legs_uniq = np.unique(df_all_legs['leg_total']).tolist()
+        max_legs_uniq = list(np.unique(df_all_legs['leg_total']))
         max_legs_uniq.sort()
         self.logger.info(
             'Query-collections connections, max leg unique ' + str(max_legs_uniq)
@@ -419,11 +447,24 @@ if __name__ == '__main__':
     gu = GraphUtils(logger=lgr)
     G = gu.create_multi_graph(
         edges = [
+            # Tokyo -- Shanghai -- Beijing
             {'key': 'plane', 'u': 'Shanghai', 'v': 'Tokyo', 'distance': 10, 'comment': 'Shanghai-Tokyo flight'},
-            # duplicate (will not be added), order does not matter
-            {'key': 'plane', 'u': 'Tokyo', 'v': 'Shanghai', 'distance': 22, 'comment': 'Tokyo-Shanghai flight'},
+            # duplicate (u,v,key) will replace earlier value
+            {'key': 'plane', 'u': 'Tokyo', 'v': 'Shanghai', 'distance': 8, 'comment': 'Tokyo-Shanghai flight'},
+            {'key': 'ship', 'u': 'Tokyo', 'v': 'Shanghai', 'distance': 22, 'comment': 'Tokyo-Shanghai ship'},
+            {'key': 'car', 'u': 'Shanghai', 'v': 'Beijing', 'distance': 999, 'comment': 'Shanghai-Beijing car'},
+            # Tokyo -- Beijing
+            {'key': 'teleport', 'u': 'Tokyo', 'v': 'Beijing', 'distance': 1, 'comment': 'Shanghai-Beijing teleport'},
+            {'key': 'teleport-2', 'u': 'Tokyo', 'v': 'Beijing', 'distance': 1, 'comment': 'Shanghai-Beijing teleport-2'},
         ],
         col_weight = 'distance',
     )
+    print('-------------------------------------------------------------------------------')
     print(G)
+    print('All edges total ' + str(len(G.edges)) + ': ' + str(G.edges))
+    print('Edge Shanghai-Tokyo' + str(G.get_edge_data(u='Shanghai', v='Tokyo')))
+    # Demo paths
+    paths = gu.get_paths(G=G, method='simple', source='Beijing', target='Tokyo', randomize_edge_if_weights_same=True)
+    print('***** Demo Paths *****')
+    [print(i, p) for i, p in enumerate(paths)]
     exit(0)

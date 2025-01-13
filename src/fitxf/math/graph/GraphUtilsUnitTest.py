@@ -7,6 +7,7 @@ from fitxf.math.utils.Pandas import Pandas
 
 
 class GraphUtilsUnitTest:
+
     def __init__(self, logger=None):
         self.logger = logger if logger is not None else logging.getLogger()
         return
@@ -180,6 +181,7 @@ class GraphUtilsUnitTest:
             (
                     # Undirected test, dijkstra
                     False, [
+                        # Among all these connections, we want to find shortest path keys
                         {'u': 'Moscow', 'v': 'Beijing'}, {'u': 'Tokyo', 'v': 'Shanghai'},
                         {'u': 'Medellin', 'v': 'Antartica'}, {'u': 'Vientiane', 'v': 'Bangkok'},
                     ], 'dijkstra',
@@ -307,11 +309,13 @@ class GraphUtilsUnitTest:
                 query_col_u = 'u',
                 query_col_v= 'v',
                 query_col_weight = 'cost',
+                randomize_edge_if_weights_same = False,
             )
             self.logger.info('Return search result:')
             [self.logger.info(str(k) + ': ' + str(v)) for k, v in res.items()]
             top_keys = res['top_keys_by_number_of_edges']
             top_keys_by_agg_weight = res['top_keys_by_aggregated_weight']
+            self.logger.info('Top keys ' + str(top_keys) + ', by agg weight ' + str(top_keys_by_agg_weight))
             assert top_keys == exp_top_keys, \
                 'Result for test #' + str(i) + ' top keys\n' + str(top_keys) + ' not\n' + str(exp_top_keys)
             assert top_keys_by_agg_weight == exp_top_keys_agg_w, \
