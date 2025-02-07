@@ -100,10 +100,10 @@ class Cluster:
             # useful for clusters of more than 1,000,000 points for example, where starting
             # again means another half day of fit training
             start_centers: np.ndarray = None,
-            km_iters = 100,
-            converge_diff_thr = 0.00001,
+            km_iters: int = 100,
+            converge_diff_thr: float = 0.00001,
             # pass through mode
-            test_mode = False,
+            test_mode: bool = False,
     ):
         assert x.ndim == 2
         if x_labels is None:
@@ -192,15 +192,17 @@ class Cluster:
             self,
             x: np.ndarray,
             x_labels: list = None,
-            km_iters = 100,
-            max_clusters = 100,
-            min_clusters = 2,
-            plot = False,
+            km_iters: int = 100,
+            max_clusters: int = 100,
+            min_clusters: int = 2,
+            # when calculating movement of median distance between centers, we give more weight to number of clusters
+            weight_n_centers_for_gradient: bool = False,
+            plot: bool = False,
             # by default if 25% of the clusters are single point clusters, we quit
-            thr_single_clusters = 0.25,
-            estimate_min_max = False,
+            thr_single_clusters: float = 0.25,
+            estimate_min_max: bool = False,
             # pass through mode
-            test_mode = False,
+            test_mode: bool = False,
     ):
         assert x.ndim == 2
 
@@ -248,14 +250,21 @@ class Cluster:
                 break
 
         cs = cluster_sets
+        # The value of the centers median starting from index=0 for min_clusters
         val_cm = np.array([cs[i]['centers_median'] for i in range(max_n+1) if i>=min_clusters])
         #
         # Heuristic method using "pigeonhole principle". If n is the optimal number of clusters, then adding
         # one more will need to "crowd" the new center among the existing n centers. Thus center median should
         # reduce, or gradient calculated below is positive
         #
+        w = [1.] * (max_n + 1)
+        if weight_n_centers_for_gradient:
+            for i in range(min_clusters, max_n+1, 1):
+                w[i] = np.log2(cs[i]['n_centers'])
+                # offset by min_clusters
+                val_cm[i-min_clusters] = val_cm[i-min_clusters] * w[i]
         grad_cm = [
-            cs[i]['centers_median']-cs[i+1]['centers_median'] for i in range(max_n+1)
+            cs[i]['centers_median']*w[i] - cs[i+1]['centers_median']*w[i+1] for i in range(max_n+1)
             if ((i >= min_clusters) and (i < max_n))
         ]
         grad_cm.append(0.)
@@ -278,8 +287,12 @@ class Cluster:
             cluster_info['gradient'] = grad_cm[n_ctr-min_clusters]
 
             if cluster_info['is_local_max_centers_median']:
+                common_msg = 'Decrease of median distance of cluster centers at'
+            else:
+                common_msg = 'NO decrease of median distance of cluster centers at'
+            if n_ctr < max_n:
                 self.logger.info(
-                    'Decrease of median distance of cluster centers at n_centers=' + str(n_ctr)
+                    common_msg + ' n_centers=' + str(n_ctr)
                     + ', from median distance ' + str(val_cm[n_ctr-min_clusters])
                     + ' to ' + str(val_cm[n_ctr+1-min_clusters])
                 )

@@ -9,6 +9,24 @@ class ClusterUnitTest:
     def __init__(self, logger=None):
         self.logger = logger if logger is not None else logging.getLogger()
 
+    def test_1d(self):
+        x = np.array([
+            [1.0], [1.1], [1.1],
+            [5.0], [5.2], [5.3],
+            # [10.4], [10.5], [10.7],
+            [100.4], [100.5], [100.7],
+        ])
+        obj = Cluster(logger=self.logger)
+        res = obj.kmeans_optimal(
+            x = x,
+            estimate_min_max = True,
+            weight_n_centers_for_gradient = True,
+        )
+        self.logger.info('Result of optimal cluster: ' + str(res))
+        exp_n = 3
+        assert res[0]['n_centers'] == exp_n, 'Expected centers ' + str(exp_n) + ' but got ' + str(res[0]['n_centers'])
+        return
+
     def test_converge(self):
         x = np.array([
             [5, 1, 1], [8, 2, 1], [6, 0, 2],
@@ -146,6 +164,7 @@ class ClusterUnitTest:
         return
 
     def test(self):
+        self.test_1d()
         self.test_converge()
         self.test_diverge()
         self.test_imbalanced()
