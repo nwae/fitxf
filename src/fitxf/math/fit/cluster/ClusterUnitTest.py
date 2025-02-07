@@ -14,7 +14,7 @@ class ClusterUnitTest:
             [1.0], [1.1], [1.1],
             [5.0], [5.2], [5.3],
             # [10.4], [10.5], [10.7],
-            [100.4], [100.5], [100.7],
+            [20.4], [20.5], [20.7],
         ])
         obj = Cluster(logger=self.logger)
         res = obj.kmeans_optimal(
