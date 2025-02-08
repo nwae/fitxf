@@ -91,6 +91,76 @@ class Cluster:
             'cluster_sizes': inner_sizes,
         }
 
+    def kmeans_1d(
+            self,
+            x: np.ndarray,
+            n_median: float = 2.
+    ):
+        idx_ori = np.argsort(x.flatten(), axis=0)
+        self.logger.info('Arg ori ' + str(idx_ori))
+        x_sort = np.sort(x.flatten(), axis=0)
+        x_diff = x_sort[1:] - x_sort[:-1]
+        diff_avg = np.mean(x_diff)
+        diff_median = np.median(x_diff)
+        self.logger.info(
+            'x sorted ' + str(x_sort) + ', diffs ' + str(x_diff) + ', diff mean ' + str(diff_avg)
+            + ', diff median ' + str(diff_median)
+        )
+        idx_diff = np.argsort(x_diff, axis=0)[::-1]
+        diff_sorted = x_diff[idx_diff]
+        # condition as separator of cluster if length greater than N times median
+        condition = diff_sorted > n_median * diff_median
+        val_separators = diff_sorted[condition]
+        idx_separators = idx_diff[:len(val_separators)] + 1
+        self.logger.info(
+            'Index argsort diff ' + str(idx_diff) + ', diff sorted ' + str(diff_sorted)
+            + ', value separators ' + str(val_separators) + ', index separators ' + str(idx_separators)
+        )
+        idx_separators = np.array([0] + list(np.sort(idx_separators)))
+        n_centers = len(idx_separators)
+        self.logger.info(
+            'Index separators final ' + str(idx_separators) + ', n centers ' + str(n_centers)
+        )
+        clusters = []
+        cluster_centers = []
+        cluster_numbers = []
+        for i, i_start in enumerate(idx_separators):
+            if i >= n_centers - 1:
+                i_end = len(x_sort) + 1
+            else:
+                i_end = idx_separators[i+1]
+            clusters.append(x_sort[i_start:i_end].tolist())
+            cluster_centers.append(float(np.mean(clusters[-1])))
+            cluster_numbers = cluster_numbers + [i]*len(clusters[-1])
+        # Re-order back
+        cluster_numbers_reordered_back = [-1] * len(cluster_numbers)
+        for i, cn in enumerate(cluster_numbers):
+            cluster_numbers_reordered_back[idx_ori[i]] = cn
+        cluster_numbers = np.array(cluster_numbers)[idx_ori]
+        self.logger.info(
+            'Clusters: ' + str(clusters) + ', cluster centers ' + str(cluster_centers)
+            + ', cluster numbers ' + str(cluster_numbers_reordered_back)
+        )
+        return {
+            'total_iterations': 1,
+            'n_centers': n_centers,
+            # Group the indexes in same cluster
+            'clusters': clusters,
+            'cluster_centers': cluster_centers,
+            # e.g. [2, 2, 2, 0, 0, 0, 1, 1, 1] из меток пользавателя ['a', 'a', 'a', 'b', 'b', 'b', 'c', 'c', 'd']
+            'cluster_labels': cluster_numbers_reordered_back,
+            # как связываются между новыми метками кластерами и исходными метками пользавателя. e.g. {
+            #    2: {'a': 1.0, 'b': 0.0, 'c': 0.0, 'd': 0.0},
+            #    0: {'b': 1.0, 'a': 0.0, 'c': 0.0, 'd': 0.0},
+            #    1: {'c': 0.6666666666666666, 'd': 0.3333333333333333, 'a': 0.0, 'b': 0.0}
+            # }
+            # 'cluster_label_to_original_labels': cluster_label_to_labelsori,
+            # 'centers_median': additional_info['centers_median'],
+            # 'inner_radiuses': additional_info['inner_radiuses'],
+            # 'cluster_sizes': additional_info['cluster_sizes'],
+            # 'points_inertia': fit_inertia,
+        }
+
     def kmeans(
             self,
             x: np.ndarray,

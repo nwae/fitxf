@@ -11,20 +11,22 @@ class ClusterUnitTest:
 
     def test_1d(self):
         x = np.array([
-            [1.0], [1.1], [1.1],
-            [5.0], [5.2], [5.3],
+            [5.0], [1.15], [1.0],
+            [20.2], [5.2], [1.1],
             # [10.4], [10.5], [10.7],
-            [20.4], [20.5], [20.7],
+            [20.4], [20.5], [5.3],
         ])
         obj = Cluster(logger=self.logger)
-        res = obj.kmeans_optimal(
+        # res = obj.kmeans_optimal(
+        res = obj.kmeans_1d(
             x = x,
-            estimate_min_max = True,
-            weight_n_centers_for_gradient = True,
+            n_median = 3.,
+            # estimate_min_max = True,
+            # weight_n_centers_for_gradient = True,
         )
         self.logger.info('Result of optimal cluster: ' + str(res))
         exp_n = 3
-        assert res[0]['n_centers'] == exp_n, 'Expected centers ' + str(exp_n) + ' but got ' + str(res[0]['n_centers'])
+        assert res['n_centers'] == exp_n, 'Expected centers ' + str(exp_n) + ' but got ' + str(res['n_centers'])
         return
 
     def test_converge(self):
