@@ -132,15 +132,23 @@ class Cluster:
             clusters.append(x_sort[i_start:i_end].tolist())
             cluster_centers.append(float(np.mean(clusters[-1])))
             cluster_numbers = cluster_numbers + [i]*len(clusters[-1])
+        # TODO: Don't use loop to reorder back to original indexes
         # Re-order back
         cluster_numbers_reordered_back = [-1] * len(cluster_numbers)
         for i, cn in enumerate(cluster_numbers):
             cluster_numbers_reordered_back[idx_ori[i]] = cn
-        cluster_numbers = np.array(cluster_numbers)[idx_ori]
         self.logger.info(
             'Clusters: ' + str(clusters) + ', cluster centers ' + str(cluster_centers)
             + ', cluster numbers ' + str(cluster_numbers_reordered_back)
         )
+        additional_info = self.derive_additional_cluster_info(
+            x = x,
+            n_centers = n_centers,
+            cluster_centers = np.array(cluster_centers),
+            cluster_labels = np.array(cluster_numbers_reordered_back),
+            metric = 'euclid',
+        )
+        self.logger.info('Additional info: ' + str(additional_info))
         return {
             'total_iterations': 1,
             'n_centers': n_centers,
@@ -155,9 +163,9 @@ class Cluster:
             #    1: {'c': 0.6666666666666666, 'd': 0.3333333333333333, 'a': 0.0, 'b': 0.0}
             # }
             # 'cluster_label_to_original_labels': cluster_label_to_labelsori,
-            # 'centers_median': additional_info['centers_median'],
-            # 'inner_radiuses': additional_info['inner_radiuses'],
-            # 'cluster_sizes': additional_info['cluster_sizes'],
+            'centers_median': additional_info['centers_median'],
+            'inner_radiuses': additional_info['inner_radiuses'],
+            'cluster_sizes': additional_info['cluster_sizes'],
             # 'points_inertia': fit_inertia,
         }
 
