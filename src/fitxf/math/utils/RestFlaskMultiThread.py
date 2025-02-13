@@ -19,21 +19,22 @@ class RestFlaskMultiThread:
 
     def __init__(
             self,
+            port = 80,
             logger = None,
     ):
         self.logger = logger if logger is not None else logging.getLogger()
         # Flask app
         self.app = app
         # self.app_test.config['DEBUG'] = False
-        self.params_cl = self.get_cmdline_params()
+        self.params_cl = self.get_cmdline_params(default_port=port)
         self.port = self.params_cl['port']
         self.logger.info('Port from commend line "' + str(self.port) + '"')
         self.init_rest_urls()
         return
 
-    def get_cmdline_params(self):
+    def get_cmdline_params(self, default_port):
         params = CmdLine.get_cmdline_params()
-        for p, p_env_var, v_default in [('port', 'PORT', 7777)]:
+        for p, p_env_var, v_default in [('port', 'PORT', default_port)]:
             if p not in params.keys():
                 # not in command line, try env var instead
                 v_envvar_or_default = os.environ.get(p_env_var, v_default)
