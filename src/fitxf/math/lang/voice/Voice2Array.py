@@ -359,6 +359,23 @@ class Voice2Array:
         )
         return
 
+    def up_down_sample(
+            self,
+            x: np.ndarray,
+            from_sample_rate: int,
+            to_sample_rate: int,
+    ):
+        ratio_to_from = to_sample_rate / from_sample_rate
+        new_interval = 1 / ratio_to_from
+        new_len = math.floor(len(x) / new_interval)
+        self.logger.info(
+            'Data length ' + str(len(x)) + ', from rate ' + str(from_sample_rate) + ' to rate ' + str(to_sample_rate)
+            + ' new interval ' + str(new_interval) + ', new length ' + str(new_len)
+        )
+        sample_indexes = np.array([round(v * new_interval) for v in range(new_len)])
+        sample_indexes = [i for i in sample_indexes if i < len(x)]
+        return x[sample_indexes]
+
 
 if __name__ == '__main__':
     lgr = Logging.get_default_logger(log_level=logging.INFO, propagate=False)
@@ -386,11 +403,15 @@ if __name__ == '__main__':
         )
 
     for f, chn in [
-        (sample_2_s64, 1),
-        (f_wav, 2),
+        # (sample_2_s64, 1),
+        # (f_wav, 2),
     ]:
         v.play_voice_stream(file_path_or_base64_str=f, channels=chn)
 
     # v.play_voice_stream(file_path=f_wav, channels=1)
     # exit(0)
+    x = np.arange(100)
+    for from_rate, to_rate in [(44100, 8000), (8000, 44100)]:
+        x_new = v.up_down_sample(x=x, from_sample_rate=from_rate, to_sample_rate=to_rate)
+        lgr.info(x_new)
     exit(0)
