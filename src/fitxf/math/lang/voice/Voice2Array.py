@@ -94,6 +94,10 @@ class Voice2Array:
             save_file_path: str = None,
     ):
         pa = pyaudio.PyAudio()
+        self.logger.info(
+            'Trying to open audio channel for recording, sample rate ' + str(sample_rate)
+            + ', sample width ' + str(sample_width) + ', channels ' + str(channels)
+        )
         stream = pa.open(
             format = self.get_pyaudio_type(sample_width=sample_width),
             channels = channels,
@@ -113,8 +117,15 @@ class Voice2Array:
         history_mean_amplitude = []
         for i in range(0, int(record_secs / secs_per_chunk)):
             # data is of type <bytes>
+            # if 1 channels, sample width 2, then each sample will have 2 bytes. So if chunk is 1024,
+            # data will be 2048 length.
+            # if 2 channels, sample width 2, each sample interleaved as 4 bytes, data will be 4096 length
+            # Channel samples are interleaved [s1c1, s1c2, s2c1, s2c2, s3c1, s3c2,... ]
             data = stream.read(self.chunk)
-            self.logger.debug('Read chunk of ' + str(secs_per_chunk) + ', data type "' + str(type(data)) + '"')
+            self.logger.info(
+                'Read chunk of ' + str(secs_per_chunk) + ', data type "' + str(type(data))
+                + '", bytes length ' + str(len(data))
+            )
             frames.append(data)
             # Convert bytes to numpy int16 type
             x = np.frombuffer(data, dtype=self.get_numpy_type(sample_width=sample_width))
@@ -187,7 +198,10 @@ class Voice2Array:
             #     rate = sample_rate,
             #     data = x,
             # )
-        self.logger.info('Wav successfully saved to file "' + str(save_file_path) + '"')
+        self.logger.info(
+            'Wav successfully saved to file "' + str(save_file_path) + '", sample rate ' + str(sample_rate)
+            + ', sample width ' + str(sample_width) + ', channels ' + str(channels)
+        )
 
     def play_voice(self, file_path: str):
         sample_rate, x = self.read_audio(file_path_or_base64_str=file_path)
@@ -215,15 +229,29 @@ class Voice2Array:
             output = True,
             frames_per_buffer = self.chunk,
         )
-        self.logger.info('Read audio file as numpy array of shape ' + str(x.shape))
+        self.logger.info('Read audio file as numpy array of shape ' + str(x.shape) + ': ' + str(x))
         N = self.chunk
-        dt = N / sample_rate
+        # dt = N / sample_rate
         pack_format = self.get_pack_type(sample_width=sample_width)
+        # Loop by chunk
         for i in range(math.ceil(len(x) / N)):
             i_start = i*N
             i_end = min(len(x), (i+1)*N)
-            data_part = x[i_start:i_end]
+            # multiple channels
+            if channels > 1:
+                # Channel samples are interleaved [s1c1, s1c2, s2c1, s2c2, s3c1, s3c2,...
+                data_part = [samp for samp in x[i_start:i_end].flatten()]
+                # data_part = []
+                # # Channel samples must exist block by block, not interleaved by sample
+                # for ch in range(channels):
+                #     data_part_channel = [samp[ch] for samp in x[i_start:i_end]]
+                #     data_part = data_part + data_part_channel
+            else:
+                data_part = [samp for samp in x[i_start:i_end]]
+
+            self.logger.debug('Data part #' + str(i) + ', length ' + str(len(data_part)) + ': ' + str(data_part))
             data_part_b = b''.join(struct.pack(pack_format, samp) for samp in data_part)
+            self.logger.debug('Data part (b) #' + str(i) + ', length ' + str(len(data_part_b)) + ': ' + str(data_part_b))
             # the stream will know how to play the different parts continuously at the right speed,
             # even if we don't send them at regular intervals
             stream.write(frames = data_part_b)
@@ -331,35 +359,48 @@ class Voice2Array:
         )
         return
 
+    def up_down_sample(
+            self,
+            x: np.ndarray,
+            from_sample_rate: int,
+            to_sample_rate: int,
+    ):
+        ratio_to_from = to_sample_rate / from_sample_rate
+        new_interval = 1 / ratio_to_from
+        new_len = math.floor(len(x) / new_interval)
+        self.logger.info(
+            'Data length ' + str(len(x)) + ', from rate ' + str(from_sample_rate) + ' to rate ' + str(to_sample_rate)
+            + ' new interval ' + str(new_interval) + ', new length ' + str(new_len)
+        )
+        sample_indexes = np.array([round(v * new_interval) for v in range(new_len)])
+        sample_indexes = [i for i in sample_indexes if i < len(x)]
+        return x[sample_indexes]
+
 
 if __name__ == '__main__':
     lgr = Logging.get_default_logger(log_level=logging.INFO, propagate=False)
     v = Voice2Array(logger=lgr)
-    f_wav = "sample_5s.wav"
-
-    # b64 = Base64(logger=lgr)
-    # sample_1_s64 = ''
-    # v.save_b64str_to_ogg(s_b64=sample_1_s64, file_path='sample_1.ogg')
-
-    # fs, data = v.read_ogg_file(ogg_file_path='js_namade.ogg')
-    # v.save_np_audio_to_wav(x=data, sample_rate=fs, channels=1, save_file_path='js_namade.wav')
-    # v.play_voice_stream(file_path_or_base64_str='js_namade.wav', channels=1)
-    # exit(0)
+    f_wav = "sample_5s_y.wav"
 
     if not os.path.exists(f_wav):
         v.record_voice(
             sample_rate = 8000,
-            channels = 1,
-            record_secs = 5,
+            sample_width = 2,
+            channels = 2,
+            record_secs = 5.,
             save_file_path = f_wav,
             stop_stddev_thr = 20.,
         )
 
-    for f in [
-        f_wav,
+    for f, chn in [
+        # (f_wav, 2),
     ]:
-        v.play_voice_stream(file_path_or_base64_str=f, channels=1)
+        v.play_voice_stream(file_path_or_base64_str=f, channels=chn)
 
     # v.play_voice_stream(file_path=f_wav, channels=1)
     # exit(0)
+    x = np.arange(100)
+    for from_rate, to_rate in [(44100, 8000), (8000, 44100)]:
+        x_new = v.up_down_sample(x=x, from_sample_rate=from_rate, to_sample_rate=to_rate)
+        lgr.info(x_new)
     exit(0)
