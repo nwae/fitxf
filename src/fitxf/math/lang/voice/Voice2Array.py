@@ -210,11 +210,25 @@ class Voice2Array:
         sd.play(data=x, samplerate=sample_rate, blocking=True)
         return x
 
-    def play_voice_stream(
+    def play_voice_stream_from_file(
             self,
             file_path_or_base64_str: str,
     ):
         sample_rate, channels, x = self.read_audio(file_path_or_base64_str=file_path_or_base64_str)
+        # we need to normalize audio data to range [-1, +1] before play back
+        # x = self.normalize_audio_data(x=x)
+        return self.play_voice_stream(
+            sample_rate = sample_rate,
+            channels = channels,
+            x = x,
+        )
+
+    def play_voice_stream(
+            self,
+            sample_rate: int,
+            channels: int,
+            x: np.ndarray,
+    ):
         sample_width = self.get_sample_width(x=x)
         # we need to normalize audio data to range [-1, +1] before play back
         # x = self.normalize_audio_data(x=x)
@@ -398,7 +412,7 @@ if __name__ == '__main__':
         sample_1_s64,
         f_wav,
     ]:
-        v.play_voice_stream(file_path_or_base64_str=f)
+        v.play_voice_stream_from_file(file_path_or_base64_str=f)
 
     # v.play_voice_stream(file_path=f_wav, channels=1)
     # exit(0)
