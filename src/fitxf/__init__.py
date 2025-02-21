@@ -29,3 +29,6 @@ from fitxf.math.datasource.vecdb.model.ModelDbInterface import ModelDbInterface
 from fitxf.math.datasource.vecdb.model.ModelEncoderInterface import ModelEncoderInterface
 from fitxf.math.datasource.vecdb.model.ModelInterface import ModelInterface
 from fitxf.math.datasource.vecdb.model.ModelFitXForm import ModelFitTransform
+
+# Voice
+# from fitxf.math.lang.voice.Voice2Array import Voice2Array
