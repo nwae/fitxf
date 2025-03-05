@@ -1,14 +1,11 @@
 import logging
-import pyaudio
 import wave
 import re
 import os
 import io
 import math
 import struct
-import librosa
 import numpy as np
-import sounddevice as sd
 import scipy.io.wavfile as wav
 from fitxf.math.algo.encoding.Base64 import Base64
 from fitxf.math.utils.Logging import Logging
@@ -26,6 +23,7 @@ class Voice2Array:
 
     @staticmethod
     def get_pyaudio_type(sample_width):
+        import pyaudio
         if sample_width == 2:
             return pyaudio.paInt16
         elif sample_width == 4:
@@ -93,6 +91,7 @@ class Voice2Array:
             stop_stddev_thr: float = 0.0,
             save_file_path: str = None,
     ):
+        import pyaudio
         pa = pyaudio.PyAudio()
         self.logger.info(
             'Trying to open audio channel for recording, sample rate ' + str(sample_rate)
@@ -207,7 +206,8 @@ class Voice2Array:
         sample_rate, n_channels, x = self.read_audio(file_path_or_base64_str=file_path)
         x = self.normalize_audio_data(x=x)
         self.logger.info('Read audio file "' + str(file_path) + '" as numpy array of shape ' + str(x.shape))
-        sd.play(data=x, samplerate=sample_rate, blocking=True)
+        import sounddevice
+        sounddevice.play(data=x, samplerate=sample_rate, blocking=True)
         return x
 
     def play_voice_stream_from_file(
@@ -233,6 +233,7 @@ class Voice2Array:
         # we need to normalize audio data to range [-1, +1] before play back
         # x = self.normalize_audio_data(x=x)
 
+        import pyaudio
         p = pyaudio.PyAudio()
         stream = p.open(
             # struct.pack later will use 4 byte float
@@ -315,6 +316,7 @@ class Voice2Array:
         return sample_rate, n_channels, np_wav
 
     def read_ogg_bytes(self, ogg_bytes: bytes):
+        import librosa
         data_normalized, sample_rate = librosa.load(io.BytesIO(ogg_bytes))
         self.logger.info(
             'Read from ogg bytes of length ' + str(len(ogg_bytes)) + ', data type ' + str(type(data_normalized))
@@ -324,6 +326,7 @@ class Voice2Array:
         return self.read_ogg_data(data_normalized=data_normalized, sample_rate=sample_rate)
 
     def read_ogg_file(self, ogg_file_path: str):
+        import librosa
         data_normalized, sample_rate = librosa.load(ogg_file_path)
         self.logger.info(
             'Read from ogg file "' + str(ogg_file_path) + '", data type ' + str(type(data_normalized))
