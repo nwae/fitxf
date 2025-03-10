@@ -41,6 +41,11 @@ class Voice2Array:
             raise Exception('Sample width ' + str(sample_width))
 
     @staticmethod
+    def convert_pcm_float_to_int(x: np.ndarray, to_dtype):
+        assert to_dtype in [np.int16]
+        return (x * ((2**15)-1)).astype(np.int16)
+
+    @staticmethod
     def get_pack_type(sample_width):
         if sample_width == 2:
             return 'h'
