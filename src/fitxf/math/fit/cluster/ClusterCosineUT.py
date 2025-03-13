@@ -8,8 +8,6 @@ from fitxf.math.algo.encoding.Base64 import Base64
 from fitxf.math.fit.utils.TensorUtils import TensorUtils
 from fitxf.math.fit.cluster.Metrics import Metrics as ClusterMetrics
 from fitxf.math.fit.cluster.ClusterCosine import ClusterCosine
-from fitxf.math.lang.encode.LangModelPtSingleton import LangModelPtSingleton, LangModelInterface
-from fitxf.math.lang.encode.LangModelPt import LangModelPt
 from fitxf.math.utils.Logging import Logging
 from fitxf.math.utils.Env import Env
 from fitxf.math.utils.Pandas import Pandas
@@ -37,6 +35,8 @@ class ClusterCosineUnitTest:
         is_csv_exist = False
         self.logger.info('Test data csv exist = ' + str(is_csv_exist) + '.')
 
+        from fitxf.math.lang.encode.LangModelPtSingleton import LangModelPtSingleton, LangModelInterface
+        from fitxf.math.lang.encode.LangModelPt import LangModelPt
         def get_lm() -> LangModelInterface:
             return LangModelPtSingleton.get_singleton(
                 LmClass = LangModelPt,
