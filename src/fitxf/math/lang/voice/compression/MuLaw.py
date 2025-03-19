@@ -29,5 +29,6 @@ if __name__ == '__main__':
     x = 2 * ( (np.arange(101) / 100) - 0.5)
     lgr.info(x)
     x_enc = ml.u_law_enc(x=x)
-    lgr.info(x_enc)
+    tmp = np.array([x.tolist(), x_enc.tolist()]).transpose()
+    lgr.info(tmp)
     exit(0)
