@@ -1,5 +1,6 @@
 import logging
 import numpy as np
+from fitxf.math.lang.voice.compression.MuLawBob404 import u_law_e, u_law_d
 from fitxf.utils import Logging
 
 
