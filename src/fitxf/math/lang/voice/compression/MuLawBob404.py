@@ -201,13 +201,13 @@ for data in ulaw_Data:
     print('')
 
     data &= 0x3fff
-    print('normal :\t' + form(data))
+    print('normal :\t' + form(data) + ' (' + str(type(data)) + ' ' + str(data) + ')')
 
     e_data = u_law_e(data)
-    print('encoded:\t' + form(e_data))
+    print('encoded:\t' + form(e_data) + ' (' + str(type(e_data)) + ' ' + str(e_data) + ')')
 
     d_data = u_law_d(e_data)
-    print('decoded:\t' + form(d_data))
+    print('decoded:\t' + form(d_data) + ' (' + str(type(d_data)) + ' ' + str(d_data) + ')')
 
     print('-' * 120)
 
