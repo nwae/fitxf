@@ -14,7 +14,6 @@ class Mulaw:
     def u_law_enc(self, x, mu = 255):
         assert np.max(np.abs(x)) <= 1
         sgn = -1 * (x < 0) + 1 * (x >= 0)
-        self.logger.debug(sgn)
         y = sgn * np.log(1 + mu * np.abs(x)) / np.log(1 + mu)
         return y
 
