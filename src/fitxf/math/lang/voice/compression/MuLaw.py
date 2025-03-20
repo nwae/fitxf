@@ -7,6 +7,20 @@ from fitxf.utils import Logging
 # https://en.wikipedia.org/wiki/%CE%9C-law_algorithm
 class Mulaw:
 
+    BIN_INTERVALS = (
+        # high, low, num sub intervals, code
+        (8158, 4063, 16, 0x80),
+        (4062, 2015, 16, 0x90),
+        (2014,  991, 16, 0xA0),
+        ( 990,  479, 16, 0xB0),
+        ( 478,  223, 16, 0xC0),
+        ( 222,   95, 16, 0xD0),
+        (  94,   31, 16, 0xE0),
+        (  30,    1, 15, 0xF0),
+        (   0,    0,  1, 0xFF),
+        (  -1,   -1,  1, 0x7F),
+    )
+
     def __init__(self, logger: Logging = None):
         self.logger = logger if logger is not None else logging.getLogger()
         return
