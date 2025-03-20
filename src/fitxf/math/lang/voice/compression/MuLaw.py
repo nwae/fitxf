@@ -28,15 +28,32 @@ class Mulaw:
         (-4063,-2016, 16, 0x10),
         (-8159,-4064, 16, 0x00),
     )
+    MAX_VAL = 8158
 
     def __init__(self, logger: Logging = None):
         self.logger = logger if logger is not None else logging.getLogger()
+        self.create_bins()
+        return
+
+    def create_bins(self):
+        edges = []
+        codes = []
+        for a, b, n_sub_intervals, code in self.BIN_INTERVALS:
+            if a > b:
+                a, b = b, a
+            edges.append(a)
+            codes.append(code)
+        edges.append(np.max([v[0] for v in self.BIN_INTERVALS]))
+        edges.sort()
+        codes.sort()
+        self.logger.info('Edges ' + str(edges) + ', codes ' + str(codes))
         return
 
     def u_law_enc(self, x, mu = 255):
         assert np.max(np.abs(x)) <= 1
         sgn = -1 * (x < 0) + 1 * (x >= 0)
         y = sgn * np.log(1 + mu * np.abs(x)) / np.log(1 + mu)
+
         return y
 
     def u_law_dec(self, y, mu = 255):
