@@ -2,8 +2,6 @@ import warnings
 import uuid
 import os
 import re
-from venv import logger
-
 from fitxf.utils import Logging, Profiling, Env
 #----------------------------------------------------------------------------------
 # IC Section
