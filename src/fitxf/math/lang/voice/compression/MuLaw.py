@@ -61,7 +61,7 @@ if __name__ == '__main__':
     x_enc = ml.u_law_enc(x=x)
     x_dec = ml.u_law_dec(y=x_enc)
     tmp = np.array([
-        x.tolist(), x_enc.tolist(), x_enc_bins.tolist(), x_dec.tolist()
+        x.tolist(), x_enc.tolist(), x_dec.tolist()
     ]).transpose()
     lgr.info(tmp)
     exit(0)
