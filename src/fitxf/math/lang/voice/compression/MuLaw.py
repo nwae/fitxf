@@ -1,6 +1,5 @@
 import logging
 import numpy as np
-from fitxf.math.lang.voice.compression.MuLawBob404 import u_law_e, u_law_d
 from fitxf.utils import Logging
 
 
@@ -36,24 +35,16 @@ class Mulaw:
         return
 
     def create_bins(self):
-        edges = []
-        codes = []
-        for a, b, n_sub_intervals, code in self.BIN_INTERVALS:
-            if a > b:
-                a, b = b, a
-            edges.append(a)
-            codes.append(code)
-        edges.append(np.max([v[0] for v in self.BIN_INTERVALS]))
-        edges.sort()
-        codes.sort()
-        self.logger.info('Edges ' + str(edges) + ', codes ' + str(codes))
+        edges = np.array([v[0] for v in self.BIN_INTERVALS])[::-1]
+        codes = np.array([v[3] for v in self.BIN_INTERVALS])[::-1]
+        self.logger.info('Edges\n' + str(edges))
+        self.logger.info('Codes\n' + str(codes))
         return
 
     def u_law_enc(self, x, mu = 255):
         assert np.max(np.abs(x)) <= 1
         sgn = -1 * (x < 0) + 1 * (x >= 0)
         y = sgn * np.log(1 + mu * np.abs(x)) / np.log(1 + mu)
-
         return y
 
     def u_law_dec(self, y, mu = 255):
