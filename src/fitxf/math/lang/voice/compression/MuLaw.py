@@ -35,10 +35,10 @@ class Mulaw:
         return
 
     def create_bins(self):
-        edges = np.array([v[0] for v in self.BIN_INTERVALS])[::-1]
-        codes = np.array([v[3] for v in self.BIN_INTERVALS])[::-1]
-        self.logger.info('Edges\n' + str(edges))
-        self.logger.info('Codes\n' + str(codes))
+        self.edge_bins = np.array([v[0] for v in self.BIN_INTERVALS])[::-1]
+        self.code_bins = np.array([v[3] for v in self.BIN_INTERVALS])[::-1]
+        self.logger.info('Edges\n' + str(self.edge_bins))
+        self.logger.info('Codes\n' + str(self.code_bins))
         return
 
     def u_law_enc(self, x, mu = 255):
@@ -60,6 +60,8 @@ if __name__ == '__main__':
     lgr.info(x)
     x_enc = ml.u_law_enc(x=x)
     x_dec = ml.u_law_dec(y=x_enc)
-    tmp = np.array([x.tolist(), x_enc.tolist(), x_dec.tolist()]).transpose()
+    tmp = np.array([
+        x.tolist(), x_enc.tolist(), x_enc_bins.tolist(), x_dec.tolist()
+    ]).transpose()
     lgr.info(tmp)
     exit(0)
