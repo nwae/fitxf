@@ -24,16 +24,26 @@ class Env:
         return dir
 
     @staticmethod
-    def set_env_vars_from_file(env_filepath):
-        assert os.path.isfile(env_filepath), 'Not a file "' + str(env_filepath) + '"'
-        env_lines = FileUtils(filepath=env_filepath).read_text_file()
-        env_lines_cleaned = [line for line in env_lines if line.strip()]
+    def set_env_vars_from_lines(lines: list):
+        env_lines_cleaned = [line for line in lines if line.strip()]
         env_lines_cleaned = [line for line in env_lines_cleaned if not re.match(pattern="^#", string=line)]
-        print('Set environment variables from file "' + str(env_filepath) + '"')
         for line in env_lines_cleaned:
             varname, value = line.split(sep="=", maxsplit=1)
+            varname, value = varname.strip(), value.strip()
             os.environ[varname] = value
             print('Set env var ' + str(varname) + ' = "' + str(value) + '"')
+
+    @staticmethod
+    def set_env_vars_from_string(string: str, sep: str="\n"):
+        env_lines = string.split(sep=sep)
+        Env.set_env_vars_from_lines(lines=env_lines)
+        return
+
+    @staticmethod
+    def set_env_vars_from_file(env_filepath: str):
+        assert os.path.isfile(env_filepath), 'Not a file "' + str(env_filepath) + '"'
+        env_lines = FileUtils(filepath=env_filepath).read_text_file()
+        Env.set_env_vars_from_lines(lines=env_lines)
         return
 
     def __init__(
