@@ -30,5 +30,9 @@ from fitxf.math.datasource.vecdb.model.ModelEncoderInterface import ModelEncoder
 from fitxf.math.datasource.vecdb.model.ModelInterface import ModelInterface
 from fitxf.math.datasource.vecdb.model.ModelFitXForm import ModelFitTransform
 
+# Lang
+from fitxf.math.lang.measures.TextDiffCharFreq import TextDiffCharFreq
+from fitxf.math.lang.measures.TextDiffCharDiff import TextDiffCharDiff
+
 # Voice
 # from fitxf.math.lang.voice.Voice2Array import Voice2Array

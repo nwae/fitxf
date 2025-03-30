@@ -19,6 +19,9 @@ from fitxf.math.fit.cluster.ClusterUnitTest import ClusterUnitTest
 from fitxf.math.fit.cluster.ClusterCosineUT import ClusterCosineUnitTest
 from fitxf.math.graph.GraphUtilsUnitTest import GraphUtilsUnitTest
 from fitxf.math.utils.PkgVersion import PkgVersion
+# Lang
+from fitxf.math.lang.measures.TextDiffCharDiff import TextDiffCharDiffUnitTest
+from fitxf.math.lang.measures.TextDiffCharFreq import TextDiffCharFreqUnitTest
 # Utils
 from fitxf.math.utils.Lock import LockUnitTest
 from fitxf.math.utils.ObjPers import UnitTestObjectPersistence
@@ -66,6 +69,8 @@ class RepoUnitTest:
             MathUtilsUnitTest, PatternSearchUnitTest, ClusterUnitTest, ClusterCosineUnitTest,
             GraphUtilsUnitTest,
             ClassifierArcUnitTest,
+            # Lang
+            TextDiffCharFreqUnitTest, TextDiffCharDiffUnitTest,
             # Utils
             LockUnitTest, SingletonUnitTest, StringVarUnitTest,
             UnitTestObjectPersistence,

@@ -143,7 +143,7 @@ class TextDiffCharDiff(TextDiffInterface):
         return top_texts[0:min(top_k, len(top_texts))], top_dist[0:min(top_k, len(top_dist))]
 
 
-class TextDiffUnitTest:
+class TextDiffCharDiffUnitTest:
     def __init__(self, logger=None):
         self.logger = logger if logger is not None else logging.getLogger()
         return
@@ -202,5 +202,5 @@ class TextDiffUnitTest:
 
 if __name__ == '__main__':
     lgr = Logging.get_default_logger(log_level=logging.INFO, propagate=False)
-    TextDiffUnitTest(logger=lgr).test()
+    TextDiffCharDiffUnitTest(logger=lgr).test()
     exit(0)
