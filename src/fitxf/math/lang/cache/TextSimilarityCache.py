@@ -85,6 +85,13 @@ class TextSimilarityCache:
         )
         return
 
+    def get_cache_size(self):
+        try:
+            self.__mutex_cache.acquire()
+            return len(self.cache_dict)
+        finally:
+            self.__mutex_cache.release()
+
     def update_cache_stats(
             self,
             hit_exact = 0,
