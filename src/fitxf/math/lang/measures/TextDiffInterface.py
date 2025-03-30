@@ -38,7 +38,7 @@ class TextDiffInterface:
             ref_text_model_list = None,
             model_params = {},
             top_k = 3,
-    ):
+    ) -> tuple: # returns tuple of top text list & top scores list
         raise Exception('Must be implemented by child class!!')
 
 

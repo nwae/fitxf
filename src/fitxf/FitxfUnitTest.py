@@ -22,6 +22,7 @@ from fitxf.math.utils.PkgVersion import PkgVersion
 # Lang
 from fitxf.math.lang.measures.TextDiffCharDiff import TextDiffCharDiffUnitTest
 from fitxf.math.lang.measures.TextDiffCharFreq import TextDiffCharFreqUnitTest
+from fitxf.math.lang.measures.TextDiffSpeedTest import TextDiffSpeedTest
 # Utils
 from fitxf.math.utils.Lock import LockUnitTest
 from fitxf.math.utils.ObjPers import UnitTestObjectPersistence
@@ -70,7 +71,7 @@ class RepoUnitTest:
             GraphUtilsUnitTest,
             ClassifierArcUnitTest,
             # Lang
-            TextDiffCharFreqUnitTest, TextDiffCharDiffUnitTest,
+            TextDiffCharFreqUnitTest, TextDiffCharDiffUnitTest, TextDiffSpeedTest,
             # Utils
             LockUnitTest, SingletonUnitTest, StringVarUnitTest,
             UnitTestObjectPersistence,

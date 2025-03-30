@@ -74,7 +74,7 @@ class TextDiffCharFreq(TextDiffInterface):
             ref_text_model_list = None,
             model_params: dict = MODEL_PARAMS_DEFAULT,
             top_k = 3,
-    ):
+    ) -> tuple: # returns tuple of top text list & top scores list
         assert len(ref_text_list) > 0, 'No reference to compare with for text "' + str(candidate_text) + '"'
 
         if ref_text_model_list is not None:
@@ -208,6 +208,6 @@ class TextDiffCharFreqUnitTest:
 
 
 if __name__ == '__main__':
-    lgr = Logging.get_default_logger(log_level=logging.INFO, propagate=False)
+    lgr = Logging.get_default_logger(log_level=logging.DEBUG, propagate=False)
     TextDiffCharFreqUnitTest(logger=lgr).test()
     exit(0)

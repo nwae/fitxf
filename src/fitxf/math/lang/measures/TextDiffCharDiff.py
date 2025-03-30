@@ -61,7 +61,7 @@ class TextDiffCharDiff(TextDiffInterface):
             ref_text_model_list = None,
             model_params: dict = MODEL_PARAMS_DEFAULT,
             top_k = 3,
-    ):
+    ) -> tuple: # returns tuple of top text list & top scores list
         assert len(ref_text_list) > 0, 'No reference to compare with for text "' + str(candidate_text) + '"'
 
         if ref_text_model_list is not None:
