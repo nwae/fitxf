@@ -23,12 +23,12 @@ from fitxf.math.utils.PkgVersion import PkgVersion
 from fitxf.math.lang.measures.TextDiffCharDiff import TextDiffCharDiffUnitTest
 from fitxf.math.lang.measures.TextDiffCharFreq import TextDiffCharFreqUnitTest
 from fitxf.math.lang.measures.TextDiffSpeedTest import TextDiffSpeedTest
+from fitxf.math.lang.cache.TextSimilarityCache import TextSimilarityCacheUnitTest
 # Utils
 from fitxf.math.utils.Lock import LockUnitTest
 from fitxf.math.utils.ObjPers import UnitTestObjectPersistence
 from fitxf.math.utils.Singleton import SingletonUnitTest
 from fitxf.math.utils.StringVar import StringVarUnitTest
-from fitxf.math.utils.TextSimilarityCache import TextSimilarityCacheUnitTest
 # Algo
 from fitxf.math.algo.encoding.Base64 import Base64UnitTest
 
@@ -72,10 +72,10 @@ class RepoUnitTest:
             GraphUtilsUnitTest,
             ClassifierArcUnitTest,
             # Lang
-            TextDiffCharFreqUnitTest, TextDiffCharDiffUnitTest, TextDiffSpeedTest,
+            TextDiffCharFreqUnitTest, TextDiffCharDiffUnitTest, TextDiffSpeedTest, TextSimilarityCacheUnitTest,
             # Utils
             LockUnitTest, SingletonUnitTest, StringVarUnitTest,
-            UnitTestObjectPersistence, TextSimilarityCacheUnitTest,
+            UnitTestObjectPersistence,
             # Datastore
             # This test can only run if you already set up Elasticsearch locally
             # MemoryCacheUnitTest, MySqlUnitTest, VecDbUnitTest, VecDbCcrcyTest, VecDbSingletonUnitTest,
