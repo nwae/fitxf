@@ -435,7 +435,7 @@ class TextSimilarityCacheUnitTest:
         return
 
     def test_cache_dict(self):
-        p = Profiling()
+        p = Profiling(logger=self.logger)
         data = [
             ('yo bro',           None,            ['yo bro']),
             ('dobriy dyen 1',    None,            ['yo bro', 'dobriy dyen 1']),
