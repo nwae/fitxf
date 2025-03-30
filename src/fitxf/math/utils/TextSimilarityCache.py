@@ -2,6 +2,7 @@ import logging
 import threading
 import os
 import pandas as pd
+from fitxf.math.lang.measures.TextDiffCharDiff import TextDiffCharDiff
 from datetime import datetime, timedelta
 from fitxf import DbParams
 from fitxf import Datastore as DatastoreMaster
@@ -63,8 +64,6 @@ class TextSimilarityCache:
             self.logger.info('Successfully created cache db from db params: ' + str(self.db_params.get_db_info()))
         self.cache_stats = {'name': self.cache_name, 'total': 0, 'hit_exact': 0, 'hit_similar': 0, 'hit_rate': 0.0}
 
-        # We cannot put on top of file, as there will be circular import
-        from fitxf.math.lang.measures.TextDiffCharDiff import TextDiffCharDiff
         self.textdiff = TextDiffCharDiff(
             log_time_profilings = True,
             logger = self.logger,
