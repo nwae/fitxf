@@ -143,8 +143,8 @@ class TextSimilarityCache:
     def get_from_cache_threadsafe(
             self,
             object,
-            # by default is exact key search. if this value >0, means will do a text similarity search
-            similarity_threshold = 0.0,
+            # by default is exact key search. if this value >0, means will do a text difference search
+            difference_threshold = 0.0,
     ):
         if self.db_params is not None:
             # Clear records older than 1 day
@@ -177,7 +177,7 @@ class TextSimilarityCache:
         else:
             return self.get_from_cache_dict_threadsafe(
                 object = object,
-                similarity_threshold = similarity_threshold,
+                difference_threshold = difference_threshold,
             )
 
     # Look for <object> and return RESULT, something like lookup "key" and return "value", just naming problem
@@ -185,7 +185,7 @@ class TextSimilarityCache:
             self,
             object,
             # by default is exact key search. if this value >0, means will do a text similarity search
-            similarity_threshold = 0.0,
+            difference_threshold = 0.0,
     ):
         key = self.derive_key(object=object)
         hit_exact, hit_similar = 0, 0
@@ -217,7 +217,7 @@ class TextSimilarityCache:
                     )
                     hit_exact = 1
                     return self.cache_dict[key][self.KEY_VALUE]
-                elif similarity_threshold > 0.0:
+                elif difference_threshold > 0.0:
                     if not self.ref_texts_keys:
                         return None
                     top_keys, top_distances = self.textdiff.text_difference(
@@ -232,7 +232,7 @@ class TextSimilarityCache:
                     #     top_distances) + ', object ' + str(object))
                     # raise Exception('asdf')
                     if top_keys:
-                        if top_distances[0] <= similarity_threshold:
+                        if top_distances[0] <= difference_threshold:
                             key_similar = top_keys[0]
                             self.logger.info(
                                 'Found via similarity search for "' + str(key) + '", a similar key "' + str(key_similar)
@@ -371,7 +371,7 @@ class TextSimilarityCache:
     def search_similar_object(
             self,
             text,
-    ):
+    ) -> tuple:
         try:
             self.__mutex_cache.acquire()
             return self.textdiff.text_difference(
@@ -475,7 +475,7 @@ class TextSimilarityCacheUnitTest:
             txt, expected_res_from_cache, expected_proven_cache_keys = tp
             res = cache.get_from_cache_threadsafe(
                 object = txt,
-                similarity_threshold = 0.2,
+                difference_threshold = 0.2,
             )
             cache.add_to_cache_threadsafe(
                 object = txt,
@@ -502,11 +502,11 @@ class TextSimilarityCacheUnitTest:
 
             # print('(AFTER ADD) At line #' + str(i+1) + '. cache state ' + str(cache.cache_db))
             top_keys, top_dists = cache.search_similar_object(text=txt)
-            print('Sim search "' + str(txt) + '": ' + str(list(zip(top_keys, top_dists))))
+            self.logger.info('Sim search "' + str(txt) + '": ' + str(list(zip(top_keys, top_dists))))
 
             p.record_time_profiling(id='ut', msg=data[i], logmsg=True)
 
-        print(cache.cache_stats)
+        self.logger.info(cache.cache_stats)
         assert cache.cache_stats['total'] == len(data), \
             'Data length ' + str(len(data)) + ' but cache total ' + str(cache.cache_stats['total'])
         assert cache.cache_stats['hit_exact'] == count_hit_exact == 4, \
@@ -529,7 +529,7 @@ class TextSimilarityCacheUnitTest:
             keys_expected = [str(v) for v in list(range(i + 1)) if i - v < 4]
             assert keys == keys_expected, 'Keys ' + str(keys) + ' not expected ' + str(keys_expected)
 
-        print('ALL CACHE DICT TESTS PASSED')
+        self.logger.info('ALL CACHE DICT TESTS PASSED')
         return
 
 
