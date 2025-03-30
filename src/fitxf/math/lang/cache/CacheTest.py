@@ -16,9 +16,9 @@ class CacheTest:
             'The American gulped down the burger',
             'The French was buying a croissant in the local bakery by the river',
             'The Korean bought a pack of kimchi',
-            'The Japanese paid for ramen with a 100 yen bill',
-            'The Pinoys loved their local Inasal',
-            'The Honkies sell very expensive dimsum',
+            'The Japanese paid for ramen with a 1000 yen bill to the robot machine',
+            'The Pinoys loved their local Inasal chicken with Dinuguang',
+            'The Honkies sell very expensive dimsum and the aircons keep dripping water by the walk pavements',
         ] * 100
         test_texts = [
             'Tomorrow is a holiday',
