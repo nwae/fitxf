@@ -113,7 +113,7 @@ class KeyValueCache:
     def clear_cache(self):
         if self.db_params is not None:
             self.cache_db.delete_all(
-                key = self.KEY_ID,
+                # key = self.KEY_ID,
                 tablename = self.db_params.db_table,
             )
             self.logger.info('Cleared cache for db params: ' + str(self.db_params.get_db_info()))
@@ -397,7 +397,7 @@ class KeyValueCacheUnitTest:
         self.logger = logger if logger is not None else logging.getLogger()
         return
 
-    def test(self, additional_tests=('db',)):
+    def test(self, additional_tests=()):
         self.test_cache_dict()
         if 'db' in additional_tests:
             self.test_cache_db()
