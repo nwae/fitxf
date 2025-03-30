@@ -3,9 +3,12 @@ from fitxf.utils import Profiling, Logging
 
 
 #
+# Simple text models (no big data LLMs) for fast & convenient comparisons of text differences.
+# Mainly for use in simple applications, requiring fast, simple metrics.
+# The function textdiff(t1, t2):
 #   Measure Consistency & Must Condition:
-#     charfreq = 1.0 when no common character is shared (including space). e.g. 'IloveMcD' and 'ЯдюблюМзкД'
-#     charfreq = 0.0 when count of characters are equal regardless of order
+#     textdiff = 1.0 when totally "different" (depending on model definition) e.g. 'IloveMcD' and 'ЯдюблюМзкД'
+#     textdiff = 0.0 when t1 == t2
 #
 class TextDiffInterface:
 
@@ -29,7 +32,7 @@ class TextDiffInterface:
     ):
         raise Exception('Must be implemented by child class!!')
 
-    def text_similarity(
+    def text_difference(
             self,
             candidate_text,
             ref_text_list,
@@ -40,6 +43,26 @@ class TextDiffInterface:
             top_k = 3,
     ) -> tuple: # returns tuple of top text list & top scores list
         raise Exception('Must be implemented by child class!!')
+
+    def text_similarity(
+            self,
+            candidate_text,
+            ref_text_list,
+            # option for user to pre-calculate to whichever text model being used
+            candidate_text_model = None,
+            ref_text_model_list = None,
+            model_params = {},
+            top_k = 3,
+    ) -> tuple: # returns tuple of top text list & top scores list
+        top_texts, top_scores = self.text_difference(
+            candidate_text = candidate_text,
+            ref_text_list = ref_text_list,
+            candidate_text_model = candidate_text_model,
+            ref_text_model_list = ref_text_model_list,
+            model_params = model_params,
+            top_k = top_k,
+        )
+        return [t for t in reversed(top_texts)], [v for v in reversed(top_scores)]
 
 
 if __name__ == '__main__':

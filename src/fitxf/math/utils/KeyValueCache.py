@@ -226,7 +226,7 @@ class KeyValueCache:
                 elif similarity_threshold > 0.0:
                     if not self.ref_texts_keys:
                         return None
-                    top_keys, top_distances = self.textdiff.text_similarity(
+                    top_keys, top_distances = self.textdiff.text_difference(
                         candidate_text = key,
                         ref_text_list = self.ref_texts_keys,
                         candidate_text_model = None,
@@ -380,7 +380,7 @@ class KeyValueCache:
     ):
         try:
             self.__mutex_cache.acquire()
-            return self.textdiff.text_similarity(
+            return self.textdiff.text_difference(
                 candidate_text = text,
                 ref_text_list = self.ref_texts_keys,
                 candidate_text_model = None,
@@ -526,7 +526,7 @@ class KeyValueCacheUnitTest:
             cache_size = 4,
             clear_cache_method = 'old',
             rm_prop_when_full = 0.3,
-            logger = lgr,
+            logger = self.logger,
         )
         for i in range(10):
             cache.add_to_cache_threadsafe(object=i, result=10 * i)

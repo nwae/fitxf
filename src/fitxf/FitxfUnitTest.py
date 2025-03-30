@@ -28,6 +28,7 @@ from fitxf.math.utils.Lock import LockUnitTest
 from fitxf.math.utils.ObjPers import UnitTestObjectPersistence
 from fitxf.math.utils.Singleton import SingletonUnitTest
 from fitxf.math.utils.StringVar import StringVarUnitTest
+from fitxf.math.utils.KeyValueCache import KeyValueCacheUnitTest
 # Algo
 from fitxf.math.algo.encoding.Base64 import Base64UnitTest
 
@@ -74,7 +75,7 @@ class RepoUnitTest:
             TextDiffCharFreqUnitTest, TextDiffCharDiffUnitTest, TextDiffSpeedTest,
             # Utils
             LockUnitTest, SingletonUnitTest, StringVarUnitTest,
-            UnitTestObjectPersistence,
+            UnitTestObjectPersistence, KeyValueCacheUnitTest,
             # Datastore
             # This test can only run if you already set up Elasticsearch locally
             # MemoryCacheUnitTest, MySqlUnitTest, VecDbUnitTest, VecDbCcrcyTest, VecDbSingletonUnitTest,

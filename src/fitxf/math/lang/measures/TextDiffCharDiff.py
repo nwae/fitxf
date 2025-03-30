@@ -39,6 +39,9 @@ class TextDiffCharDiff(TextDiffInterface):
         )
         return
 
+    def get_model_params(self, ref_str_len: int, append_ordinal: int) -> dict:
+        return {'ref_str_len': ref_str_len, 'append_ordinal': append_ordinal}
+
     # Represent each character by its Unicode integer, then append 0's (by default) to a fixed length
     def get_text_model(
             self,
@@ -52,7 +55,7 @@ class TextDiffCharDiff(TextDiffInterface):
         self.logger.debug('chardiff model for text "' + str(text) + '": ' + str(ordinals_list))
         return ordinals_list
 
-    def text_similarity(
+    def text_difference(
             self,
             candidate_text,
             ref_text_list,
@@ -71,7 +74,7 @@ class TextDiffCharDiff(TextDiffInterface):
         id_timer = 'text_similarity (' + str(self) + ')'
         self.profiler.start_time_profiling(id=id_timer)
 
-        res = self.text_similarity_chardiff(
+        res = self.text_difference_chardiff(
             candidate_text = candidate_text,
             ref_text_list = ref_text_list,
             candidate_text_model = candidate_text_model,
@@ -91,7 +94,7 @@ class TextDiffCharDiff(TextDiffInterface):
     # Convert all character to unicode number, take difference, convert to 0 and 1 (non-zero), then sum each
     # row (reference text) divided by fixed string length.
     # Take the lowest value as most similar text.
-    def text_similarity_chardiff(
+    def text_difference_chardiff(
             self,
             candidate_text,
             ref_text_list,
@@ -163,26 +166,44 @@ class TextDiffCharDiffUnitTest:
             0x70, 0x72, 0x69, 0x76, 0x65, 0x74, 0x20, 0x6d, 0x65, 0x64, 0x76, 0x65, 0x64, AO, AO], \
             'Wrong chardiff model for "' + str(s) + '": ' + str(s_rep)
 
+        #
+        # Important test to ensure textdiff between 2 texts are the same regardless of reference fixed length
+        #
+        cand_txt = 'privet medved'
         # Check chardiff model again by different lengths
-        for ln, txt in [
-            (30, 'privet medved'), (13, 'privet medved'), (5, 'privet med'), (0, ''),
+        for txt_compare, exp_d, ref_len in [
+            # Should be no difference regardless of reference length 30 or more
+            ('privet medved', 0., 30), ('privet medved', 0., 30+np.random.randint(low=50, high=100)),
+            # Should be no difference regardless of reference length 30 or more
+            ('privet med', 0.23076923076923078, 30),
+            ('privet med', 0.23076923076923078, 30+np.random.randint(low=50, high=100)),
+            # Should be no difference regardless of reference length 30 or more
+            ('privet', 0.5384615384615384, 30),
+            ('privet', 0.5384615384615384, 30+np.random.randint(low=50, high=100)),
+            # Should be no difference regardless of reference length 30 or more
+            ('', 1.0, 30), ('', 1.0, 30+np.random.randint(low=50, high=100)),
         ]:
             model_params = obj.get_model_params(
-                ref_str_len = ln,
+                ref_str_len = ref_len,
                 append_ordinal = obj.APPEND_ORDINAL_DEFAULT,
             )
-            s_rep = obj.get_text_model(text="privet medved", model_params=model_params)
-            self.logger.info(
-                'chardiff for "' + str(txt) + '", ref len ' + str(ln) + ': ' + str(s_rep)
+            top_texts, top_diffs = obj.text_difference(
+                candidate_text = cand_txt,
+                ref_text_list = [txt_compare],
+                model_params = model_params,
             )
-            assert [o for o in s_rep if o>0] == [ord(c) for i, c in enumerate(txt) if i<ln], \
-                'Wrong text model "' + str(''.join([chr(i) for i in s_rep])) + '" for length ' + str(ln)
-            assert len(s_rep) == ln, 'Wrong text model length "' + str(len(s_rep)) + ' expected length ' + str(ln)
+            self.logger.info(
+                'chardiff for "' + str(cand_txt) + '" vs "' + str(txt_compare) + '", ref len ' + str(ref_len)
+                + ': ' + str(list(zip(top_texts, top_diffs)))
+            )
+            assert top_diffs[0] == exp_d, \
+                'chardiff for "' + str(cand_txt) + '" vs "' + str(txt_compare) + '", ref len ' + str(ref_len) \
+                + ': ' + str(list(zip(top_texts, top_diffs))) + ' top diff ' + str(top_diffs[0]) + ' not ' + str(exp_d)
 
         # Check both metric is correct by top_k
         s_ref = 'hi how are u'
         test_text_list = [s_ref, 'how are you', 'how are', 'рш0рщц0фку0нщг']
-        close_texts, close_scores = obj.text_similarity(
+        close_texts, close_scores = obj.text_difference(
             candidate_text = s_ref,
             ref_text_list = test_text_list,
             top_k = 4,
