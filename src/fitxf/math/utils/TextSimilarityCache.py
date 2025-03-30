@@ -539,6 +539,6 @@ if __name__ == '__main__':
     er = Env(logger=lgr)
     Env.set_env_vars_from_file(env_filepath=er.REPO_DIR + '/.env.fitxf.math.ut')
 
-    KeyValueCacheUnitTest(logger=lgr).test(additional_tests=[])
+    TextSimilarityCacheUnitTest(logger=lgr).test(additional_tests=[])
 
     exit(0)
