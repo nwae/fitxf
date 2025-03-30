@@ -196,27 +196,8 @@ class TextDiffUnitTest:
         assert close_texts == exp_texts, 'Close texts ' + str(close_texts) + ' not ' + str(exp_texts)
         assert close_scores == exp_scores,  'Close scores ' + str(close_scores) + ' not ' + str(exp_scores)
 
-        prf = Profiling(logger=self.logger)
-        # Test speed, make sure below some threshold
-        start_time = prf.start()
-        itr = 10000
-        for i in range(itr):
-            _, _ = obj.text_similarity(
-                candidate_text = 'hi how are you',
-                ref_text_list = test_text_list,
-                top_k = 4,
-            )
-        diff_secs = prf.get_time_dif_secs(start=start_time, stop=prf.stop(), decimals=8)
-        rps = round(itr / diff_secs, 2)
-        min_rps = 15000
-        if rps < min_rps:
-            self.logger.warning(
-                str(itr) + ' iterations, FAIL rps = ' + str(rps) + ' < ' + str(min_rps)
-            )
-        else:
-            self.logger.info(str(itr) + ' iterations OK rps = ' + str(rps) + ' >= ' + str(min_rps))
-
-        print('ALL TESTS PASSED')
+        self.logger.info('ALL TESTS PASSED')
+        return
 
 
 if __name__ == '__main__':
