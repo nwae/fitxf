@@ -11,7 +11,7 @@ from fitxf.utils import Logging, Profiling, Env
 #
 # A key/value cache (bad naming below makes it "object"/"result")
 #
-class KeyValueCache:
+class TextSimilarityCache:
 
     KEY_ID = 'key'   # key
     KEY_VALUE = 'value'   # value
@@ -43,7 +43,6 @@ class KeyValueCache:
             clear_cache_method: str = 'old',
             # How much to remove from unproven cache when full, default is 50%
             rm_prop_when_full: float = 0.5,
-            enable_text_similarity_lookup: bool = True,
             text_similarity_fixed_len: int = 100,
             logger: Logging = None,
     ):
@@ -54,7 +53,6 @@ class KeyValueCache:
         self.clear_cache_method = clear_cache_method
         assert self.clear_cache_method in ['old', 'unpopular']
         self.rm_prop_when_full = rm_prop_when_full
-        self.enable_text_similarity_lookup = enable_text_similarity_lookup
         self.text_similarity_fixed_len = text_similarity_fixed_len
         self.logger = logger if logger is not None else logging.getLogger()
 
@@ -65,18 +63,16 @@ class KeyValueCache:
             self.logger.info('Successfully created cache db from db params: ' + str(self.db_params.get_db_info()))
         self.cache_stats = {'name': self.cache_name, 'total': 0, 'hit_exact': 0, 'hit_similar': 0, 'hit_rate': 0.0}
 
-        self.textdiff = None
-        if self.enable_text_similarity_lookup:
-            # We cannot put on top of file, as there will be circular import
-            from fitxf.math.lang.measures.TextDiffCharDiff import TextDiffCharDiff
-            self.textdiff = TextDiffCharDiff(
-                log_time_profilings = True,
-                logger = self.logger,
-            )
-            self.textdiff_model_prms = self.textdiff.get_model_params(
-                ref_str_len = self.text_similarity_fixed_len,
-                append_ordinal = 0,
-            )
+        # We cannot put on top of file, as there will be circular import
+        from fitxf.math.lang.measures.TextDiffCharDiff import TextDiffCharDiff
+        self.textdiff = TextDiffCharDiff(
+            log_time_profilings = True,
+            logger = self.logger,
+        )
+        self.textdiff_model_prms = self.textdiff.get_model_params(
+            ref_str_len = self.text_similarity_fixed_len,
+            append_ordinal = 0,
+        )
         self.ref_texts_keys = []
         self.ref_texts_chardiff_model = []
 
@@ -87,7 +83,6 @@ class KeyValueCache:
             'Initialized SimpleCache with cache size ' + str(self.cache_size)
             + ', clear cache method "' + str(self.clear_cache_method)
             + '", remove proportion when cache full ' + str(self.rm_prop_when_full)
-            + ', text similarity lookup enabled = ' + str(self.enable_text_similarity_lookup)
         )
         return
 
@@ -392,7 +387,7 @@ class KeyValueCache:
             self.__mutex_cache.release()
 
 
-class KeyValueCacheUnitTest:
+class TextSimilarityCacheUnitTest:
     def __init__(self, logger=None):
         self.logger = logger if logger is not None else logging.getLogger()
         return
@@ -419,7 +414,7 @@ class KeyValueCacheUnitTest:
             db_database = os.environ["DB_DATABASE"],
             db_table = "unittest_key_value_cache",
         )
-        cache = KeyValueCache(
+        cache = TextSimilarityCache(
             db_params = db_params,
             cache_size = 4,
             clear_cache_method = 'unpopular',
@@ -462,7 +457,7 @@ class KeyValueCacheUnitTest:
             # at this point cache will clear again keeping only those hit & latest ones added
             ('sami ludi 1',      'sami ludi 1',   ['kamusta 1', 'sami ludi 1']), # exact hit
         ]
-        cache = KeyValueCache(
+        cache = TextSimilarityCache(
             db_params = None,
             cache_size = 4,
             clear_cache_method = 'unpopular',
@@ -522,7 +517,7 @@ class KeyValueCacheUnitTest:
 
         # Old test
         # Cache max 4, and remove 1 when full everytime
-        cache = KeyValueCache(
+        cache = TextSimilarityCache(
             cache_size = 4,
             clear_cache_method = 'old',
             rm_prop_when_full = 0.3,
