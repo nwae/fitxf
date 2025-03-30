@@ -2,7 +2,7 @@ import logging
 import collections
 import numpy as np
 from fitxf.math.lang.measures.TextDiffInterface import TextDiffInterface
-from fitxf.utils import Profiling, Logging
+from fitxf.utils import Logging
 
 
 #
