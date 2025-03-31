@@ -46,8 +46,10 @@ class Mdct:
         # reshape so that k is indexed at the rows
         k = np.reshape(np.arange(N), shape=(N, 1))
         # print(k)
+        A = 0.5 + N/2
+        B = 0.5
         # now we have a k x n matrix
-        m = np.cos((np.pi / N) * (n + 1 / 2 + N / 2) * (k + 1 / 2))
+        m = np.cos((np.pi / N) * (n + A) * (k + B))
         # x_square = np.array([x.tolist() for i in range(N)])
         # [print(line) for line in np.round(m,3).tolist()]
         y = np.dot(m, x)
@@ -64,12 +66,33 @@ class Mdct:
         # reshape so that n is indexed at the rows
         n = np.reshape(np.arange(2 * N), shape=(2 * N, 1))
         # print(k)
+        A = 0.5 + N/2
+        B = 0.5
         # now we have a k x n matrix
-        m = (1 / N) * np.cos((np.pi / N) * (n + 1 / 2 + N / 2) * (k + 1 / 2))
+        m = (1 / N) * np.cos((np.pi / N) * (n + A) * (k + B))
         # T_square = np.array([T.tolist() for i in range(2*N)])
         # [print(line) for line in np.round(m,3).tolist()]
         imdct = np.dot(m, y)
         return imdct
+
+    def test_sum(
+            self,
+            x: np.ndarray,
+            k1: int,
+            k2: int,
+            f,
+    ):
+        assert len(x) % 2 == 0
+        N = int(len(x) / 2)
+        # n is indexed at the columns
+        n = np.arange(2 * N)
+
+        A = 0.5 + N/2
+        B = 0.5
+        m = f((np.pi / N) * (n + A) * (k1 + B)) * f((np.pi / N) * (n + A) * (k2 + B))
+        self.logger.debug(m)
+        v = np.dot(m, x) / N
+        return v
 
 
 class MdctUnitTest:
@@ -93,6 +116,11 @@ class MdctUnitTest:
 
 if __name__ == '__main__':
     lgr = LoggingSingleton.get_singleton_logger(log_level=logging.DEBUG)
+    obj = Mdct(logger=lgr)
+    t_val = obj.test_sum(x=np.ones(10), k1=2, k2=65, f=np.sin)
+    lgr.info(t_val)
+    exit(0)
+
     MdctUnitTest(logger=lgr).test()
     exit(0)
 
