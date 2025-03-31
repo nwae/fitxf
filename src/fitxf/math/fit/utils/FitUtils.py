@@ -192,11 +192,31 @@ class FitUtils:
             # see https://wandb.ai/wandb_fc/tips/reports/How-To-Implement-Gradient-Accumulation-in-PyTorch--VmlldzoyMjMwOTk5
             accum_steps = 1,
     ):
+        # self.logger.info('Dataloader shape ' + str(len(dataloader)) + ': ' + str(dataloader))
+
+        # Regularization
+        if type(regularization_type) in [int, float]:
+            reg_pwr = regularization_type
+        # Apply L1 regularization
+        elif regularization_type == 'L1':
+            reg_pwr = 1
+        # Apply L2 regularization
+        elif regularization_type == 'L2':
+            reg_pwr = 2
+        else:
+            reg_pwr = 0
+
         running_loss = 0.
         # Total step/batch should be int(n_train_samples/batch_size)
         for step, batch in enumerate(dataloader, 0):
             # batch = tuple(t.to(device) for t in batch)
-            b_input_ids, b_input_mask, b_labels = batch
+            if len(batch) == 3:
+                # with attention mask
+                b_input_ids, b_input_mask, b_labels = batch
+            else:
+                # without attention mask
+                b_input_ids, b_labels = batch
+                b_input_mask = None
 
             start_accum = (step % accum_steps == 0)
             done_accum = ((step + 1) % accum_steps == 0) or (step + 1 == len(dataloader))
@@ -209,18 +229,7 @@ class FitUtils:
             pred_batch_y = model(b_input_ids)
             loss = loss_func(pred_batch_y, b_labels)
             loss = loss / accum_steps
-
-            # Regularization
-            if type(regularization_type) in [int, float]:
-                reg_pwr = regularization_type
-            # Apply L1 regularization
-            elif regularization_type == 'L1':
-                reg_pwr = 1
-            # Apply L2 regularization
-            elif regularization_type == 'L2':
-                reg_pwr = 2
-            else:
-                reg_pwr = 0
+            # self.logger.info('Loss ' + str(loss))
 
             if reg_pwr > 0:
                 l_norm = sum(p.abs().pow(reg_pwr).sum() for p in model.parameters())
@@ -233,6 +242,9 @@ class FitUtils:
                 + str([p for p in model.parameters()])
             )
             loss += reg_penalty
+            # self.logger.info('Loss ' + str(loss.item()) + ', reg penalty ' + str(reg_penalty))
+            if np.isnan(loss.item()):
+                raise Exception('Step ' + str(step) + ' loss ' + str(loss.item()))
 
             # Backward pass
             loss.backward()
@@ -244,6 +256,7 @@ class FitUtils:
             running_loss += loss.item() * accum_steps
             self.logger.debug(
                 'Epoch ' + str(epoch) + ': step ' + str(step) + ' loss ' + str(running_loss / 2000)
+                + ', accum steps ' + str(accum_steps)
             )
         return running_loss
 
