@@ -13,11 +13,18 @@ class Dft:
 
     def getSineSignal(
             self,
-            amps,
-            freqs,
-            t: np.ndarray,
+            amps: np.ndarray,
+            freqs: np.ndarray,
+            samp_rate: float,
             show_plot: bool = False,
     ):
+        assert len(amps) == len(freqs)
+
+        dt = 1.0 / samp_rate
+        t_start = 0
+        t_end = 1
+        t = np.arange(t_start, t_end, dt)
+
         x = np.zeros_like(t)
         for a, f in zip(amps, freqs):
             x += a * np.sin(2 * np.pi * f * t)
@@ -71,6 +78,15 @@ class Dft:
         # raise Exception('asdf')
         return (1 / N) * np.dot(e, y)
 
+    def plot_fft(self, X_fft: np.ndarray, freq: np.ndarray):
+        plt.figure(figsize=(8,6))
+        plt.stem(freq, abs(X_fft), 'b', markerfmt=' ', basefmt='-b')
+        plt.xlabel(r'$\omega$ '+'(Hz)')
+        plt.ylabel('DFT Amplitude '+r'$|X(\omega)|$')
+        plt.grid(True)
+        plt.show()
+        return
+
 
 class DftUnitTest:
 
@@ -93,5 +109,33 @@ class DftUnitTest:
 if __name__ == '__main__':
     lgr = LoggingSingleton.get_singleton_logger()
     DftUnitTest(logger=lgr).test()
+
+    # sampling rate 100Hz
+    rate = 30
+
+    dft = Dft()
+
+    amps = np.array([1, 2, 10])
+    freqs = np.array([1, 2, 10])
+    x = dft.getSineSignal(
+        samp_rate=rate,
+        amps=amps,
+        freqs=freqs,
+    )
+    lgr.info('x shape ' + str(x.shape) + ': ' + str(x))
+
+    X_k = dft.DFT(x=x)
+    lgr.info('DFT ' + str(abs(X_k)) + ', shape ' + str(X_k.shape))
+    N = X_k.size
+    n = np.arange(N)
+    # total time span
+    T = N / rate
+    freq = n / T
+    lgr.info('N=' + str(N) + ', total time span T=' + str(T))
+    lgr.info('Discrete freq: ' + str(freq))
+
+    dft.plot_fft(X_k, freq=freq)
+    idft = dft.IDFT(y=X_k)
+    lgr.info('Inverse DFT error ' + str(idft - x))
     exit(0)
 
