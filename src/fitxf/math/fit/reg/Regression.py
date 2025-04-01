@@ -193,14 +193,18 @@ class RegressionUnitTest:
         def derivative(self, X: torch.Tensor, delta: float = 0.001):
             derv = [None]*len(self.params )
             for i, _ in enumerate(self.params):
-                prms_i_delta = self.params + self.params_delta[i] + delta
+                prms_i_delta = self.params.clone().detach()
+                prms_i_delta[i] = prms_i_delta[i] + delta
+                # TODO need to normalize?
                 derv_i = self.forward(X=X, params=prms_i_delta) - self.forward(X=X, params=self.params)
                 self.logger.info(
                     'Derivative for i=' + str(i) + ', ' + str(derv_i) + ', params delta ' + str(prms_i_delta)
                     + ', params ' + str(self.params)
                 )
-                derv[i] = derv_i
-            return torch.Tensor(derv)
+                derv[i] = derv_i.tolist()
+            tsr_derv = torch.Tensor(derv)
+            self.logger.info('Final derivative ' + str(tsr_derv))
+            return tsr_derv
 
     def test_linear_regression(self):
         X = np.array([[80], [65], [50], [30], [10]])
