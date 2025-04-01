@@ -12,6 +12,7 @@ from fitxf.math.fit.transform.FitXformUnitTest import FitXformUnitTest
 from fitxf.math.fit.utils.FitUtilsUnitTest import FitUtilsUt
 from fitxf.math.fit.arc.ClassifierArcUnitTest import ClassifierArcUnitTest
 from fitxf.math.fit.arc.ClassifierArcRf import ClassifierArcRf
+from fitxf.math.fit.arc.ClassifierArc import ClassifierArc
 from fitxf.math.fit.utils.TensorUtils import TensorUtilsUnitTest
 from fitxf.math.fit.utils.MathUtils import MathUtilsUnitTest
 from fitxf.math.fit.utils.PatternSearchUnitTest import PatternSearchUnitTest
@@ -122,8 +123,10 @@ class RepoUnitTest:
                 ut.test_norm()
                 ut.test_similarity_cosine_and_similarity_distance()
             elif cls == ClassifierArcUnitTest:
-                ut = ClassifierArcUnitTest(child_class=ClassifierArcRf, logger=self.logger)
-                ut.test()
+                ut_rf = ClassifierArcUnitTest(child_class=ClassifierArcRf, logger=self.logger)
+                ut_nn = ClassifierArcUnitTest(child_class=ClassifierArc, logger=self.logger)
+                ut_rf.test()
+                ut_nn.test()
             else:
                 cls(logger=self.logger).test()
 

@@ -213,7 +213,7 @@ class ClassifierArc(torch.nn.Module, ClassifierArcInterface):
             regularization_type = "L2",
     ):
         fit_utils = FitUtils(logger=self.logger)
-        dl_trn, dl_val, n_cutoff_train = self.create_dataloader(
+        dl_trn, dl_val, n_cutoff_train = fit_utils.create_dataloader(
             X = X,
             y = y,
             y_num_classes = num_categories,
