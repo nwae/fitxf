@@ -118,12 +118,6 @@ class Regression(torch.nn.Module):
     ):
         return self.layer_1(X)
 
-    def predict(
-            self,
-            X: torch.Tensor,
-    ):
-        return self(X)
-
 
 if __name__ == '__main__':
     lgr = Logging.get_default_logger(log_level=logging.INFO, propagate=False)
@@ -135,7 +129,7 @@ if __name__ == '__main__':
     y_ = r.predict_linear_regression(X=X, coef=cf, intercept=ic)
     lgr.info(y_)
 
-    order = 2
+    order = 1
     r_poly = Regression(
         polynomial_order = order,
         learning_rate = 0.01,
