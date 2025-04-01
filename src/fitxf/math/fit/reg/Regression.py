@@ -99,6 +99,7 @@ class Regression(torch.nn.Module):
         )
         for i in range(epochs):
             y_round = custom_func.forward(X)
+            loss_val = np.sum((y_round - y) ** 2)
 
 
     # func: function callback f(X) -> y
@@ -167,6 +168,13 @@ class RegressionUnitTest:
         self.regressor = Regression(logger=self.logger)
         self.custom_func = self.CustomFunctionExample(logger=self.logger)
         return
+
+    class CustomLossMseExample:
+        def __init__(self, logger: Logging = None):
+            return
+
+        def forward(self, y_eval: torch.Tensor, y: torch.Tensor):
+            return np.sum((y_eval - y) ** 2)
 
     class CustomFunctionExample:
         def __init__(self, logger: Logging = None):
