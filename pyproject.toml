@@ -1,6 +1,7 @@
 [project]
 name = "fitxf"
 version = "1.2.0"
+# license = { text = 'MIT' }
 authors = [
   { name="HH" },
 ]
@@ -28,3 +29,7 @@ requires = [
     "wheel"
 ]
 build-backend = "setuptools.build_meta"
+
+# To fix twine upload problems with malformed "license-file" in PKG-INFO
+[tool.setuptools]
+license-files = []
