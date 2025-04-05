@@ -248,7 +248,7 @@ if __name__ == '__main__':
 
     X = np.array([[80], [65], [50], [30], [10]])
     y = np.array([6, 5, 4, 3, 2])
-    order = 1
+    order = 2
     r_poly = Regression(
         polynomial_order = order,
         learning_rate = 0.01,
