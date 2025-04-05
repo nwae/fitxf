@@ -1,6 +1,5 @@
 import logging
 import torch
-import threading
 import numpy as np
 from sklearn.linear_model import LinearRegression
 from fitxf import FitUtils
@@ -36,7 +35,7 @@ class Regression(torch.nn.Module):
         return intercept + coef * X
 
     def init_network_arc(self):
-        self.layer_1 = torch.nn.Linear(in_features=1+self.polynomial_order, out_features=1)
+        self.layer_1 = torch.nn.Linear(in_features=self.polynomial_order, out_features=1)
 
         # Random initialization of model parameters if not loading from a previous state
         for p in self.parameters():
@@ -47,8 +46,8 @@ class Regression(torch.nn.Module):
         self.optimizer = torch.optim.Adam(
             self.parameters(),
             lr = self.learning_rate,
-            betas = (0.9, 0.98),
-            eps = 1e-9
+            # betas = (0.9, 0.98),
+            # eps = 1e-9
         )
         return
 
@@ -240,13 +239,15 @@ class RegressionUnitTest:
         self.logger.info(f.derivative(X))
 
         self.logger.info('All Tests Passed')
+        return
 
 
 if __name__ == '__main__':
     lgr = Logging.get_default_logger(log_level=logging.INFO, propagate=False)
     RegressionUnitTest(logger=lgr).test()
-    exit(0)
 
+    X = np.array([[80], [65], [50], [30], [10]])
+    y = np.array([6, 5, 4, 3, 2])
     order = 1
     r_poly = Regression(
         polynomial_order = order,
@@ -254,7 +255,7 @@ if __name__ == '__main__':
         logger = lgr,
     )
     X_poly = torch.Tensor([
-        [x[0]**i for i in range(order+1)] for x in X
+        [x[0]**i for i in range(1, order+1, 1)] for x in X
     ])
     y_poly = torch.from_numpy(y).to(torch.float)
     lgr.info(X_poly)
@@ -263,10 +264,11 @@ if __name__ == '__main__':
         y = y_poly,
         eval_percent = 0.,
         batch_size = len(X_poly),
-        epochs = 100,
+        epochs = 500,
         # regularization_type = "L1",
     )
     lgr.info('Model parameters ' + str(r_poly.state_dict()))
     lgr.info('y predict ' + str(r_poly(X_poly)))
+    lgr.info('Model ' + str(r_poly))
 
     exit(0)
