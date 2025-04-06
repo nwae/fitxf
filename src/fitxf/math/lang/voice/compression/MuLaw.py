@@ -2,6 +2,7 @@ import logging
 import numpy as np
 import pandas as pd
 from fitxf.utils import Logging
+from sympy import intervals
 from sympy.codegen.ast import uint16
 
 
@@ -23,7 +24,7 @@ class Mulaw:
         #           = low[3] + 64 (1 + 2 + .. + 2**(i-1))
         #           = 31 + 64 (2^i - 1)
         # Inversion to get i
-        #    i = log2( 1 + ( low[i] - 31 ) / 64 ) + 2
+        #    i = log2( 1 + ( low[i] - 31 ) / 64 )
         ( 8158, 4063, 16, 256, 0x80), # i=8
         ( 4062, 2015, 16, 128, 0x90), # i=7
         ( 2014,  991, 16,  64, 0xA0), # i=6
@@ -51,11 +52,14 @@ class Mulaw:
         self.create_bins()
         return
 
-    def calculate_bin_intervals(self):
-        return [1] + (31 + 64 * (2 ** np.arange(8) - 1)).tolist()
+    # interval can be scalar or numpy ndarray
+    def calculate_bin_interval(self, interval):
+        return 31 + 64 * (2 ** interval - 1)
 
+    # value can be scalar or numpy ndarray
     def calculate_inverse_bin(self, value):
-        return np.log2(1 + (value - 31)/64) + 1
+        # 31 will be at index 1
+        return np.log2( 1 + ( value - 31 ) / 64 ) + 1
 
     def create_bins(self):
         # only need positive bins, negative bins are just bit inverse of the positive side
@@ -99,7 +103,10 @@ class Mulaw:
 if __name__ == '__main__':
     lgr = Logging.get_default_logger(log_level=logging.DEBUG, propagate=False)
     ml = Mulaw(logger=lgr)
-    lgr.info(ml.calculate_bin_intervals())
+    intervals = ml.calculate_bin_interval(interval=np.arange(8))
+    lgr.info('Intervals calculated: ' + str(intervals))
+    inv = ml.calculate_inverse_bin(value=np.array([0, 1, 30, 31, 94, 95, 222, 223, 478, 479, 990, 991, 2015, 4063, 8159]))
+    lgr.info('Inverse: ' + str(inv))
     raise Exception('asdf')
     x = 2 * ( (np.arange(101) / 100) - 0.5)
     lgr.info(x)
