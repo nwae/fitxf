@@ -54,12 +54,13 @@ class Mulaw:
 
     # interval can be scalar or numpy ndarray
     def calculate_bin_interval(self, interval):
-        return 31 + 64 * (2 ** interval - 1)
+        # 31 will be at index 2
+        return 31 + 64 * ((2 ** interval) - 1)
 
     # value can be scalar or numpy ndarray
     def calculate_inverse_bin(self, value):
-        # 31 will be at index 1
-        return np.log2( 1 + ( value - 31 ) / 64 ) + 1
+        # 0 will be at index 0, 31 will be at index 2
+        return 1 + (-1 * (value==0)) + np.log2( 1 + ( value - 31 ) / 64 ) + 1
 
     def create_bins(self):
         # only need positive bins, negative bins are just bit inverse of the positive side
