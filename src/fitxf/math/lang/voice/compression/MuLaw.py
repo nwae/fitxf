@@ -60,7 +60,9 @@ class Mulaw:
     # value can be scalar or numpy ndarray
     def calculate_inverse_bin(self, value):
         # 0 will be at index 0, 31 will be at index 2
-        return 1 + (-1 * (value==0)) + np.log2( 1 + ( value - 31 ) / 64 ) + 1
+        return np.floor(
+            1 + (-1 * (value==0)) + np.log2( 1 + ( value - 31 ) / 64 ) + 1
+        ).astype(np.int16)
 
     def create_bins(self):
         # only need positive bins, negative bins are just bit inverse of the positive side
