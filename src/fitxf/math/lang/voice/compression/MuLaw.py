@@ -87,10 +87,11 @@ class Mulaw:
         sgn = -1 * (x < 0) + 1 * (x >= 0)
         y = sgn * np.log(1 + mu * np.abs(x)) / np.log(1 + mu)
 
-        y_pos = np.round(y * sgn * self.MAX_POS, decimals=0).astype(np.uint16)
+        y_pos = np.round(y * sgn * self.MAX_POS, decimals=0).astype(np.int16)
+        self.logger.info('y_pos ' + str(y_pos))
         # Use inverse formula
-        np.log2(1 + (y_pos - 30)/64) + 1
-        raise Exception(bin)
+        bin = self.calculate_inverse_bin(value=y_pos)
+        raise Exception(list(zip(y_pos.tolist(), bin.tolist())))
         return y
 
     def u_law_dec(self, y, mu = 255):
@@ -110,7 +111,7 @@ if __name__ == '__main__':
     lgr.info('Intervals calculated: ' + str(intervals))
     inv = ml.calculate_inverse_bin(value=np.array([0, 1, 30, 31, 94, 95, 222, 223, 478, 479, 990, 991, 2015, 4063, 8159]))
     lgr.info('Inverse: ' + str(inv))
-    raise Exception('asdf')
+    # raise Exception('asdf')
     x = 2 * ( (np.arange(101) / 100) - 0.5)
     lgr.info(x)
     x_enc = ml.u_law_enc(x=x)
