@@ -33,6 +33,7 @@ from fitxf.math.datasource.vecdb.model.ModelFitXForm import ModelFitTransform
 # Lang
 from fitxf.math.lang.measures.TextDiffCharFreq import TextDiffCharFreq
 from fitxf.math.lang.measures.TextDiffCharDiff import TextDiffCharDiff
+from fitxf.math.lang.cache.TextSimilarityCache import TextSimilarityCache
 
 # Voice
 # from fitxf.math.lang.voice.Voice2Array import Voice2Array
