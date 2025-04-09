@@ -2,8 +2,6 @@ import logging
 import numpy as np
 import pandas as pd
 from fitxf.utils import Logging
-from sympy import intervals
-from sympy.codegen.ast import uint16
 
 
 # https://en.wikipedia.org/wiki/%CE%9C-law_algorithm
@@ -77,8 +75,8 @@ class Mulaw:
             'code': self.code_bins,
         })
         self.logger.info(df)
-        self.logger.info([hex(v) for v in self.edge_bins])
-        self.logger.info([hex(~v) for v in self.edge_bins])
+        self.logger.info('Edges in hex: ' + str([hex(v) for v in self.edge_bins]))
+        self.logger.info('Bit Inversion of edges: ' + str([hex(~v) for v in self.edge_bins]))
         self.logger.info([self.edge_bins[i] - self.edge_bins[i-1] for i in range(len(self.edge_bins)) if i>0])
         return
 
