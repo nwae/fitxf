@@ -98,8 +98,11 @@ class Mulaw:
         # Use inverse formula
         bin = self.calculate_inverse_bin(value=y_pos)
         codes = self.code_bins[bin]
+        edges = self.edge_bins[bin]
         self.logger.info(codes)
+        edges = (-1 * (sgn == -1)) * (edges + 1) + (1 * (sgn == 1)) * edges
         codes = (1 * (sgn == -1)) * np.array([v & 0x7F for v in codes]) + (1 * (sgn == 1)) * codes
+        self.logger.info('Value/Edges: ' + str(list(zip((y_pos*sgn).tolist(), edges.tolist()))))
         self.logger.info('Value/Codes: ' + str(list(zip((y_pos*sgn).tolist(), [hex(x) for x in codes.tolist()]))))
         raise Exception(list(zip(y_pos.tolist(), bin.tolist())))
         return y
