@@ -75,6 +75,7 @@ class Mulaw:
         self.num_interval_bins = np.array([v[2] for v in self.BIN_INTERVALS if v[1]>=0])[::-1]
         self.interval_bins = np.array([v[3] for v in self.BIN_INTERVALS if v[1]>=0])[::-1]
         self.code_bins = np.array([v[4] for v in self.BIN_INTERVALS if v[1]>=0])[::-1]
+        self.logger.info('Code bins: ' + str([hex(x) for x in self.code_bins]))
         df = pd.DataFrame({
             'edge': self.edge_bins,
             'num_interval': self.num_interval_bins,
@@ -96,6 +97,10 @@ class Mulaw:
         self.logger.info('y_pos ' + str(y_pos))
         # Use inverse formula
         bin = self.calculate_inverse_bin(value=y_pos)
+        codes = self.code_bins[bin]
+        self.logger.info(codes)
+        codes = (1 * (sgn == -1)) * np.array([v & 0x7F for v in codes]) + (1 * (sgn == 1)) * codes
+        self.logger.info('Value/Codes: ' + str(list(zip((y_pos*sgn).tolist(), [hex(x) for x in codes.tolist()]))))
         raise Exception(list(zip(y_pos.tolist(), bin.tolist())))
         return y
 
