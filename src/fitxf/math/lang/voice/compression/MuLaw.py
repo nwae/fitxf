@@ -35,6 +35,11 @@ class Mulaw:
         # The lower edge is just the inverted bits of the positive values on top
         # e.g. ~8158 = -8159, ~4062 = -4063, ~2014 = -2015, ~990 = -991,
         #      ~478 = -479, ~222 = -223, ~94 = -95, ~30 = -31, ~0 = -1
+        # As for the code numbers, they are the bit AND with 0x7F, or zeroing the 8th bit from the right
+        # e.g. hex(0x80 & 0x7F) = 0x10
+        #      hex(0x90 & 0x7F) = 0x20
+        #      ...
+        #      hex(0xFF & 0x7F) = 0x7F
         (   -1,   -1,  1,   0, 0x7F),
         (  -31,   -2, 15,   2, 0x70),
         (  -95,  -32, 16,   4, 0x60),
