@@ -63,7 +63,11 @@ class Mulaw:
         return 31 + 64 * ((2 ** interval) - 1)
 
     # value can be scalar or numpy ndarray
-    def calculate_inverse_bin(self, value):
+    def calculate_inverse_bin_lower(
+            self,
+            value: np.ndarray,  # all non-negative values
+            sign: np.ndarray,   # +1 or -1
+    ):
         # 0 will be at index 0, 31 will be at index 2
         return np.floor(
             1 + (-1 * (value==0)) + np.log2( 1 + ( value - 31 ) / 64 ) + 1
@@ -72,6 +76,8 @@ class Mulaw:
     def create_bins(self):
         # only need positive bins, negative bins are just bit inverse of the positive side
         self.edge_bins = np.array([v[1] for v in self.BIN_INTERVALS if v[1]>=0])[::-1]
+        self.edge_bins_extended = np.array(self.edge_bins.tolist() + [self.MAX_VAL])
+
         self.num_interval_bins = np.array([v[2] for v in self.BIN_INTERVALS if v[1]>=0])[::-1]
         self.interval_bins = np.array([v[3] for v in self.BIN_INTERVALS if v[1]>=0])[::-1]
         self.code_bins = np.array([v[4] for v in self.BIN_INTERVALS if v[1]>=0])[::-1]
@@ -96,11 +102,13 @@ class Mulaw:
         y_pos = np.round(y * sgn * self.MAX_POS, decimals=0).astype(np.int16)
         self.logger.info('y_pos ' + str(y_pos))
         # Use inverse formula
-        bin = self.calculate_inverse_bin(value=y_pos)
+        bin = self.calculate_inverse_bin_lower(value=y_pos, sign=sgn)
+        self.logger.info('Bins for the values: ' + str(bin))
+        raise Exception('asdf')
         codes = self.code_bins[bin]
         edges = self.edge_bins[bin]
         self.logger.info(codes)
-        edges = (-1 * (sgn == -1)) * (edges + 1) + (1 * (sgn == 1)) * edges
+        edges_lower = (-1 * (sgn == -1)) * (edges + 1) + (1 * (sgn == 1)) * edges
         codes = (1 * (sgn == -1)) * np.array([v & 0x7F for v in codes]) + (1 * (sgn == 1)) * codes
         self.logger.info('Value/Edges: ' + str(list(zip((y_pos*sgn).tolist(), edges.tolist()))))
         self.logger.info('Value/Codes: ' + str(list(zip((y_pos*sgn).tolist(), [hex(x) for x in codes.tolist()]))))
@@ -122,8 +130,12 @@ if __name__ == '__main__':
     ml = Mulaw(logger=lgr)
     intervals = ml.calculate_bin_interval(interval=np.arange(8))
     lgr.info('Intervals calculated: ' + str(intervals))
-    inv = ml.calculate_inverse_bin(value=np.array([0, 1, 30, 31, 94, 95, 222, 223, 478, 479, 990, 991, 2015, 4063, 8159]))
-    lgr.info('Inverse: ' + str(inv))
+    value = np.array([0, 1, 30, 31, 94, 95, 222, 223, 478, 479, 990, 991, 2015, 4063, 8159])
+    inv = ml.calculate_inverse_bin_lower(
+        value = value,
+        sign = np.ones(len(value))
+    )
+    lgr.info('Inverse: ' + str(inv) + ', associated values ' + str(ml.edge_bins_extended[inv]))
     # raise Exception('asdf')
     x = 2 * ( (np.arange(101) / 100) - 0.5)
     lgr.info(x)
