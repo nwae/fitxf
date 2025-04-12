@@ -4,6 +4,8 @@ import pandas as pd
 from fitxf.utils import Logging
 
 
+raise Exception('Not yet supported')
+
 # https://en.wikipedia.org/wiki/%CE%9C-law_algorithm
 class Mulaw:
 
