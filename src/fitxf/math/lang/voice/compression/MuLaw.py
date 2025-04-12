@@ -10,19 +10,18 @@ class Mulaw:
     MAX_POS = 0x1fde # 8158
 
     # high/low, low/high, num sub intervals, interval, code
-    #    h[i] = h[i-1] + 2**(i+4)   for i >= 2
-    BIN_EDGES = [0, 1, 31, 95, 223, 479, 991, 2015, 4063]
+    #    low[i] = low[i-1] + 2**(i+3)   for i >= 3
+    # Thus
+    #    low[i] = low[2] + 2**6 + 2**7 + ... + 2**(i+3)
+    #           = low[2] + 64 (1 + 2 + .. + 2**(i-3))
+    #           = 31 + 64 (2^(i-2) - 1)
+    # Inversion to get i
+    #    i = Floor( 2 + log2( 1 + ( low[i] - 31 ) / 64 ) )
+    BIN_LOW_EDGES_INCLUSIVE = (     0,      1,     31,     95,    223,    479,    991,   2015,  4063,  8159,)
+    BIN_CODES =               ('0xff', '0xf0', '0xe0', '0xd0', '0xc0', '0xb0', '0xa0', '0x90', '0x80', '-',)
 
     # only need positive bins, negative bins are just bit inverse of the positive side
     BIN_INTERVALS = (
-        # high/low, low/high, num sub intervals, interval, code
-        #    low[i] = low[i-1] + 2**(i+4)   for i >= 3
-        # thus
-        #    low[i] = low[3] + 2**6 + 2**7 + ... + 2**(i+5)
-        #           = low[3] + 64 (1 + 2 + .. + 2**(i-1))
-        #           = 31 + 64 (2^i - 1)
-        # Inversion to get i
-        #    i = log2( 1 + ( low[i] - 31 ) / 64 )
         ( 8158, 4063, 16, 256, 0x80), # i=8
         ( 4062, 2015, 16, 128, 0x90), # i=7
         ( 2014,  991, 16,  64, 0xA0), # i=6
@@ -55,23 +54,49 @@ class Mulaw:
     def __init__(self, logger: Logging = None):
         self.logger = logger if logger is not None else logging.getLogger()
         self.create_bins()
+
+        low = np.array(self.BIN_LOW_EDGES_INCLUSIVE)
+        check_edges = [0, 1, 31] + [low[i - 1] + 2 ** (i + 3) for i in range(3, 10, 1)]
+        self.logger.info('Check edges ' + str(check_edges))
+        assert list(self.BIN_LOW_EDGES_INCLUSIVE) == check_edges, \
+            'Check edges ' + str(check_edges) + ' not ' + str(self.BIN_LOW_EDGES_INCLUSIVE)
+
+        # check_bins = [0, 1, 2] + [2 + np.log2(1 + (low[i] - 31) / 64) for i in range(3, 10, 1)]
+        check_bins = self.calculate_lower_edge_bin(value=low, sign=None).tolist()
+        self.logger.info('Check bins ' + str(check_bins))
+        assert np.arange(len(check_bins)).tolist() == check_bins, \
+            'Check bins ' + str(check_bins) + ' not ' + str(np.arange(len(check_bins)))
+
+        codes = np.array(self.BIN_CODES)
+        check_codes = codes[np.array([int(bin) for bin in check_bins])]
+        self.logger.info('Check codes ' + str(check_codes))
+        assert list(self.BIN_CODES) == check_codes.tolist(), \
+            'Check codes ' + str(check_codes) + ' not ' + str(self.BIN_CODES)
         return
 
     # interval can be scalar or numpy ndarray
-    def calculate_bin_interval(self, interval):
-        # 31 will be at index 2
-        return 31 + 64 * ((2 ** interval) - 1)
+    # def calculate_bin_interval(
+    #         self,
+    #         # int or numpy ndarray of integers
+    #         interval,
+    # ):
+    #     # 31 will be at index 2
+    #     return (1 * (interval == 1)) * 1 \
+    #         + (1 * (interval == 2)) * 31 \
+    #         + (1 * (interval > 2)) * ( 31 + 64 * ((2 ** (interval - 2)) - 1) )
 
     # value can be scalar or numpy ndarray
-    def calculate_inverse_bin_lower(
+    def calculate_lower_edge_bin(
             self,
             value: np.ndarray,  # all non-negative values
             sign: np.ndarray,   # +1 or -1
     ):
         # 0 will be at index 0, 31 will be at index 2
-        return np.floor(
-            1 + (-1 * (value==0)) + np.log2( 1 + ( value - 31 ) / 64 ) + 1
-        ).astype(np.int16)
+        bins_lower_edge = (1 * (value == 0)) * np.array([0]).astype(np.int16) \
+                          + (1 * (value == 1)) * np.array([1]).astype(np.int16) \
+                          + (1 * (value > 1) & (value <=31)) * np.array([2]).astype(np.int16) \
+                          + (1 * (value > 31)) * np.floor(2 + np.log2( 1 + ( value - 31 ) / 64 )).astype(np.int16)
+        return bins_lower_edge
 
     def create_bins(self):
         # only need positive bins, negative bins are just bit inverse of the positive side
@@ -102,7 +127,7 @@ class Mulaw:
         y_pos = np.round(y * sgn * self.MAX_POS, decimals=0).astype(np.int16)
         self.logger.info('y_pos ' + str(y_pos))
         # Use inverse formula
-        bin = self.calculate_inverse_bin_lower(value=y_pos, sign=sgn)
+        bin = self.calculate_lower_edge_bin(value=y_pos, sign=sgn)
         self.logger.info('Bins for the values: ' + str(bin))
         raise Exception('asdf')
         codes = self.code_bins[bin]
@@ -128,10 +153,10 @@ class Mulaw:
 if __name__ == '__main__':
     lgr = Logging.get_default_logger(log_level=logging.DEBUG, propagate=False)
     ml = Mulaw(logger=lgr)
-    intervals = ml.calculate_bin_interval(interval=np.arange(8))
-    lgr.info('Intervals calculated: ' + str(intervals))
+    # intervals = ml.calculate_bin_interval(interval=np.arange(8))
+    # lgr.info('Intervals calculated: ' + str(intervals))
     value = np.array([0, 1, 30, 31, 94, 95, 222, 223, 478, 479, 990, 991, 2015, 4063, 8159])
-    inv = ml.calculate_inverse_bin_lower(
+    inv = ml.calculate_lower_edge_bin(
         value = value,
         sign = np.ones(len(value))
     )
