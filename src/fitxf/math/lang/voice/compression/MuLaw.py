@@ -127,11 +127,12 @@ class Mulaw:
         y_pos = np.round(y * sgn * self.MAX_POS, decimals=0).astype(np.int16)
         self.logger.info('y_pos ' + str(y_pos))
         # Use inverse formula
-        bin = self.calculate_lower_edge_bin(value=y_pos, sign=sgn)
-        self.logger.info('Bins for the values: ' + str(bin))
-        raise Exception('asdf')
-        codes = self.code_bins[bin]
-        edges = self.edge_bins[bin]
+        bin_lower = self.calculate_lower_edge_bin(value=y_pos, sign=sgn)
+        bin_higher = bin_lower + 1
+        self.logger.info('Bins for the values: ' + str(list(zip(bin_lower.tolist(), bin_higher.tolist()))))
+        codes = self.code_bins[bin_lower]
+        edges_lower = self.edge_bins[bin_lower]
+        edges_higher = self.edge_bins[bin_higher]
         self.logger.info(codes)
         edges_lower = (-1 * (sgn == -1)) * (edges + 1) + (1 * (sgn == 1)) * edges
         codes = (1 * (sgn == -1)) * np.array([v & 0x7F for v in codes]) + (1 * (sgn == 1)) * codes
