@@ -35,6 +35,9 @@ class Regression(torch.nn.Module):
         return intercept + coef * X
 
     def init_network_arc(self):
+        # for polynomial a0 + a1*x + a2*x^2 + ...
+        # a0 = bias or self.parameters()[0]
+        # a1, a2, ... = self.parameters()[1]
         self.layer_1 = torch.nn.Linear(in_features=self.polynomial_order, out_features=1)
 
         # Random initialization of model parameters if not loading from a previous state
@@ -133,6 +136,14 @@ class Regression(torch.nn.Module):
             epochs = epochs,
         )
         self.logger.info('Train losses: ' + str(losses))
+        self.coeff_a = torch.nan
+        self.coeff_a0 = torch.nan
+        for i, prm in enumerate(self.parameters()):
+            if i == 0:
+                self.coeff_a = torch.Tensor([v.item() for v in prm[0]])
+            elif i == 1:
+                self.coeff_a0 = prm[0].item()
+        self.logger.info('a0=' + str(self.coeff_a0) + ', a=' + str(self.coeff_a))
         # Important! Set back to eval mode, so subsequent forwards won't affect any weights or gradients
         self.eval()
 
@@ -157,8 +168,13 @@ class Regression(torch.nn.Module):
     def forward(
             self,
             X: torch.Tensor,
+            method: str = None,
     ):
-        return self.layer_1(X)
+        if method is None:
+            return self.layer_1(X)
+        else:
+            # should return the same as above, just that we calculate manually for demo purposes
+            return self.coeff_a0 + torch.sum(self.coeff_a * X, dim=1)
 
 
 class RegressionUnitTest:
@@ -268,7 +284,8 @@ if __name__ == '__main__':
         # regularization_type = "L1",
     )
     lgr.info('Model parameters ' + str(r_poly.state_dict()))
-    lgr.info('y predict ' + str(r_poly(X_poly)))
+    lgr.info('y predict:\n' + str(r_poly(X_poly)))
+    lgr.info('y predict manual:\n' + str(r_poly.forward(X_poly, method='manual')))
     lgr.info('Model ' + str(r_poly))
 
     exit(0)
