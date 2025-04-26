@@ -20,6 +20,27 @@ class TsDecompose:
         return
 
     #
+    # q = 1 - p
+    # ma[T] = px[T] + qx[T-1]
+    #       = px[T] + pq x[T-1] + qq x[T-2]
+    #       = px[T] + pq x[T-1] + pqq x[T-2] + ... + pq^n x[T-n] + q^(n+1) x[T-n-1]
+    #
+    def calculate_ma_exponential(
+            self,
+            series: np.ndarray,
+            p: float,
+            min_weight: float = 0.000001,
+            method: str = 'np',
+    ):
+        assert (p > 0) and (p < 1)
+        q = 1 - p
+        n = int(np.ceil( np.log(min_weight) / np.log(q) ))
+
+        weights = p * np.array([q**k for k in range(n)])
+        self.logger.info('Exponential MA weights for p = ' + str(p) + ', n = ' + str(n) + ': ' + str(weights))
+        return self.calculate_ma(series=series, weights=weights, method=method)
+
+    #
     # Moving average
     #
     def calculate_ma(
@@ -29,6 +50,7 @@ class TsDecompose:
             method: str = 'np',
     ) -> np.ndarray:
         assert series.ndim == 1
+        assert len(weights) >= 2
         if method == 'np':
             # numpy convolve will extend the length of the original series, so we clip it
             return np.convolve(a=series, v=weights)[:len(series)]
@@ -57,6 +79,13 @@ class TsDecomposeUnitTest:
         ma_2 = ts_dec.calculate_ma(series=series, weights=weights, method='np')
         self.logger.info('MA manual: ' + str(ma_1) + '\n, via numpy: ' + str(ma_2))
         assert np.sum((ma_1**2) - (ma_2**2)) < 0.0000000001, 'MA manual ' + str(ma_1) + ' not ' + str(ma_2)
+        assert np.sum((ma_1**2) - (exp_ma**2)) < 0.0000000001, 'MA manual ' + str(ma_1) + ' not ' + str(exp_ma)
+
+        ma_exp = ts_dec.calculate_ma_exponential(series=series, p=0.4)
+        exp_ma_exp = np.array([4., 6., 6.8, 6.88, 6.528, 5.9168, 5.15008, 4.290048, 3.3740288, 2.42441728])
+        self.logger.info('MA exp: ' + str(ma_exp))
+        assert np.sum((ma_exp**2) - (exp_ma_exp**2)) < 0.0000000001, \
+            'MA exponential ' + str(ma_exp) + ' not ' + str(exp_ma_exp)
         raise Exception('asdf')
 
         # Generate random time series, with cycle of sine
