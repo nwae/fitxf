@@ -67,8 +67,16 @@ class TsDecompose:
             self,
             x: np.ndarray,
             y: np.ndarray,
+            method: str = 'np',
     ):
-        return np.correlate(x, y)
+        if method == 'np':
+            return np.correlate(x, y, mode="full")
+        else:
+            # manually calculate, mainly for unit tests
+            l_extend = len(y) - 1
+            x_extended = np.array([0.0]*l_extend + x.tolist() + [0.0]*l_extend)
+            self.logger.info('x extended ' + str(x_extended) + ', y ' + str(y))
+            return np.array([np.sum(y * x_extended[i:(i + l_extend + 1)]) for i in range(len(x) + l_extend)])
 
 
 class TsDecomposeUnitTest:
@@ -108,8 +116,12 @@ class TsDecomposeUnitTest:
         #
         x = np.array([1, 2, 3])
         y = np.array([0, 1, 0.5])
-        cor = ts_dec.calculate_correlation(x=x, y=y)
-        self.logger.info('Correlation ' + str(cor))
+        exp_cor = np.array([0.5, 2.,  3.5, 3.,  0. ])
+        cor_np = ts_dec.calculate_correlation(x=x, y=y, method='np')
+        cor_mn = ts_dec.calculate_correlation(x=x, y=y, method='manual')
+        self.logger.info('Correlation ' + str(cor_np) + ', manual ' + str(cor_mn))
+        assert np.sum((cor_np**2) - (exp_cor**2)) < 0.0000000001, 'Cor numpy ' + str(cor_np) + ' not ' + str(exp_cor)
+        assert np.sum((cor_mn**2) - (exp_cor**2)) < 0.0000000001, 'Cor manual ' + str(cor_mn) + ' not ' + str(exp_cor)
         raise Exception('asdf')
 
         # Generate random time series, with cycle of sine
