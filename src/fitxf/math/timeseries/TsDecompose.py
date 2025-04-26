@@ -53,8 +53,9 @@ class TsDecompose:
         assert len(weights) >= 2
         if method == 'np':
             # numpy convolve will extend the length of the original series, so we clip it
-            return np.convolve(a=series, v=weights)[:len(series)]
+            return np.convolve(a=series, v=weights, mode='full')[:len(series)]
         else:
+            # manually calculate, mainly for unit tests
             inv_w = np.flip(weights, axis=0)
             self.logger.info('Flipped weights ' + str(inv_w))
             l_add = len(weights) - 1
@@ -62,6 +63,12 @@ class TsDecompose:
             self.logger.info('Series extended ' + str(series_extended))
             return np.array([np.sum(inv_w * series_extended[i:(i + l_add + 1)]) for i in range(len(series))])
 
+    def calculate_correlation(
+            self,
+            x: np.ndarray,
+            y: np.ndarray,
+    ):
+        return np.correlate(x, y)
 
 
 class TsDecomposeUnitTest:
@@ -71,21 +78,38 @@ class TsDecomposeUnitTest:
 
     def test(self):
         ts_dec = TsDecompose(logger=self.logger)
+
+        #
+        # Test MA
+        #
         N = 10
         series = np.flip(np.arange(N) + 1, axis=0).astype(np.float32)
+        self.logger.info('Series: ' + str(series))
         weights = np.array([0.5, 0.3, 0.2])
-        exp_ma = np.array([5.,  7.5, 8.7, 7.7, 6.7, 5.7, 4.7, 3.7, 2.7, 1.7])
-        ma_1 = ts_dec.calculate_ma(series=series, weights=weights, method='manual')
-        ma_2 = ts_dec.calculate_ma(series=series, weights=weights, method='np')
-        self.logger.info('MA manual: ' + str(ma_1) + '\n, via numpy: ' + str(ma_2))
-        assert np.sum((ma_1**2) - (ma_2**2)) < 0.0000000001, 'MA manual ' + str(ma_1) + ' not ' + str(ma_2)
-        assert np.sum((ma_1**2) - (exp_ma**2)) < 0.0000000001, 'MA manual ' + str(ma_1) + ' not ' + str(exp_ma)
+        exp_ma = np.array([5., 7.5, 8.7, 7.7, 6.7, 5.7, 4.7, 3.7, 2.7, 1.7])
+        ma_mn = ts_dec.calculate_ma(series=series, weights=weights, method='manual')
+        ma_np = ts_dec.calculate_ma(series=series, weights=weights, method='np')
+        self.logger.info('MA manual: ' + str(ma_mn) + '\n, via numpy: ' + str(ma_np))
+        assert np.sum((ma_mn**2) - (ma_np**2)) < 0.0000000001, 'MA manual ' + str(ma_mn) + ' not ' + str(ma_np)
+        assert np.sum((ma_mn**2) - (exp_ma**2)) < 0.0000000001, 'MA manual ' + str(ma_mn) + ' not ' + str(exp_ma)
+        assert np.sum((ma_np**2) - (exp_ma**2)) < 0.0000000001, 'MA numpy ' + str(ma_np) + ' not ' + str(exp_ma)
 
+        #
+        # Test exponential MA
+        #
         ma_exp = ts_dec.calculate_ma_exponential(series=series, p=0.4)
         exp_ma_exp = np.array([4., 6., 6.8, 6.88, 6.528, 5.9168, 5.15008, 4.290048, 3.3740288, 2.42441728])
         self.logger.info('MA exp: ' + str(ma_exp))
         assert np.sum((ma_exp**2) - (exp_ma_exp**2)) < 0.0000000001, \
             'MA exponential ' + str(ma_exp) + ' not ' + str(exp_ma_exp)
+
+        #
+        # Test Correlation
+        #
+        x = np.array([1, 2, 3])
+        y = np.array([0, 1, 0.5])
+        cor = ts_dec.calculate_correlation(x=x, y=y)
+        self.logger.info('Correlation ' + str(cor))
         raise Exception('asdf')
 
         # Generate random time series, with cycle of sine
