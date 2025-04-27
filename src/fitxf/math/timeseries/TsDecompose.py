@@ -164,14 +164,23 @@ class TsDecomposeUnitTest:
         #
         # Test Auto-Correlation
         #
-        x = np.array([1, 2, 3, 11, 12, 13, 1, 2, 3, 11, 12, 13])
-        x_ma = ts_dec.calculate_ma_exponential(series=x, p=0.5)
-        self.logger.info('MA for x ' + str(x_ma))
-        acor_np = ts_dec.calculate_auto_correlation(x=x, x_mu=x_ma)
-        self.logger.info('Auto-correlation ' + str(acor_np))
-        raise Exception('asdf')
+        x = np.array([1, 2, 3, 10, 3, 2, 12, 2, 2])
+        # Seasonality at index shift +3
+        exp_seasonality = 3
+        x_mu = float(np.mean(x))
+        self.logger.info('MA for x ' + str(x_mu))
+        ac_np = ts_dec.calculate_auto_correlation(x=x, x_mu=x_mu)
+        max_ac_idx = np.argsort(ac_np, axis=-1)
+        seasonality_n = max_ac_idx[-2]
+        # The biggest auto-correlation is when there is no shift
+        assert max_ac_idx[-1] == 0
+        self.logger.info('Auto-correlation ' + str(ac_np) + ', max AC index ' + str(max_ac_idx))
+        assert seasonality_n == exp_seasonality, \
+            'Seasonality at period ' + str(seasonality_n) + ' not ' + str(exp_seasonality)
 
+        #
         # Generate random time series, with cycle of sine
+        #
         N = 100
         k = 3
         t = np.arange(N).astype(np.float32)
@@ -204,21 +213,7 @@ class TsDecomposeUnitTest:
         plt.title('DFT')
         plt.show()
 
-        # moving average
-        ma = y[0]
-        mv_avg = []
-        w_ma = 0.5
-        for i in range(len(y)):
-            ma = y[0] if i==0 else w_ma*ma + (1-w_ma)*y[i]
-            mv_avg.append(ma)
-        self.logger.info('MA ' + str(mv_avg))
-        plt.plot(t, mv_avg, marker='o', linestyle='-', color='b', label='Moving Average')
-        plt.title('MA')
-        plt.show()
-
-        # Modeling absolute series
-
-        # Modeling differences
+        self.logger.info('Tests Passed')
         return
 
 
