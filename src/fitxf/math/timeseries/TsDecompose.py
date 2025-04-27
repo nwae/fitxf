@@ -67,16 +67,28 @@ class TsDecompose:
             self,
             x: np.ndarray,
             y: np.ndarray,
+            # can be moving average or simple average, etc.
+            x_mu: np.ndarray = None,
+            y_mu: np.ndarray = None,
+            var_x: float = 1.0,
+            var_y: float = 1.0,
             method: str = 'np',
     ):
+        x_mu = 0.0 if x_mu is None else x_mu
+        y_mu = 0.0 if y_mu is None else y_mu
+
+        x_norm = x - x_mu
+        y_norm = y - y_mu
+
         if method == 'np':
-            return np.correlate(x, y, mode="full")
+            return np.correlate(x_norm, y_norm, mode="full") / (var_x * var_y)
         else:
             # manually calculate, mainly for unit tests
-            l_extend = len(y) - 1
-            x_extended = np.array([0.0]*l_extend + x.tolist() + [0.0]*l_extend)
-            self.logger.info('x extended ' + str(x_extended) + ', y ' + str(y))
-            return np.array([np.sum(y * x_extended[i:(i + l_extend + 1)]) for i in range(len(x) + l_extend)])
+            l_extend = len(y_norm) - 1
+            x_extended = np.array([0.0]*l_extend + x_norm.tolist() + [0.0]*l_extend)
+            self.logger.info('x extended ' + str(x_extended) + ', y ' + str(y_norm))
+            cor = np.array([np.sum(y_norm* x_extended[i:(i + l_extend + 1)]) for i in range(len(x_norm) + l_extend)])
+            return cor / (var_x * var_y)
 
 
 class TsDecomposeUnitTest:
