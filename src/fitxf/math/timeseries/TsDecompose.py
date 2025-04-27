@@ -80,15 +80,41 @@ class TsDecompose:
         x_norm = x - x_mu
         y_norm = y - y_mu
 
+        l_extend = len(y_norm) - 1
+
         if method == 'np':
-            return np.correlate(x_norm, y_norm, mode="full") / (var_x * var_y)
+            cor = np.correlate(x_norm, y_norm, mode="full")
+            return cor / (var_x * var_y)
         else:
             # manually calculate, mainly for unit tests
-            l_extend = len(y_norm) - 1
             x_extended = np.array([0.0]*l_extend + x_norm.tolist() + [0.0]*l_extend)
             self.logger.info('x extended ' + str(x_extended) + ', y ' + str(y_norm))
-            cor = np.array([np.sum(y_norm* x_extended[i:(i + l_extend + 1)]) for i in range(len(x_norm) + l_extend)])
+            cor = np.array([
+                np.sum(y_norm* x_extended[i:(i + l_extend + 1)])
+                for i in range(len(x_norm) + l_extend)
+            ])
             return cor / (var_x * var_y)
+
+    def calculate_auto_correlation(
+            self,
+            x: np.ndarray,
+            # can be moving average or simple average, etc.
+            x_mu: np.ndarray,
+            method: str = 'np',
+    ):
+        auto_cor = self.calculate_correlation(
+            x = x,
+            y = x,
+            x_mu = x_mu,
+            y_mu = x_mu,
+            var_x = float(np.var(x)),
+            var_y = float(np.var(x)),
+            method = method,
+        )
+        l_extend = len(x) - 1
+        l_end = l_extend + len(x)
+        auto_cor_0 = auto_cor[l_extend:l_end]
+        return auto_cor_0
 
 
 class TsDecomposeUnitTest:
@@ -134,6 +160,15 @@ class TsDecomposeUnitTest:
         self.logger.info('Correlation ' + str(cor_np) + ', manual ' + str(cor_mn))
         assert np.sum((cor_np**2) - (exp_cor**2)) < 0.0000000001, 'Cor numpy ' + str(cor_np) + ' not ' + str(exp_cor)
         assert np.sum((cor_mn**2) - (exp_cor**2)) < 0.0000000001, 'Cor manual ' + str(cor_mn) + ' not ' + str(exp_cor)
+
+        #
+        # Test Auto-Correlation
+        #
+        x = np.array([1, 2, 3, 11, 12, 13, 1, 2, 3, 11, 12, 13])
+        x_ma = ts_dec.calculate_ma_exponential(series=x, p=0.5)
+        self.logger.info('MA for x ' + str(x_ma))
+        acor_np = ts_dec.calculate_auto_correlation(x=x, x_mu=x_ma)
+        self.logger.info('Auto-correlation ' + str(acor_np))
         raise Exception('asdf')
 
         # Generate random time series, with cycle of sine
