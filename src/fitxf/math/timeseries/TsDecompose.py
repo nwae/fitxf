@@ -9,6 +9,7 @@ from fitxf.utils import Logging
 
 #
 # https://en.wikipedia.org/wiki/Decomposition_of_time_series
+# https://www.ibm.com/think/topics/arima-model#:~:text=ARIMA%20stands%20for%20Autoregressive%20Integrated,to%20forecasting%20time%20series%20data.
 #
 class TsDecompose:
 
@@ -63,6 +64,9 @@ class TsDecompose:
             self.logger.info('Series extended ' + str(series_extended))
             return np.array([np.sum(inv_w * series_extended[i:(i + l_add + 1)]) for i in range(len(series))])
 
+    #
+    # cor(x, y) = E[(X-mu_x)(Y-mu_y)] / (sigma_x * sigma_y)
+    #
     def calculate_correlation(
             self,
             x: np.ndarray,
@@ -72,6 +76,8 @@ class TsDecompose:
             y_mu: np.ndarray = None,
             var_x: float = 1.0,
             var_y: float = 1.0,
+            # divide by correct lengths
+            normalize_divide_lengths: bool = False,
             method: str = 'np',
     ):
         x_mu = 0.0 if x_mu is None else x_mu
@@ -80,41 +86,76 @@ class TsDecompose:
         x_norm = x - x_mu
         y_norm = y - y_mu
 
-        l_extend = len(y_norm) - 1
+        l_y = len(y_norm)
+        l_extend = l_y - 1
+        if normalize_divide_lengths:
+            l_actual = np.append(
+                np.array([len(y)] * l_extend),
+                np.minimum(np.arange(len(x))[::-1] + 1, np.arange(len(y))[::-1] + 1),
+                axis = 0,
+            )
+            # self.logger.info('Actual lengths ' + str(l_actual))
+        else:
+            l_actual = 1
 
         if method == 'np':
-            cor = np.correlate(x_norm, y_norm, mode="full")
-            return cor / (var_x * var_y)
+            # numpy correlation does not divide by length
+            cor = np.correlate(x_norm, y_norm, mode="full") / l_actual
         else:
             # manually calculate, mainly for unit tests
             x_extended = np.array([0.0]*l_extend + x_norm.tolist() + [0.0]*l_extend)
-            self.logger.info('x extended ' + str(x_extended) + ', y ' + str(y_norm))
+            # self.logger.info('x extended ' + str(x_extended) + ', y ' + str(y_norm))
             cor = np.array([
-                np.sum(y_norm* x_extended[i:(i + l_extend + 1)])
+                np.sum(y_norm * x_extended[i:(i + l_extend + 1)])
                 for i in range(len(x_norm) + l_extend)
-            ])
-            return cor / (var_x * var_y)
+            ]) / l_actual
+        return {int(idx): float(v) for idx, v in list(zip(np.arange(len(cor))-l_extend, cor))}
+        # return cor[l_extend:] / (var_x * var_y)
 
     def calculate_auto_correlation(
             self,
             x: np.ndarray,
             # can be moving average or simple average, etc.
+            # however, it is sometimes more accurate to just use simple average to calculate
+            # auto-correlation.
             x_mu: np.ndarray,
+            normalize_divide_lengths: bool = False,
             method: str = 'np',
     ):
-        auto_cor = self.calculate_correlation(
+        return self.calculate_correlation(
             x = x,
             y = x,
             x_mu = x_mu,
             y_mu = x_mu,
             var_x = float(np.var(x)),
             var_y = float(np.var(x)),
+            normalize_divide_lengths = normalize_divide_lengths,
             method = method,
         )
         l_extend = len(x) - 1
         l_end = l_extend + len(x)
-        auto_cor_0 = auto_cor[l_extend:l_end]
+        auto_cor_0 = auto_cor[:l_end]
         return auto_cor_0
+
+    def correct_seasonality(
+            self,
+            x: np.ndarray,
+            # can be moving average or simple average, etc.
+            # however, it is sometimes more accurate to just use simple average to calculate
+            # auto-correlation.
+            x_mu: np.ndarray,
+            method: str = 'np',
+    ):
+        ac_np = self.calculate_auto_correlation(x=x, x_mu=x_mu)
+        idxs_sorted = np.argsort(a=ac_np, axis=-1)[::-1]
+        ac_np_sorted = ac_np[idxs_sorted]
+        self.logger.info(
+            'Auto correlation ' + str(ac_np_sorted) + ', sorted indexes ' + str(idxs_sorted)
+        )
+        # correct the seasonality
+
+        raise Exception('asdf')
+        return
 
 
 class TsDecomposeUnitTest:
@@ -136,9 +177,9 @@ class TsDecomposeUnitTest:
         ma_mn = ts_dec.calculate_ma(series=series, weights=weights, method='manual')
         ma_np = ts_dec.calculate_ma(series=series, weights=weights, method='np')
         self.logger.info('MA manual: ' + str(ma_mn) + '\n, via numpy: ' + str(ma_np))
-        assert np.sum((ma_mn**2) - (ma_np**2)) < 0.0000000001, 'MA manual ' + str(ma_mn) + ' not ' + str(ma_np)
-        assert np.sum((ma_mn**2) - (exp_ma**2)) < 0.0000000001, 'MA manual ' + str(ma_mn) + ' not ' + str(exp_ma)
-        assert np.sum((ma_np**2) - (exp_ma**2)) < 0.0000000001, 'MA numpy ' + str(ma_np) + ' not ' + str(exp_ma)
+        assert np.sum((ma_mn - ma_np)**2) < 0.0000000001, 'MA manual ' + str(ma_mn) + ' not ' + str(ma_np)
+        assert np.sum((ma_mn - exp_ma)**2) < 0.0000000001, 'MA manual ' + str(ma_mn) + ' not ' + str(exp_ma)
+        assert np.sum((ma_np - exp_ma)**2) < 0.0000000001, 'MA numpy ' + str(ma_np) + ' not ' + str(exp_ma)
 
         #
         # Test exponential MA
@@ -146,7 +187,7 @@ class TsDecomposeUnitTest:
         ma_exp = ts_dec.calculate_ma_exponential(series=series, p=0.4)
         exp_ma_exp = np.array([4., 6., 6.8, 6.88, 6.528, 5.9168, 5.15008, 4.290048, 3.3740288, 2.42441728])
         self.logger.info('MA exp: ' + str(ma_exp))
-        assert np.sum((ma_exp**2) - (exp_ma_exp**2)) < 0.0000000001, \
+        assert np.sum((ma_exp - exp_ma_exp)**2) < 0.0000000001, \
             'MA exponential ' + str(ma_exp) + ' not ' + str(exp_ma_exp)
 
         #
@@ -154,29 +195,42 @@ class TsDecomposeUnitTest:
         #
         x = np.array([1, 2, 3])
         y = np.array([0, 1, 0.5])
-        exp_cor = np.array([0.5, 2.,  3.5, 3.,  0. ])
-        cor_np = ts_dec.calculate_correlation(x=x, y=y, method='np')
-        cor_mn = ts_dec.calculate_correlation(x=x, y=y, method='manual')
+        len_actual = np.array([3, 3, 3, 2, 1])
+        exp_cor = np.array([3.5, 3.,  0. ])
+        cor_np = ts_dec.calculate_correlation(x=x, y=y, normalize_divide_lengths=False, method='np')
+        cor_mn = ts_dec.calculate_correlation(x=x, y=y, normalize_divide_lengths=False, method='manual')
         self.logger.info('Correlation ' + str(cor_np) + ', manual ' + str(cor_mn))
-        assert np.sum((cor_np**2) - (exp_cor**2)) < 0.0000000001, 'Cor numpy ' + str(cor_np) + ' not ' + str(exp_cor)
-        assert np.sum((cor_mn**2) - (exp_cor**2)) < 0.0000000001, 'Cor manual ' + str(cor_mn) + ' not ' + str(exp_cor)
+        err_np = np.sum(([v for i, v in cor_np.items() if i >= 0] - exp_cor)**2)
+        err_mn = np.sum(([v for i, v in cor_mn.items() if i >= 0] - exp_cor)**2)
+        assert err_np < 0.0000000001, 'Cor numpy ' + str(cor_np) + ' not ' + str(exp_cor)
+        assert err_mn < 0.0000000001, 'Cor manual ' + str(cor_mn) + ' not ' + str(exp_cor)
 
         #
         # Test Auto-Correlation
         #
-        x = np.array([1, 2, 3, 10, 3, 2, 12, 2, 2])
+        # seasonality at 2nd index
+        x = np.array([1, 2, 10, 2, 3, 11, 1, 4, 9, 2, 2, 11])
+        len_actual = np.array([
+            12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12,
+            12, 11, 10,  9,  8 , 7,  6,  5,  4,  3,  2,  1,
+        ])
         # Seasonality at index shift +3
         exp_seasonality = 3
         x_mu = float(np.mean(x))
         self.logger.info('MA for x ' + str(x_mu))
-        ac_np = ts_dec.calculate_auto_correlation(x=x, x_mu=x_mu)
+        ac_np = ts_dec.calculate_auto_correlation(x=x, x_mu=x_mu, normalize_divide_lengths=True)
         max_ac_idx = np.argsort(ac_np, axis=-1)
+        self.logger.info('Auto-correlation ' + str(ac_np) + ', max AC index ' + str(max_ac_idx))
         seasonality_n = max_ac_idx[-2]
         # The biggest auto-correlation is when there is no shift
         assert max_ac_idx[-1] == 0
-        self.logger.info('Auto-correlation ' + str(ac_np) + ', max AC index ' + str(max_ac_idx))
         assert seasonality_n == exp_seasonality, \
             'Seasonality at period ' + str(seasonality_n) + ' not ' + str(exp_seasonality)
+
+        #
+        # Test seasonality correction
+        #
+        ts_dec.correct_seasonality(x=x, x_mu=x_mu)
 
         #
         # Generate random time series, with cycle of sine
