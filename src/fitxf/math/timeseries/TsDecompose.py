@@ -146,7 +146,8 @@ class TsDecompose:
             x_mu: np.ndarray,
             method: str = 'np',
     ):
-        ac_np = self.calculate_auto_correlation(x=x, x_mu=x_mu)
+        ac_np_dict = self.calculate_auto_correlation(x=x, x_mu=x_mu)
+        ac_np = np.array([v for i, v in ac_np_dict.items() if i >= 0])
         idxs_sorted = np.argsort(a=ac_np, axis=-1)[::-1]
         ac_np_sorted = ac_np[idxs_sorted]
         self.logger.info(
@@ -218,7 +219,8 @@ class TsDecomposeUnitTest:
         exp_seasonality = 3
         x_mu = float(np.mean(x))
         self.logger.info('MA for x ' + str(x_mu))
-        ac_np = ts_dec.calculate_auto_correlation(x=x, x_mu=x_mu, normalize_divide_lengths=True)
+        ac_np_dict = ts_dec.calculate_auto_correlation(x=x, x_mu=x_mu, normalize_divide_lengths=False)
+        ac_np = np.array([v for i, v in ac_np_dict.items() if i >= 0])
         max_ac_idx = np.argsort(ac_np, axis=-1)
         self.logger.info('Auto-correlation ' + str(ac_np) + ', max AC index ' + str(max_ac_idx))
         seasonality_n = max_ac_idx[-2]
