@@ -132,10 +132,6 @@ class TsDecompose:
             normalize_divide_lengths = normalize_divide_lengths,
             method = method,
         )
-        l_extend = len(x) - 1
-        l_end = l_extend + len(x)
-        auto_cor_0 = auto_cor[:l_end]
-        return auto_cor_0
 
     def correct_seasonality(
             self,
@@ -146,8 +142,11 @@ class TsDecompose:
             x_mu: np.ndarray,
             method: str = 'np',
     ):
-        ac_np_dict = self.calculate_auto_correlation(x=x, x_mu=x_mu)
-        ac_np = np.array([v for i, v in ac_np_dict.items() if i >= 0])
+        # we only check auto-correlation for shifts of 1 to len_max
+        len_max = int(len(x) / 2)
+        self.logger.info('Check for lengths up to ' + str(len_max) + ' from total x length ' + str(len(x)))
+        ac_np_dict = self.calculate_auto_correlation(x=x, x_mu=x_mu, normalize_divide_lengths=False)
+        ac_np = np.array([v for i, v in ac_np_dict.items() if (i >= 1) and (i <= len_max)])
         idxs_sorted = np.argsort(a=ac_np, axis=-1)[::-1]
         ac_np_sorted = ac_np[idxs_sorted]
         self.logger.info(
@@ -196,25 +195,27 @@ class TsDecomposeUnitTest:
         #
         x = np.array([1, 2, 3])
         y = np.array([0, 1, 0.5])
-        len_actual = np.array([3, 3, 3, 2, 1])
-        exp_cor = np.array([3.5, 3.,  0. ])
-        cor_np = ts_dec.calculate_correlation(x=x, y=y, normalize_divide_lengths=False, method='np')
-        cor_mn = ts_dec.calculate_correlation(x=x, y=y, normalize_divide_lengths=False, method='manual')
-        self.logger.info('Correlation ' + str(cor_np) + ', manual ' + str(cor_mn))
-        err_np = np.sum(([v for i, v in cor_np.items() if i >= 0] - exp_cor)**2)
-        err_mn = np.sum(([v for i, v in cor_mn.items() if i >= 0] - exp_cor)**2)
-        assert err_np < 0.0000000001, 'Cor numpy ' + str(cor_np) + ' not ' + str(exp_cor)
-        assert err_mn < 0.0000000001, 'Cor manual ' + str(cor_mn) + ' not ' + str(exp_cor)
+        len_actual = np.array([3, 2, 1])
+        exp_cor_no_div = np.array([3.5, 3.,  0. ])
+        exp_cor_div = exp_cor_no_div / len_actual
+        for norm_div_len, exp_cor in [(False, exp_cor_no_div), (True, exp_cor_div)]:
+            cor_np = ts_dec.calculate_correlation(x=x, y=y, normalize_divide_lengths=norm_div_len, method='np')
+            cor_mn = ts_dec.calculate_correlation(x=x, y=y, normalize_divide_lengths=norm_div_len, method='manual')
+            self.logger.info(
+                'Normalize divide lengths ' + str(norm_div_len) + ', correlation ' + str(cor_np)
+                + ', manual ' + str(cor_mn)
+            )
+            err_np = np.sum(([v for i, v in cor_np.items() if i >= 0] - exp_cor)**2)
+            err_mn = np.sum(([v for i, v in cor_mn.items() if i >= 0] - exp_cor)**2)
+            assert err_np < 0.0000000001, 'Cor numpy ' + str(cor_np) + ' not ' + str(exp_cor)
+            assert err_mn < 0.0000000001, 'Cor manual ' + str(cor_mn) + ' not ' + str(exp_cor)
 
         #
         # Test Auto-Correlation
         #
         # seasonality at 2nd index
         x = np.array([1, 2, 10, 2, 3, 11, 1, 4, 9, 2, 2, 11])
-        len_actual = np.array([
-            12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12,
-            12, 11, 10,  9,  8 , 7,  6,  5,  4,  3,  2,  1,
-        ])
+        len_actual = np.array([12, 11, 10,  9,  8 , 7,  6,  5,  4,  3,  2,  1,])
         # Seasonality at index shift +3
         exp_seasonality = 3
         x_mu = float(np.mean(x))
