@@ -31,6 +31,7 @@ class TsDecompose:
             series: np.ndarray,
             p: float,
             min_weight: float = 0.000001,
+            prepend_value: float = None,
             method: str = 'np',
     ):
         assert (p > 0) and (p < 1)
@@ -39,7 +40,7 @@ class TsDecompose:
 
         weights = p * np.array([q**k for k in range(n)])
         self.logger.info('Exponential MA weights for p = ' + str(p) + ', n = ' + str(n) + ': ' + str(weights))
-        return self.calculate_ma(series=series, weights=weights, method=method)
+        return self.calculate_ma(series=series, weights=weights, prepend_value=prepend_value, method=method)
 
     #
     # Moving average
@@ -48,21 +49,29 @@ class TsDecompose:
             self,
             series: np.ndarray,
             weights: np.ndarray,
+            prepend_value: float = None,
             method: str = 'np',
     ) -> np.ndarray:
         assert series.ndim == 1
         assert len(weights) >= 2
+        prepend_value = series[0] if prepend_value is None else prepend_value
+        l_pp = len(weights) - 1
+        # prepend with value of first index, so that MA at first index is the value itself
+        preprend = np.array([prepend_value] * l_pp)
+        series_x = np.append(preprend, series)
         if method == 'np':
             # numpy convolve will extend the length of the original series, so we clip it
-            return np.convolve(a=series, v=weights, mode='full')[:len(series)]
+            ma_tmp = np.convolve(a=series_x, v=weights, mode='full')[:len(series_x)]
+            return ma_tmp[l_pp:]
         else:
             # manually calculate, mainly for unit tests
             inv_w = np.flip(weights, axis=0)
-            self.logger.info('Flipped weights ' + str(inv_w))
-            l_add = len(weights) - 1
-            series_extended = np.array([0.0]*l_add + series.tolist())
-            self.logger.info('Series extended ' + str(series_extended))
-            return np.array([np.sum(inv_w * series_extended[i:(i + l_add + 1)]) for i in range(len(series))])
+            self.logger.info('Flipped weights ' + str(inv_w) + ' prepended series ' + str(series_x))
+            ma_tmp = np.array([
+                np.sum(inv_w * series_x[i:(i + l_pp + 1)])
+                for i in range(len(series))
+            ])
+            return ma_tmp
 
     #
     # cor(x, y) = E[(X-mu_x)(Y-mu_y)] / (sigma_x * sigma_y)
@@ -149,8 +158,10 @@ class TsDecompose:
         ac_np = np.array([v for i, v in ac_np_dict.items() if (i >= 1) and (i <= len_max)])
         idxs_sorted = np.argsort(a=ac_np, axis=-1)[::-1]
         ac_np_sorted = ac_np[idxs_sorted]
+        top_index_ac = ac_np_sorted[0]
         self.logger.info(
-            'Auto correlation ' + str(ac_np_sorted) + ', sorted indexes ' + str(idxs_sorted)
+            'Top index ' + str(top_index_ac) + ', auto correlation ' + str(ac_np_sorted)
+            + ', sorted indexes ' + str(idxs_sorted)
         )
         # correct the seasonality
 
@@ -173,22 +184,36 @@ class TsDecomposeUnitTest:
         series = np.flip(np.arange(N) + 1, axis=0).astype(np.float32)
         self.logger.info('Series: ' + str(series))
         weights = np.array([0.5, 0.3, 0.2])
-        exp_ma = np.array([5., 7.5, 8.7, 7.7, 6.7, 5.7, 4.7, 3.7, 2.7, 1.7])
-        ma_mn = ts_dec.calculate_ma(series=series, weights=weights, method='manual')
-        ma_np = ts_dec.calculate_ma(series=series, weights=weights, method='np')
-        self.logger.info('MA manual: ' + str(ma_mn) + '\n, via numpy: ' + str(ma_np))
-        assert np.sum((ma_mn - ma_np)**2) < 0.0000000001, 'MA manual ' + str(ma_mn) + ' not ' + str(ma_np)
-        assert np.sum((ma_mn - exp_ma)**2) < 0.0000000001, 'MA manual ' + str(ma_mn) + ' not ' + str(exp_ma)
-        assert np.sum((ma_np - exp_ma)**2) < 0.0000000001, 'MA numpy ' + str(ma_np) + ' not ' + str(exp_ma)
+        exp_ma_pp_none = np.array([5., 7.5, 8.7, 7.7, 6.7, 5.7, 4.7, 3.7, 2.7, 1.7])
+        exp_ma_pp      = np.array([10., 9.5, 8.7, 7.7, 6.7, 5.7, 4.7, 3.7, 2.7, 1.7])
+        for i, (ser, w, prepend_val, exp_ma) in enumerate([
+            (series, weights, 0.0, exp_ma_pp_none,),
+            (series, weights, series[0], exp_ma_pp,),
+        ]):
+            ma_mn = ts_dec.calculate_ma(series=ser, weights=w, prepend_value=prepend_val, method='manual')
+            ma_np = ts_dec.calculate_ma(series=ser, weights=w, prepend_value=prepend_val, method='np')
+            self.logger.info('# ' + str(i) + ' MA manual: ' + str(ma_mn) + '\n, via numpy: ' + str(ma_np))
+            assert np.sum((ma_mn - ma_np)**2) < 0.0000000001, \
+                '# ' + str(i) + ' MA manual ' + str(ma_mn) + ' not ' + str(ma_np)
+            assert np.sum((ma_mn - exp_ma)**2) < 0.0000000001, \
+                '# ' + str(i) + ' MA manual ' + str(ma_mn) + ' not ' + str(exp_ma)
+            assert np.sum((ma_np - exp_ma)**2) < 0.0000000001, \
+                '# ' + str(i) + ' MA numpy ' + str(ma_np) + ' not ' + str(exp_ma)
 
         #
         # Test exponential MA
         #
-        ma_exp = ts_dec.calculate_ma_exponential(series=series, p=0.4)
-        exp_ma_exp = np.array([4., 6., 6.8, 6.88, 6.528, 5.9168, 5.15008, 4.290048, 3.3740288, 2.42441728])
-        self.logger.info('MA exp: ' + str(ma_exp))
-        assert np.sum((ma_exp - exp_ma_exp)**2) < 0.0000000001, \
-            'MA exponential ' + str(ma_exp) + ' not ' + str(exp_ma_exp)
+        exp_ma_exp_pp_none = np.array([4., 6., 6.8, 6.88, 6.528, 5.9168, 5.15008, 4.290048, 3.3740288, 2.42441728])
+        exp_ma_exp_pp = np.array([9.99999386, 9.59999386, 8.95999386, 8.17599386, 7.30559386,
+                                  6.38335386, 5.43000986, 4.45800346, 3.47479962, 2.48487732])
+        for i, (ser, prepend_val, exp_ma) in enumerate([
+            (series, 0.0, exp_ma_exp_pp_none,),
+            (series, series[0], exp_ma_exp_pp,),
+        ]):
+            ma_exp = ts_dec.calculate_ma_exponential(series=ser, p=0.4, prepend_value=prepend_val)
+            self.logger.info('MA exp: ' + str(ma_exp))
+            assert np.sum((ma_exp - exp_ma)**2) < 0.0000000001, \
+                '#' + str(i) + ' MA exponential ' + str(ma_exp) + ' not ' + str(exp_ma)
 
         #
         # Test Correlation
