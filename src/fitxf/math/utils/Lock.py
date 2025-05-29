@@ -28,7 +28,7 @@ class Lock:
                 'locked_by': None,
                 'locked_since': datetime(year=2000, month=1, day=1),
             }
-            self.logger.info('Created mutex lock for "' + str(mtx_name) + '"')
+            self.logger.debug('Created mutex lock for "' + str(mtx_name) + '"')
         return
 
     def is_locked(
@@ -80,7 +80,7 @@ class Lock:
                         + ' times, locked by "' + str(locked_by) + '", locked since "' + str(locked_since) \
                         + '" for ' + str(tdiff) + ' secs.'
 
-                    self.logger.info(info + ' Trying again in ' + str(try_sleep_secs) + ' secs..')
+                    self.logger.debug(info + ' Trying again in ' + str(try_sleep_secs) + ' secs..')
                     time.sleep(try_sleep_secs)
                     continue
                 else:
@@ -99,7 +99,7 @@ class Lock:
                     self.__mutexes[mtx_name]['locked_by'] = id
                     self.__mutexes[mtx_name]['locked_since'] = datetime.now()
 
-                    self.logger.info(
+                    self.logger.debug(
                         '"' + str(id) + '" acquired mutex "' + str(mtx_name) + '" successfully'
                     )
                     break
@@ -121,7 +121,7 @@ class Lock:
                     mtx.release()
                     self.__mutexes[mtx_name]['locked_by'] = None
                     self.__mutexes[mtx_name]['locked_since'] = None
-                    self.logger.info(
+                    self.logger.debug(
                         'Mutex name "' + str(mtx_name) + '" released by "' + str(id_holder)
                         + '" successfully ' + str(mtx)
                     )

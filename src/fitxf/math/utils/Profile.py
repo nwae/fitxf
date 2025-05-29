@@ -50,7 +50,7 @@ class Profiling:
                 if is_non_empty and (self.time_records[id][-1]['dif_secs']) < 0.:
                     # self.logger.warning('Did not call record_time_profiling() after start')
                     self.time_records[id][-1] = new_record
-                    self.logger.warning('Previous time record "' + str(id) + '" no end time, replace with new record')
+                    self.logger.debug('Previous time record "' + str(id) + '" no end time, replace with new record')
                 else:
                     self.time_records[id].append(new_record)
                     self.logger.debug('Append new time recording to "' + str(id) + '"')
@@ -84,7 +84,7 @@ class Profiling:
             mean_secs = round(dur_cum_s / len(self.time_records[id]), decimals)
             rps_mean = round(1/(mean_secs+0.0000000001), 3)
             if logmsg:
-                self.logger.info(
+                self.logger.debug(
                     '[' + str(id) + '] Profile speed: ' + str(msg) + ' took ' + str(dur_s)
                     + 's, cumulative mean ' + str(mean_secs) + 's (' + str(rps_mean) + ' rps) from total records '
                     + str(len(self.time_records[id]))
