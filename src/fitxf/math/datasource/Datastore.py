@@ -6,7 +6,7 @@ try:
     from fitxf.math.datasource.MySql import MySql
 except Exception as __ex_import:
     pass
-    print('Error importing library: ' + str(__ex_import))
+    # print('Error importing library: ' + str(__ex_import))
 from fitxf.math.utils.Env import Env
 
 
