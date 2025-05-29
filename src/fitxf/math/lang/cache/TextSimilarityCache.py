@@ -108,7 +108,7 @@ class TextSimilarityCache:
                 (self.cache_stats['hit_exact'] + self.cache_stats['hit_similar']) / self.cache_stats['total']
         # Log stats every now and then
         if self.cache_stats['total'] % 500 == 0:
-            self.logger.info('Key Value Cache "' + str(self.cache_name) + '" stats now: ' + str(self.cache_stats))
+            self.logger.debug('Key Value Cache "' + str(self.cache_name) + '" stats now: ' + str(self.cache_stats))
         return
 
     def clear_cache(self):
@@ -117,10 +117,10 @@ class TextSimilarityCache:
                 # key = self.KEY_ID,
                 tablename = self.db_params.db_table,
             )
-            self.logger.info('Cleared cache for db params: ' + str(self.db_params.get_db_info()))
+            self.logger.debug('Cleared cache for db params: ' + str(self.db_params.get_db_info()))
         else:
             self.cache_dict = {}
-            self.logger.info('Cleared cache of dict type.')
+            self.logger.debug('Cleared cache of dict type.')
         return
 
     def get_cache_keys(self):
@@ -164,7 +164,7 @@ class TextSimilarityCache:
                     raw_query = del_sql,
                     tablename = self.db_params.db_table,
                 )
-                self.logger.info('Cleanup cache delete query "' + str(del_sql) + '": ' + str(res))
+                self.logger.debug('Cleanup cache delete query "' + str(del_sql) + '": ' + str(res))
             except Exception as ex:
                 self.logger.error('Failed to delete using sql "' + str(del_sql) + '": ' + str(ex))
                 pass
@@ -174,7 +174,7 @@ class TextSimilarityCache:
                 match_phrase = {self.KEY_ID: key},
                 tablename = self.db_params.db_table,
             )
-            self.logger.info(
+            self.logger.debug(
                 'Fetch from cache key "' + str(key) + '": ' + str(res)
             )
             if len(res) == 1:
@@ -206,7 +206,7 @@ class TextSimilarityCache:
                     tablename = self.db_params.db_table,
                 )
                 if len(res) > 0:
-                    self.logger.info(
+                    self.logger.debug(
                         'Found exact match in cache "' + str(self.db_params.db_type) + '" for key "' + str(key)
                         + '": ' + str(res)
                     )
@@ -217,7 +217,7 @@ class TextSimilarityCache:
                 # First we try to look for exact match in proven cache
                 if key in self.cache_dict.keys():
                     self.cache_dict[key][self.KEY_REPEAT_COUNT] += 1
-                    self.logger.info(
+                    self.logger.debug(
                         'Found exact match in cache "' + str(key) + '": ' + str(self.cache_dict[key])
                         + ' Text repeat count now ' + str(self.cache_dict[key][self.KEY_REPEAT_COUNT])
                         + ' "' + str(key) + '"'
@@ -235,13 +235,13 @@ class TextSimilarityCache:
                         model_params = self.textdiff_model_prms,
                         top_k = 5,
                     )
-                    # self.logger.info('Similarity search for "' + str(key) + '", top distances ' + str(
+                    # self.logger.debug('Similarity search for "' + str(key) + '", top distances ' + str(
                     #     top_distances) + ', object ' + str(object))
                     # raise Exception('asdf')
                     if top_keys:
                         if top_distances[0] <= difference_threshold:
                             key_similar = top_keys[0]
-                            self.logger.info(
+                            self.logger.debug(
                                 'Found via similarity search for "' + str(key) + '", a similar key "' + str(key_similar)
                                 + '" distance ' + str(top_distances[0])
                             )
@@ -298,7 +298,7 @@ class TextSimilarityCache:
             is_cache_updated = False
 
             if len(self.cache_dict) >= self.cache_size:
-                self.logger.info(
+                self.logger.debug(
                     'Cache full at length ' + str(len(self.cache_dict)) + ' >= ' + str(self.cache_size)
                     + ', clear proportion ' + str(self.rm_prop_when_full) + '.'
                 )
@@ -311,11 +311,11 @@ class TextSimilarityCache:
                     # remove all with no hits first
                     for k, v in cache_tmp.items():
                         if v[self.KEY_REPEAT_COUNT] > 0:
-                            self.logger.info('Keep key "' + str(k) + '": ' + str(v))
+                            self.logger.debug('Keep key "' + str(k) + '": ' + str(v))
                             self.cache_dict[k] = v
                         else:
-                            self.logger.info('Discard key "' + str(k) + '": ' + str(v))
-                    self.logger.info(
+                            self.logger.debug('Discard key "' + str(k) + '": ' + str(v))
+                    self.logger.debug(
                         'Successfully cleanup up cache keeping only those with hits from length ' + str(len(cache_tmp))
                         + ', remaining items ' + str(len(self.cache_dict))
                     )
@@ -327,7 +327,7 @@ class TextSimilarityCache:
                     count_thr = len(self.cache_dict) - count_desired
                     # Keep only latest added ones
                     self.cache_dict = {k:v for i,(k,v) in enumerate(self.cache_dict.items()) if i >= count_thr}
-                    self.logger.warning(
+                    self.logger.debug(
                         'Further clear hit cache to new size ' + str(len(self.cache_dict)) + ', count thr ' + str(count_thr)
                         + ', max cache size ' + str(self.cache_size)
                     )
@@ -372,7 +372,7 @@ class TextSimilarityCache:
             )
             for key in self.cache_dict.keys()
         ]
-        self.logger.info('Successfully updated chardiff model')
+        self.logger.debug('Successfully updated chardiff model')
         return
 
     def search_similar_object(
