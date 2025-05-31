@@ -1,6 +1,6 @@
 [project]
 name = "fitxf"
-version = "1.2.3"
+version = "1.2.4"
 # license = { text = 'MIT' }
 authors = [
   { name="HH" },
