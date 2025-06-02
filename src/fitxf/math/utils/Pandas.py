@@ -208,6 +208,9 @@ class PandasUnitTest:
             {'shop': 'A', 'prd': 'butter', 'qnty': 30,  'qlty': 0.7},
             {'shop': 'A', 'prd': 'butter', 'qnty': 50,  'qlty': 0.6},
         ])
+        exp_quantity_sum = [400, 120, 90]
+        exp_quality_median = [0.8, 0.7, 0.4]
+        exp_quality_mean = [0.76666667, 0.66666667, 0.36666667]
         exp_quality_weighted = [0.75, 0.65833333, 0.34444444]
         exp_quantity_weigted = [152.0,  41.66666667, 32.22222222]
 
@@ -228,8 +231,11 @@ class PandasUnitTest:
             'shop', 'prd', 'qnty_sum', 'qlty_sum', 'qlty_mean', 'qlty_median',
             'qnty_weighted', 'qlty_weighted',
         ]
-        assert list(df_agg['qnty_sum']) == [400, 120, 90]
-        assert list(df_agg['qlty_median']) == [0.8, 0.7, 0.4]
+        assert list(df_agg['qnty_sum']) == exp_quantity_sum
+        assert np.sum((np.array(df_agg['qlty_median']) - np.array(exp_quality_median))**2) < 0.0000000001, \
+            'Got quality median ' + str(list(df_agg['qlty_median'])) + ' not ' + str(exp_quality_median)
+        assert np.sum((np.array(df_agg['qlty_mean']) - np.array(exp_quality_mean))**2) < 0.0000000001, \
+            'Got quality mean ' + str(list(df_agg['qlty_mean'])) + ' not ' + str(exp_quality_mean)
         assert np.sum((np.array(df_agg['qlty_weighted']) - np.array(exp_quality_weighted))**2) < 0.0000000001, \
             'Got quality weighted ' + str(list(df_agg['qlty_weighted'])) + ' not ' + str(exp_quality_weighted)
         assert np.sum((np.array(df_agg['qnty_weighted']) - np.array(exp_quantity_weigted))**2) < 0.0000000001, \
