@@ -43,10 +43,10 @@ class Base64:
 
     def is_base_64_string(
             self,
-            s: object,
+            s: str,
     ):
         try:
-            self.decode(s=str(s))
+            self.decode(s=s)
             return True
         except Exception as ex:
             return False
