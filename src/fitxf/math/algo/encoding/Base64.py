@@ -15,7 +15,7 @@ class Base64:
 
     def __init__(
             self,
-            text_encoding = 'utf-8',
+            text_encoding: str = 'utf-8',
             logger = None,
     ):
         self.text_encoding = text_encoding
@@ -41,23 +41,15 @@ class Base64:
         assert type(d_bytes) is bytes
         return d_bytes
 
-    #
-    # Note: If a string consists only of base64 characters [a-zA-Z0-9+/=], and have length
-    # 0 (mod 3) then it will be wrongly recognized as a base64 string.
-    #
     def is_base_64_string(
             self,
-            s,
+            s: object,
     ):
-        s = str(s)
-        zero_mod3 = (len(s) % 3 == 0)
-        is_b64_charset = True
-        for char in s:
-            if char not in self.B64_ALLOWED_CHARSET:
-                is_b64_charset = False
-                break
-
-        return zero_mod3 & is_b64_charset
+        try:
+            self.decode(s=str(s))
+            return True
+        except Exception as ex:
+            return False
 
     def encode_numpy_array_to_base64_string_multidim(
             self,
