@@ -141,9 +141,13 @@ if __name__ == '__main__':
         '칠리 페퍼', '와사비', '머스타드',
         '케이크', '도넛', '아이스크림',
     ]
-    labels = ['hot', 'hot', 'hot', 'sweet', 'sweet', 'sweet']
+    labels = [
+        'hot', 'hot', 'hot', 'sweet', 'sweet', 'sweet',
+    ]
+    embeddings = lm.encode(content_list=text_list, return_tensors='np')
+    print('Embeddings size ' + str(embeddings.shape))
     lm.visualize_embedding(
-        encoding_np = lm.encode(content_list=text_list, return_tensors='np'),
+        encoding_np = embeddings,
         labels_list = labels,
     )
 
