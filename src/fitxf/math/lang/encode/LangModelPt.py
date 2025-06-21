@@ -144,12 +144,20 @@ if __name__ == '__main__':
     labels = [
         'hot', 'hot', 'hot', 'sweet', 'sweet', 'sweet',
     ]
-    embeddings = lm.encode(content_list=text_list, return_tensors='np')
-    print('Embeddings size ' + str(embeddings.shape))
+    encoding_np = lm.encode(content_list=text_list, return_tensors='np')
+    print('Embeddings size ' + str(encoding_np.shape))
+
+    from fitxf import TensorUtils
+    tu = TensorUtils(logger=lgr)
+    a, b = tu.dot_sim(x=encoding_np, ref=encoding_np)
+    print(b.shape, b)
+    for i, row in enumerate(a):
+        print(i, [(labels[val], text_list[val], b[i, j]) for j, val in enumerate(row) if j<3])
+
     lm.visualize_embedding(
-        encoding_np = embeddings,
+        encoding_np = encoding_np,
         labels_list = labels,
     )
 
-    print('rps', lm.speed_test(sentences=text_list, min_rounds=200))
+    # print('rps', lm.speed_test(sentences=text_list, min_rounds=200))
     exit(0)
