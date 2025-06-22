@@ -12,11 +12,13 @@ class FtEmbeddingDemo:
             self,
             model_name: str = 'sentence-transformers/all-MiniLM-L6-v2',
             dataset_name: str = 'imdb',
+            max_sentence_tokens: int = 128,
             logger: Logging | None = None,
     ):
         self.logger = logger if logger is not None else logging.getLogger()
         self.model_name = model_name
         self.dataset_name = dataset_name
+        self.max_sentence_tokens = max_sentence_tokens
 
         self.is_cuda_avail = torch.cuda.is_available()
         self.logger.info(f"CUDA Available: {torch.cuda.is_available()}")
@@ -48,6 +50,10 @@ class FtEmbeddingDemo:
         # Load your dataset (replace with your specific dataset)
         self.logger.info('Loading dataset "' + str(self.dataset_name) + '"...')
         self.dataset = load_dataset(self.dataset_name)
+        self.logger.info(
+            'Dataset keys: ' + str(self.dataset.keys()) + ', train length ' + str(len(self.dataset["train"]))
+            + ', test length ' + str(len(self.dataset["test"])) + ', type "' + str(type(self.dataset["train"])) + '"'
+        )
         self.logger.info(self.dataset["train"][0])  # Inspect the data structure
 
         self.logger.info('Preprocessing dataset "' + str(self.dataset_name) + '"...')
@@ -57,13 +63,13 @@ class FtEmbeddingDemo:
 
     def preprocess(
             self,
-            example,
+            x,
     ):
         return self.tokenizer(
-            example["text"],
+            x["text"],
             truncation = True,
             padding = "max_length",
-            max_length = 128,
+            max_length = self.max_sentence_tokens,
         )
 
 
