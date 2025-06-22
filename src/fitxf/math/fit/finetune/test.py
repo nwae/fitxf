@@ -1,5 +1,9 @@
 import logging
+import datasets.arrow_dataset
 import torch
+from torch.utils.data import DataLoader
+from sentence_transformers import losses
+from sentence_transformers import InputExample
 from transformers import AutoTokenizer, AutoModel
 from datasets import load_dataset
 from fitxf.utils import Env, Logging
@@ -59,6 +63,10 @@ class FtEmbeddingDemo:
         self.logger.info('Preprocessing dataset "' + str(self.dataset_name) + '"...')
         self.tokenized_data = self.dataset.map(self.preprocess, batched=True)
         self.logger.info(self.tokenized_data["train"][0])  # Verify the tokenized output
+
+        self.logger.info('Creating +/- pairs...')
+        data_pairs = self.create_pairs(data=self.tokenized_data["train"])
+        self.logger.info(f"Number of pairs: {len(data_pairs)}")
         return
 
     def preprocess(
@@ -71,6 +79,43 @@ class FtEmbeddingDemo:
             padding = "max_length",
             max_length = self.max_sentence_tokens,
         )
+
+    # Define a function to create pairs
+    def create_train_examples(
+            self,
+            data: datasets.arrow_dataset.Dataset = None,
+    ) -> list:
+        # positive_pairs = [(x['text'], x['similar_text']) for x in data]
+        # negative_pairs = [(x['text'], x['unrelated_text']) for x in data]
+        # return positive_pairs + negative_pairs
+
+        # Define positive and negative pairs
+        train_examples = [
+            InputExample(texts=["Apple", "Orange"], label=0.9),
+            InputExample(texts=["Apple", "Sun"], label=0.1)
+        ]
+        print(f"Prepared {len(train_examples)} training examples.")
+        return train_examples
+
+    def fine_tune(
+            self,
+            epochs: int = 100,
+            warmup_steps: int = 100,
+    ):
+        train_examples = self.create_train_examples()
+        # Create a DataLoader for the training examples
+        train_dataloader = DataLoader(train_examples, shuffle=True, batch_size=16)
+
+        # Define the loss function
+        train_loss = losses.CosineSimilarityLoss(self.model)
+
+        # Fine-tune the model
+        self.model.fit(
+            train_objectives = [(train_dataloader, train_loss)],
+            epochs = epochs,
+            warmup_steps = warmup_steps,
+        )
+        return
 
 
 if __name__ == '__main__':
