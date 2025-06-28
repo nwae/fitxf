@@ -8,7 +8,7 @@ class DatasetUtil:
 
     def __init__(
             self,
-            cache_dir: str,
+            cache_dir: str | None = None,
             logger: Logging | None = None,
     ):
         self.cache_dir = cache_dir
@@ -42,16 +42,25 @@ class DatasetUtil:
     def get_data(
             self,
             dataset_key: str,
-            return_type: str = 'dataframe',
+            # <=0 means select all
+            select_range: int = 0,
+            # allowed values, "", "pandas
+            return_type: str = "",
     ) -> Dataset | pd.DataFrame:
         assert type(self.dataset) in [DatasetDict]
-        data = self.dataset[dataset_key]
-        df = data.to_pandas()
+        if select_range > 0:
+            data = self.dataset[dataset_key].select(range(0, select_range))
+        else:
+            data = self.dataset[dataset_key]
+
         self.logger.info(
             'Data type "' + str(type(data)) + ' for dataset key "' + str(dataset_key) + '", length ' + str(len(data))
-            + ', dataframe: ' + str(df)
         )
-        if return_type == 'dataframe':
+        if return_type == 'pandas':
+            df = data.to_pandas()
+            self.logger.info(
+                'Converted to pandas dataframe: ' + str(df)
+            )
             return df
         else:
             return data
@@ -69,5 +78,9 @@ if __name__ == '__main__':
         dataset_path = 'sentence-transformers/all-nli',
         dataset_name = 'triplet',
     )
-    ds.get_data(dataset_key="train")
+    ds.get_data(
+        dataset_key = "train",
+        select_range = 2,
+        return_type = 'pandas',
+    )
     exit(0)

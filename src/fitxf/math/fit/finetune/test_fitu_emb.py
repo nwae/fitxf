@@ -1,6 +1,6 @@
 import logging
 import torch
-from datasets import load_dataset
+from fitxf.math.data.Dataset import DatasetUtil
 from fitxf.utils import Logging, Env
 
 # See https://sbert.net/docs/sentence_transformer/training_overview.html
@@ -8,10 +8,11 @@ from fitxf.utils import Logging, Env
 lgr = Logging.get_default_logger(log_level=logging.INFO, propagate=False)
 er = Env(logger=lgr)
 Env.set_env_vars_from_file(env_filepath=er.REPO_DIR + '/.env.fitxf.math.ut')
+dataset_utils = DatasetUtil(logger=lgr)
 
 model_name = 'intfloat/multilingual-e5-small'
 model_path = er.MODELS_PRETRAINED_DIR + '/' + model_name
-dataset_name = 'sentence-transformers/all-nli'
+dataset_path, dataset_name = 'sentence-transformers/all-nli', 'triplet'
 
 from sentence_transformers import (
     SentenceTransformer,
@@ -40,12 +41,13 @@ model = SentenceTransformer(
 # [lgr.info('Model parameter #' + str(i) + ': ' + str(p)) for i, p in enumerate(model.parameters())]
 # raise Exception('asdf')
 
-lgr.info('Start downloading dataset "' + str(dataset_name) + '"...')
+lgr.info('Start downloading dataset "' + str(dataset_path) + '"...')
 # 3. Load a dataset to finetune on
-dataset = load_dataset(dataset_name, "triplet")
-train_dataset = dataset["train"].select(range(100_000))
-eval_dataset = dataset["dev"]
-test_dataset = dataset["test"]
+dataset_utils.download(dataset_path=dataset_path, dataset_name=dataset_name)
+
+train_dataset = dataset_utils.get_data(dataset_key="train", select_range=1000)
+eval_dataset = dataset_utils.get_data(dataset_key="dev")
+test_dataset = dataset_utils.get_data(dataset_key="test")
 lgr.info('Test dataset: ' + str(test_dataset))
 lgr.info('Test dataset 0-10: ' + str(test_dataset[0:10]))
 lgr.info('Test dataset type "' + str(type(test_dataset)) + '"')
