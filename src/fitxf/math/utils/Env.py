@@ -72,6 +72,7 @@ class Env:
         self.logger.info('Set to different environment, REPO_DIR "' + str(self.REPO_DIR))
 
         self.MODELS_PRETRAINED_DIR = self.REPO_DIR + '/_models/' + self.model_version
+        self.DATASET_DIR = self.REPO_DIR + '/_datasets/' + self.model_version
         self.CONFIG_DIR = self.REPO_DIR + r'/config'
 
         # ----- NLP DATASETS -----
