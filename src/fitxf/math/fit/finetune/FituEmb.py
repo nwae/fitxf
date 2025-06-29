@@ -156,7 +156,8 @@ if __name__ == '__main__':
     fitu.fine_tune(
         dataset_path = 'sentence-transformers/all-nli',
         dataset_name = 'triplet',
-        train_dataset_select_range = 1000,
+        train_dataset_select_range = 100,
         epochs = 1,
+        output_dir = 'tmp/finetune',
     )
     exit(0)
