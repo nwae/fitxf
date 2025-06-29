@@ -52,6 +52,7 @@ class FituEmb:
             dataset_path: str,
             # e.g. 'triplet'
             dataset_name: str,
+            train_dataset_select_range: int = 0,
             Loss_func: torch.nn.Module = MultipleNegativesRankingLoss,
             epochs: int = 100,
             batch_size: int = 16,
@@ -68,7 +69,7 @@ class FituEmb:
         # 3. Load a dataset to finetune on
         self.dataset_utils.download(dataset_path=dataset_path, dataset_name=dataset_name)
 
-        train_dataset = self.dataset_utils.get_data(dataset_key="train", select_range=1000)
+        train_dataset = self.dataset_utils.get_data(dataset_key="train", select_range=train_dataset_select_range)
         eval_dataset = self.dataset_utils.get_data(dataset_key="dev")
         test_dataset = self.dataset_utils.get_data(dataset_key="test")
         self.logger.info('Test dataset: ' + str(test_dataset))
@@ -155,6 +156,7 @@ if __name__ == '__main__':
     fitu.fine_tune(
         dataset_path = 'sentence-transformers/all-nli',
         dataset_name = 'triplet',
+        train_dataset_select_range = 1000,
         epochs = 1,
     )
     exit(0)
