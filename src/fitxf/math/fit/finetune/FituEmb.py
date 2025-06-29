@@ -59,9 +59,9 @@ class FituEmb:
             learn_rate: float = 2e-5,
             # gradually ramp up to learn_rate during this first % of epoch
             warmup_ratio: float = 0.1,
-            # Set to False if you get an error that your GPU can't run on FP16
+            # GPU can run on FP16
             gpu_fp16: bool = False,
-            # Set to True if you have a GPU that supports BF16
+            # GPU supports BF16
             gpu_bf16: bool = False,
             output_dir: str | None = None,
     ):
@@ -88,16 +88,14 @@ class FituEmb:
 
         # Optional training arguments
         train_args = SentenceTransformerTrainingArguments(
-            # Required parameter:
             output_dir = output_dir,
-            # Optional training parameters:
             num_train_epochs = epochs,
             per_device_train_batch_size = batch_size,
             per_device_eval_batch_size = batch_size,
             learning_rate = learn_rate,
             warmup_ratio = warmup_ratio,
-            fp16 = gpu_fp16,  # Set to False if you get an error that your GPU can't run on FP16
-            bf16 = gpu_bf16,  # Set to True if you have a GPU that supports BF16
+            fp16 = gpu_fp16,
+            bf16 = gpu_bf16,
             batch_sampler = BatchSamplers.NO_DUPLICATES,
             # MultipleNegativesRankingLoss benefits from no duplicate samples in a batch
             # Optional tracking/debugging parameters:
