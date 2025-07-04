@@ -14,6 +14,7 @@ class DatasetUtil:
         self.cache_dir = cache_dir
         self.logger = logger if logger is not None else logging.getLogger()
         self.dataset = None
+        self.dataset_path, self.dataset_name = None, None
         return
 
     def download(
@@ -23,17 +24,22 @@ class DatasetUtil:
             # e.g. triplet
             dataset_name: str,
     ):
-        self.dataset = load_dataset(
-            path = dataset_path,
-            name = dataset_name,
-            # data_dir = self.cache_dir,
-        )
+        if len(dataset_name) > 0:
+            self.dataset = load_dataset(
+                path = dataset_path,
+                name = dataset_name,
+                # data_dir = self.cache_dir,
+            )
+        else:
+            self.dataset = load_dataset(path=dataset_path)
         self.logger.info(
             'Dataset path "' + str(dataset_path) + '", name "' + str(dataset_name)
             + '" downloaded, dataset type "' + str(type(self.dataset)) + '", keys ' + str(self.get_dataset_keys())
             + ', length ' + str(len(self.dataset)) + ', sample from key "' + str(self.get_dataset_keys()[0])
             + '": ' + str(self.dataset[self.get_dataset_keys()[0]][0:3])
         )
+        self.dataset_path = dataset_path
+        self.dataset_name = dataset_name
         return
 
     def get_dataset_keys(self):
@@ -46,8 +52,16 @@ class DatasetUtil:
             select_range: int = 0,
             # allowed values, "", "pandas
             return_type: str = "",
-    ) -> Dataset | pd.DataFrame:
+    ) -> Dataset | pd.DataFrame | None:
         assert type(self.dataset) in [DatasetDict]
+
+        if dataset_key not in self.dataset.keys():
+            self.logger.warning(
+                'Dataset key "' + str(dataset_key) + '" not found in dataset "' + str(self.dataset_path)
+                + '-' + str(self.dataset_name) + '"'
+            )
+            return None
+
         if select_range > 0:
             data = self.dataset[dataset_key].select(range(0, select_range))
         else:

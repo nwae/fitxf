@@ -29,10 +29,6 @@ class FituEmb:
         self.device = 'cuda' if torch.cuda.is_available() else self.device_if_no_cuda
         self.logger.info('Using device "' + str(self.device) + '"')
 
-        self.dataset_utils = DatasetUtil(
-            logger = self.logger,
-        )
-
         # 1. Load a model to finetune with 2. (Optional) model card data
         self.model = SentenceTransformer(
             device = self.device,
@@ -48,12 +44,10 @@ class FituEmb:
 
     def fine_tune(
             self,
-            # e.g. 'sentence-transformers/all-nli'
-            dataset_path: str,
-            # e.g. 'triplet'
-            dataset_name: str,
+            # e.g. [('sentence-transformers/all-nli', 'triplet'), ('sentence-transformers/natural-questions', '')]
+            dataset_paths_names: list[tuple],
+            Loss_funcs: list,
             train_dataset_select_range: int = 0,
-            Loss_func: torch.nn.Module = MultipleNegativesRankingLoss,
             epochs: int = 100,
             batch_size: int = 16,
             learn_rate: float = 2e-5,
@@ -65,25 +59,30 @@ class FituEmb:
             gpu_bf16: bool = False,
             output_dir: str | None = None,
     ):
-        self.logger.info('Start downloading dataset "' + str(dataset_path) + '"...')
-        # 3. Load a dataset to finetune on
-        self.dataset_utils.download(dataset_path=dataset_path, dataset_name=dataset_name)
+        assert len(dataset_paths_names) == len(Loss_funcs)
 
-        train_dataset = self.dataset_utils.get_data(dataset_key="train", select_range=train_dataset_select_range)
-        eval_dataset = self.dataset_utils.get_data(dataset_key="dev")
-        test_dataset = self.dataset_utils.get_data(dataset_key="test")
-        self.logger.info('Test dataset: ' + str(test_dataset))
-        self.logger.info('Test dataset 0-10: ' + str(test_dataset[0:10]))
-        self.logger.info('Test dataset type "' + str(type(test_dataset)) + '"')
-        self.logger.info('Test dataset length "' + str(len(test_dataset)) + '"')
-        # raise Exception('asdf')
+        train_ds, eval_ds, test_ds, loss_funcs = {}, {}, {}, {}
+        for i, t in enumerate(dataset_paths_names):
+            dpath, dname = t
+            dkey = dpath + '-' + dname if dname != '' else dpath
 
-        self.logger.info('Using loss function ' + str(Loss_func))
-        loss = Loss_func(self.model)
+            du = DatasetUtil(logger=self.logger)
+            self.logger.info('#' + str(i) + ' ' + str(t) + ' Start downloading dataset...')
+            # 3. Load a dataset to finetune on
+            du.download(dataset_path=dpath, dataset_name=dname)
+
+            train_ds[dkey] = du.get_data(dataset_key="train", select_range=train_dataset_select_range)
+            eval_ds[dkey] = du.get_data(dataset_key="dev")
+            test_ds[dkey] = du.get_data(dataset_key="test")
+            loss_funcs[dkey] = Loss_funcs[i]
+
+            self.logger.info('#' + str(i) + ' ' + str(t) + ' using loss function ' + str(loss_funcs[dkey]))
+            self.logger.info('#' + str(i) + ' ' + str(t) + ' train dataset 0-10: ' + str(train_ds[dkey][0:10]))
+            self.logger.info('#' + str(i) + ' ' + str(t) + ' train dataset type "' + str(type(train_ds[dkey])) + '"')
+            self.logger.info('#' + str(i) + ' ' + str(t) + ' train dataset length "' + str(len(train_ds[dkey])) + '"')
 
         run_name = re.sub(pattern=".*/", repl="", string=self.model_name_or_path) \
-                   + "-" + re.sub(pattern=".*/", repl="", string=dataset_path) \
-                   + "-" + dataset_name
+                   + "---" + '___'.join(['-'.join(t) for t in dataset_paths_names])
         self.logger.info('Using run name "' + str(run_name) + '"')
 
         # Optional training arguments
@@ -109,31 +108,43 @@ class FituEmb:
             run_name = run_name,
         )
 
-        dev_evaluator = TripletEvaluator(
-            anchors = eval_dataset["anchor"],
-            positives = eval_dataset["positive"],
-            negatives = eval_dataset["negative"],
-            name = "all-nli-dev",
-        )
-        dev_evaluator(self.model)
+        for i, t in enumerate(dataset_paths_names):
+            dpath, dname = t
+            dkey = dpath + '-' + dname if dname != '' else dpath
+            self.logger.info('#' + str(i) + ' ' + str(t) + ' start triplet evaluation...')
+            if eval_ds[dkey] is not None:
+                dev_evaluator = TripletEvaluator(
+                    anchors = eval_ds[dkey]["anchor"],
+                    positives = eval_ds[dkey]["positive"],
+                    negatives = eval_ds[dkey]["negative"],
+                    name = dkey + "-dev",
+                )
+                dev_evaluator(self.model)
+            else:
+                self.logger.warning('Evaluation dataset for dataset key "' + str(dkey) + '" is not available')
 
         trainer = SentenceTransformerTrainer(
             model = self.model,
             args = train_args,
-            train_dataset = train_dataset,
-            eval_dataset = eval_dataset,
-            loss = loss,
-            evaluator = dev_evaluator,
+            train_dataset = train_ds,
+            eval_dataset = eval_ds,
+            loss = loss_funcs,
+            # evaluator = dev_evaluator,
         )
         trainer.train()
 
-        test_evaluator = TripletEvaluator(
-            anchors = test_dataset["anchor"],
-            positives = test_dataset["positive"],
-            negatives = test_dataset["negative"],
-            name = "all-nli-test",
-        )
-        test_evaluator(self.model)
+        for i, t in enumerate(dataset_paths_names):
+            dpath, dname = t
+            dkey = dpath + '-' + dname if dname != '' else dpath
+            self.logger.info('#' + str(i) + ' ' + str(t) + ' start triplet evaluation...')
+            if eval_ds[dkey] is not None:
+                test_evaluator = TripletEvaluator(
+                    anchors = test_ds[dkey]["anchor"],
+                    positives = test_ds[dkey]["positive"],
+                    negatives = test_ds[dkey]["negative"],
+                    name = dkey + "-test",
+                )
+                test_evaluator(self.model)
 
         if output_dir is not None:
             self.model.save_pretrained(output_dir + "/final")
@@ -151,10 +162,17 @@ if __name__ == '__main__':
         device_if_no_cuda = 'mps',
         logger = lgr,
     )
+    mnrl_loss = MultipleNegativesRankingLoss(fitu.model)
     fitu.fine_tune(
-        dataset_path = 'sentence-transformers/all-nli',
-        dataset_name = 'triplet',
-        train_dataset_select_range = 100,
+        dataset_paths_names = [
+            ('sentence-transformers/all-nli', 'triplet'),
+            # ('sentence-transformers/natural-questions', ''),
+        ],
+        Loss_funcs = [
+            mnrl_loss,
+            # mnrl_loss,
+        ],
+        train_dataset_select_range = 20,
         epochs = 1,
         output_dir = 'tmp/finetune',
     )
