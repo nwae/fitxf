@@ -45,6 +45,12 @@ class DatasetUtil:
     def get_dataset_keys(self):
         return list(self.dataset.keys())
 
+    def is_dataset_exist(
+            self,
+            dataset_key: str,
+    ):
+        return dataset_key in self.dataset.keys()
+
     def get_data(
             self,
             dataset_key: str,
@@ -55,7 +61,7 @@ class DatasetUtil:
     ) -> Dataset | pd.DataFrame | None:
         assert type(self.dataset) in [DatasetDict]
 
-        if dataset_key not in self.dataset.keys():
+        if not self.is_dataset_exist(dataset_key=dataset_key):
             self.logger.warning(
                 'Dataset key "' + str(dataset_key) + '" not found in dataset "' + str(self.dataset_path)
                 + '-' + str(self.dataset_name) + '"'

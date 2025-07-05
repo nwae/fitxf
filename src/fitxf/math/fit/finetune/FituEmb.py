@@ -5,7 +5,6 @@ from sentence_transformers import (
     SentenceTransformer,
     SentenceTransformerTrainer,
     SentenceTransformerTrainingArguments,
-    # SentenceTransformerModelCardData,
 )
 from sentence_transformers.losses import MultipleNegativesRankingLoss
 from sentence_transformers.training_args import BatchSamplers
@@ -71,10 +70,13 @@ class FituEmb:
             # 3. Load a dataset to finetune on
             du.download(dataset_path=dpath, dataset_name=dname)
 
-            train_ds[dkey] = du.get_data(dataset_key="train", select_range=train_dataset_select_range)
-            eval_ds[dkey] = du.get_data(dataset_key="dev")
-            test_ds[dkey] = du.get_data(dataset_key="test")
             loss_funcs[dkey] = Loss_funcs[i]
+            train_ds[dkey] = du.get_data(dataset_key="train", select_range=train_dataset_select_range)
+            # Eval & test datasets may not exist
+            if du.is_dataset_exist(dataset_key='dev'):
+                eval_ds[dkey] = du.get_data(dataset_key="dev")
+            if du.is_dataset_exist(dataset_key='test'):
+                test_ds[dkey] = du.get_data(dataset_key="test")
 
             self.logger.info('#' + str(i) + ' ' + str(t) + ' using loss function ' + str(loss_funcs[dkey]))
             self.logger.info('#' + str(i) + ' ' + str(t) + ' train dataset 0-10: ' + str(train_ds[dkey][0:10]))
@@ -112,7 +114,7 @@ class FituEmb:
             dpath, dname = t
             dkey = dpath + '-' + dname if dname != '' else dpath
             self.logger.info('#' + str(i) + ' ' + str(t) + ' start triplet evaluation...')
-            if eval_ds[dkey] is not None:
+            if dkey in eval_ds.keys():
                 dev_evaluator = TripletEvaluator(
                     anchors = eval_ds[dkey]["anchor"],
                     positives = eval_ds[dkey]["positive"],
@@ -137,7 +139,7 @@ class FituEmb:
             dpath, dname = t
             dkey = dpath + '-' + dname if dname != '' else dpath
             self.logger.info('#' + str(i) + ' ' + str(t) + ' start triplet evaluation...')
-            if eval_ds[dkey] is not None:
+            if dkey in test_ds.keys():
                 test_evaluator = TripletEvaluator(
                     anchors = test_ds[dkey]["anchor"],
                     positives = test_ds[dkey]["positive"],
@@ -166,11 +168,11 @@ if __name__ == '__main__':
     fitu.fine_tune(
         dataset_paths_names = [
             ('sentence-transformers/all-nli', 'triplet'),
-            # ('sentence-transformers/natural-questions', ''),
+            ('sentence-transformers/natural-questions', ''),
         ],
         Loss_funcs = [
             mnrl_loss,
-            # mnrl_loss,
+            mnrl_loss,
         ],
         train_dataset_select_range = 20,
         epochs = 1,
