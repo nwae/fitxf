@@ -109,7 +109,8 @@ if __name__ == '__main__':
     )
     ds.download(
         dataset_path = 'sentence-transformers/all-nli',
-        dataset_name = 'triplet',
+        # dataset_name = 'triplet',
+        dataset_name = 'pair-class'
     )
     df = ds.get_data(
         dataset_key = "train",
