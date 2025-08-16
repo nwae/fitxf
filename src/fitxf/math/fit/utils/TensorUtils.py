@@ -2,6 +2,7 @@ import numpy as np
 import torch
 import warnings
 import logging
+from fitxf.utils import Logging
 
 
 class TensorUtils:
@@ -116,8 +117,42 @@ class TensorUtils:
         return (torch.from_numpy(result_ordered.copy()), torch.from_numpy(m_dist_ordered.copy())) \
             if return_tensors == 'pt' else (result_ordered, m_dist_ordered)
 
+    def hamming_distance_int(
+            self,
+            n1: int,
+            n2: int,
+            method: str | None = None,
+    ) -> int:
+        xor_result = n1 ^ n2
+        self.logger.debug('xor result between ' + str(bin(n1)) + ' & ' + str(bin(n2)) + ' = ' + str(bin(xor_result)))
+        # Count set bits (ones) in the XOR result
+        count = 0
+        while xor_result > 0:
+            xor_result &= (xor_result - 1)  # Brian Kernighan's algorithm
+            count += 1
+        return count
+
+    def convert_binary_encoding_to_int_vect(self, x: np.ndarray) -> np.ndarray:
+        assert x.ndim == 1
+        # this gives us [128, 64, 32, 16,  8,  4,  2,  1]
+        # ref = np.array([2], dtype=np.uint8) ** np.arange(8)[::-1]
+        ref = np.array([128, 64, 32, 16,  8,  4,  2,  1])
+        v = np.vstack([1*(v&ref > 0) for v in x]).reshape(len(x)*len(ref))
+        return v.astype(np.int8)
+
+    def convert_binary_encoding_to_int(self, x: np.ndarray) -> np.ndarray:
+        assert x.ndim in [1, 2]
+        if x.ndim == 1:
+            return self.convert_binary_encoding_to_int_vect(x=x)
+        else:
+            return np.array([self.convert_binary_encoding_to_int_vect(x=v) for v in x], dtype=np.int8)
+
 
 class TensorUtilsUnitTest:
+
+    def __init__(self, logger: logging.Logger = None):
+        self.logger = logger if logger is not None else logging.getLogger()
+        return
 
     def _helper_test_numpy_arrays(self, x1, x2):
         assert x1.shape == x2.shape
@@ -165,7 +200,7 @@ class TensorUtilsUnitTest:
         ])
         nm = m.normalize(v_np_3d)
         self._helper_test_numpy_arrays(x1=nm, x2=expected)
-        print('ALL TESTS PASSED OK (norm)')
+        self.logger.info('ALL TESTS PASSED OK (norm)')
         return
 
     def test_similarity_cosine_and_similarity_distance(self):
@@ -198,12 +233,54 @@ class TensorUtilsUnitTest:
         expected_m = np.array([[0.37416574,  6.44515322, 10.8415866], [0.73484692,  5.75673519, 15.06452787]])
         self._helper_test_numpy_arrays(x1=res, x2=expected_res)
         self._helper_test_numpy_arrays(x1=m, x2=expected_m)
-        print('ALL TESTS PASSED OK (similarity cosine & distance)')
+        self.logger.info('ALL TESTS PASSED OK (similarity cosine & distance)')
+        return
+
+    def test_hamming_distance(self):
+        tu = TensorUtils(logger=self.logger)
+        x_raw = np.array([0b10101010, 0b00001111])
+        x_arr = np.array([1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1])
+        y_raw = np.array([0b00111010, 0b01001100])
+        y_arr = np.array([0, 0, 1, 1, 1, 0, 1, 0, 0, 1, 0, 0, 1, 1, 0, 0])
+
+        x_01 = tu.convert_binary_encoding_to_int(x=x_raw)
+        assert x_01.dtype == np.int8
+        assert x_01.nbytes == 16
+        assert np.sum((x_01 - x_arr) ** 2) < 0.0000000001, 'Got x ' + str(x_01) + ' but expect ' + str(x_arr)
+        y_01 = tu.convert_binary_encoding_to_int(x=y_raw)
+        assert y_01.dtype == np.int8
+        assert y_01.nbytes == 16
+        assert np.sum((y_01 - y_arr) ** 2) < 0.0000000001, 'Got y ' + str(y_01) + ' but expect ' + str(y_arr)
+
+        x2d = np.array([[0b10101010, 0b00001111], [0b00111010, 0b01001100]])
+        x2d_arr = np.array([
+            [1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1], [0, 0, 1, 1, 1, 0, 1, 0, 0, 1, 0, 0, 1, 1, 0, 0]],
+        )
+        x2d_01 = tu.convert_binary_encoding_to_int(x=x2d)
+        assert np.sum((x2d_01 - x2d_arr) ** 2) < 0.0000000001, \
+            '2D test got x2d ' + str(x2d_01) + ' but expect ' + str(x2d_arr)
+
+        for dtyp in [np.uint8]:
+            x = x_raw.astype(dtyp)
+            y = y_raw.astype(dtyp)
+            exp_dists = [2, 3]
+            for i in range(len(x)):
+                d = tu.hamming_distance_int(n1=x[i], n2=y[i])
+                self.logger.info(
+                    'Test dtype ' + str(dtyp) + ' #' + str(i) + ' distance of ' + str(bin(x[i]))
+                    + ' & ' + str(bin(y[i])) + ' = ' + str(d)
+                )
+                assert d == exp_dists[i], \
+                    'Test dtype ' + str(dtyp) + ' #' + str(i) + ' between ' + str(bin(x[i])) + ' & ' + str(bin(y[i]))\
+                    + ' = ' + str(d) + ' but expected ' + str(exp_dists[i])
+        self.logger.info('Hamming TESTS PASSED')
         return
 
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.DEBUG)
-    TensorUtilsUnitTest().test_norm()
-    TensorUtilsUnitTest().test_similarity_cosine_and_similarity_distance()
+    lgr = Logging.get_default_logger(log_level=logging.INFO, propagate=False)
+    ut = TensorUtilsUnitTest(logger=lgr)
+    ut.test_norm()
+    ut.test_similarity_cosine_and_similarity_distance()
+    ut.test_hamming_distance()
     exit(0)
