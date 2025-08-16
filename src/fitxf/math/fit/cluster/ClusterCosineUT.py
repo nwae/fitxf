@@ -71,7 +71,7 @@ class ClusterCosineUnitTest:
         else:
             self.logger.info('Using precalculated embeddings, not calculating.')
             embeddings = np.array([
-                self.base64.decode_base64_string_to_numpy_array(s64=s, data_type=np.float64)
+                self.base64.decode_base64_string_to_numpy_array(s64=s, data_type_decode=np.float64)
                 for s in df['embedding'].tolist()
             ])
         self.logger.info('Embeddings shape ' + str(embeddings.shape) + ', type "' + str(type(embeddings)) + '"')

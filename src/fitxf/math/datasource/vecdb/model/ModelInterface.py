@@ -397,7 +397,7 @@ class ModelInterface:
             text_encoded = [
                 # 3 steps: Encode from base 64 string to base 64 bytes, then decode the base 64 to actual bytes,
                 # then finally convert to numpy from base 64 bytes
-                self.base64_encoder.decode_base64_string_to_numpy_array(s64=s64, data_type='float64')
+                self.base64_encoder.decode_base64_string_to_numpy_array(s64=s64, data_type_decode='float64')
                 for s64 in text_encoded
             ]
         if len(text_encoded) > 0:

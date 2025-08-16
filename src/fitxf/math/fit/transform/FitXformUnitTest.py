@@ -114,11 +114,11 @@ class FitXformUnitTest:
         except Exception as ex:
             self.logger.info('Failed to calculate embeddings: ' + str(ex) + ', using precalculated embeddings instead.')
             emb_train = np.array([
-                self.base64.decode_base64_string_to_numpy_array(s64=s, data_type=np.float64)
+                self.base64.decode_base64_string_to_numpy_array(s64=s, data_type_decode=np.float64)
                 for s in df_train['embedding'].tolist()
             ])
             emb_eval = np.array([
-                self.base64.decode_base64_string_to_numpy_array(s64=s, data_type=np.float64)
+                self.base64.decode_base64_string_to_numpy_array(s64=s, data_type_decode=np.float64)
                 for s in df_eval['embedding'].tolist()
             ])
             # Remove some points, and add additional points for fine-tuning

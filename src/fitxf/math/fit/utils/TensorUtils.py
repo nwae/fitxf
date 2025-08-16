@@ -154,6 +154,12 @@ class TensorUtilsUnitTest:
         self.logger = logger if logger is not None else logging.getLogger()
         return
 
+    def test(self):
+        self.test_norm()
+        self.test_similarity_cosine_and_similarity_distance()
+        self.test_hamming_distance()
+        return
+
     def _helper_test_numpy_arrays(self, x1, x2):
         assert x1.shape == x2.shape
         dif = np.sum((x1 - x2)**2)
@@ -280,7 +286,5 @@ class TensorUtilsUnitTest:
 if __name__ == '__main__':
     lgr = Logging.get_default_logger(log_level=logging.INFO, propagate=False)
     ut = TensorUtilsUnitTest(logger=lgr)
-    ut.test_norm()
-    ut.test_similarity_cosine_and_similarity_distance()
-    ut.test_hamming_distance()
+    ut.test()
     exit(0)

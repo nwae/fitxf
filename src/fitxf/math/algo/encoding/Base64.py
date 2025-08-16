@@ -64,12 +64,17 @@ class Base64:
     def decode_base64_string_to_numpy_array_multidim(
             self,
             string: str,
-            data_type = np.float64,
+            data_type_decode = np.float64,
+            data_type_encode = None,
     ) -> np.ndarray:
         data = json.loads(string)
         x_shape = data['shape']
         b64_str_flattenned = data['b64_str']
-        x_flattenned = self.decode_base64_string_to_numpy_array(s64=b64_str_flattenned, data_type=data_type)
+        x_flattenned = self.decode_base64_string_to_numpy_array(
+            s64 = b64_str_flattenned,
+            data_type_decode = data_type_decode,
+            data_type_encode = data_type_encode,
+        )
         return x_flattenned.reshape(x_shape)
 
     # Warning: Encoding numpy array to bytes will flatten it to 1-dimensional
@@ -91,36 +96,62 @@ class Base64:
 
     def decode_base64_string_to_numpy_array(
             self,
+            # we don't presume anything about this base64 string, it could be encoded with floatXX or intXX.
             s64: str,
-            data_type = np.float64,
             # if provided, will automatically discover dtype and ignore data_type above
-            float_vector_len: int = 0,
+            vector_len: int = 0,
+            # target data type to return to user, can be string also like 'float64', 'float32' or numpy dtype
+            data_type_decode = np.float32,
+            data_type_encode = None,
     ) -> np.ndarray:
+        allowed_dtypes = (
+            'int8', np.int8, 'int16', np.int16, 'int32', np.int32, 'int64', np.int64,
+            'float16', np.float16, 'float32', np.float32, 'float64', np.float64,
+        )
+        assert data_type_decode in allowed_dtypes, 'Invalid data type decode ' + str(data_type_decode)
         # Step 1: Convert base 64 string to base 64 bytes
         s64_b = s64.encode('utf-8')
         # Step 2: Convert base 64 bytes to actual bytes
         actual_bytes = b64decode(s64_b)
+
         # Step 3: Finally convert to numpy array from base 64 bytes
-        dtype_final = data_type
-        if float_vector_len > 0:
+
+        if data_type_encode in ('int8', np.int8, 'int16', np.int16, 'int32', np.int32, 'int64', np.int64):
+            map_count_bytes_to_dtype = {1: np.int8, 2: np.int16, 4: np.int32, 8: np.int64}
+        else:
+            map_count_bytes_to_dtype = {
+                1: np.int8,  # because there is no such float type with 1 byte
+                2: np.float16, 4: np.float32, 8: np.float64,
+            }
+
+        #
+        # If given target data type to convert to, we try to guess how many bytes per value
+        # in the encoding, and the data type used to encode.
+        #
+        if vector_len > 0:
             # Auto discover dtype
-            nbytes_per_flt = int( len(actual_bytes) / float_vector_len )
-            map_ = {2: np.float16, 4: np.float32, 8: np.float64}
-            assert nbytes_per_flt in map_.keys(), \
-                'Cannot auto discover float length, unusual nbytes per float ' + str(nbytes_per_flt)
-            if data_type != map_[nbytes_per_flt]:
-                dtype_final = map_[nbytes_per_flt]
-                self.logger.debug(
-                    'Ignore passed in data type ' + str(data_type) + ', auto discovered type ' + str(dtype_final)
-                )
-        vector = np.frombuffer(actual_bytes, dtype=dtype_final)
-        # return to user the desired data type requested, if auto discovered is different
-        if data_type != dtype_final:
-            self.logger.debug(
-                'Converting numpy vector back to requested data type ' + str(data_type) + ' from auto detected type '
-                + str(dtype_final)
+            nbytes_per_val = int( len(actual_bytes) / vector_len )
+            if nbytes_per_val in map_count_bytes_to_dtype.keys():
+                dtype_encode_detect = map_count_bytes_to_dtype[nbytes_per_val]
+            else:
+                raise Exception('Cannot auto discover float length, unusual nbytes per value ' + str(nbytes_per_val))
+        else:
+            dtype_encode_detect = data_type_decode
+            self.logger.warning(
+                'Vector length not provided, assuming data type base64 encoded is ' + str(dtype_encode_detect)
             )
-            return vector.astype(data_type)
+
+        vector = np.frombuffer(actual_bytes, dtype=dtype_encode_detect)
+
+        #
+        # return to user the desired data type requested, if auto discovered is different
+        #
+        if data_type_decode != dtype_encode_detect:
+            self.logger.debug(
+                'Converting numpy vector back to requested decode data type ' + str(data_type_decode)
+                + ' from auto detected type ' + str(dtype_encode_detect)
+            )
+            return vector.astype(data_type_decode)
         else:
             return vector
 
@@ -178,7 +209,10 @@ class Base64UnitTest():
 
             e_str = b64.encode_numpy_array_to_base64_string(x=x, data_type=x.dtype)
 
-            d_np = b64.decode_base64_string_to_numpy_array(s64=e_str, data_type=x.dtype)
+            d_np = b64.decode_base64_string_to_numpy_array(
+                s64 = e_str,
+                data_type_decode = x.dtype,
+            )
             self.logger.info(
                 'Test #' + str(i) + ' Original object <<' + str(x) + '>> encoded to <<' + str(e_str)
                 + '>>, decoded back as <<' + str(d_np) + '>>'
@@ -191,7 +225,9 @@ class Base64UnitTest():
             # Test auto discover data type given only vector length
             d_np_auto = b64.decode_base64_string_to_numpy_array(
                 # purposely give wrong data type
-                s64=e_str, data_type=np.float16, float_vector_len=len_flat,
+                s64 = e_str,
+                data_type_decode = np.float16,
+                vector_len = len_flat,
             )
             self.logger.info(
                 'Test #' + str(i) + ' for auto discover dtype. Original object <<' + str(x)
@@ -215,7 +251,7 @@ class Base64UnitTest():
         )
         for x, expected_b64_json in np_tests:
             e_str = b64.encode_numpy_array_to_base64_string_multidim(x=x, data_type=x.dtype)
-            d_np = b64.decode_base64_string_to_numpy_array_multidim(string=e_str, data_type=x.dtype)
+            d_np = b64.decode_base64_string_to_numpy_array_multidim(string=e_str, data_type_decode=x.dtype)
             self.logger.info(
                 'Original object <<' + str(x) + '>> encoded to <<' + str(e_str)
                 + '>>, decoded back as <<' + str(d_np) + '>>'
@@ -236,11 +272,22 @@ if __name__ == '__main__':
     s="""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"""
     b = Base64(logger=lgr)
     for dty in [np.float16, np.float32, np.float64]:
-        x = b.decode_base64_string_to_numpy_array(s64=s, data_type=dty, float_vector_len=384)
+        x = b.decode_base64_string_to_numpy_array(s64=s, data_type_decode=dty, vector_len=384)
         lgr.info(
             's64 len ' + str(len(s)) + ', shape ' + str(x.shape) + ', dtype ' + str(x.dtype)
             + ', n bytes ' + str(x.nbytes)
         )
         s2 = b.encode_numpy_array_to_base64_string(x=x, data_type=np.float16)
         lgr.info('   s64 len for np.float16 ' + str(len(s2)))
+
+    #
+    # Demo encode in float, then decode in int8 - but correctly
+    #
+    x = np.array([0.111, 3.22, -9.566, -0.001])
+    s = b.encode_numpy_array_to_base64_string(x=x, data_type=np.float16)
+    lgr.info('Encoded to: ' + str(s))
+    d = b.decode_base64_string_to_numpy_array(
+        s64=s, data_type_decode=np.int8, vector_len=len(x),
+    )
+    lgr.info('Decoded: ' + str(d))
     exit(0)
