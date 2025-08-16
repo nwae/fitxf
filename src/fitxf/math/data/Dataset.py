@@ -9,7 +9,7 @@ class DatasetUtil:
     def __init__(
             self,
             cache_dir: str | None = None,
-            logger: Logging | None = None,
+            logger: logging.Logger | None = None,
     ):
         self.cache_dir = cache_dir
         self.logger = logger if logger is not None else logging.getLogger()
@@ -53,6 +53,16 @@ class DatasetUtil:
         )
         self.dataset_path = dataset_path
         self.dataset_name = dataset_name
+
+        if os.path.exists(self.cache_dir):
+            dir = self.cache_dir + '/' + str(dataset_path) + '/' + str(dataset_name)
+            os.makedirs(name=dir)
+            for key in self.dataset_dict.keys():
+                df = self.get_data(dataset_key=key)
+                save_filepath = dir + '/' + str(key) + '.csv'
+                df.to_csv(path_or_buf=save_filepath)
+                self.logger.info('Saved dataset key "' + str(key) + '" to file "' + str(save_filepath) + '"')
+
         return
 
     def get_dataset_keys(self):
@@ -104,13 +114,13 @@ if __name__ == '__main__':
     lgr = Logging.get_default_logger(log_level=logging.INFO, propagate=False)
     er = Env(logger=lgr)
     ds = DatasetUtil(
-        cache_dir = er.DATASET_DIR,
+        cache_dir = er.REPO_DIR + './data/datasets/latest',
         logger = lgr,
     )
     ds.download(
-        dataset_path = 'sentence-transformers/all-nli',
+        dataset_path = 'mteb/banking77',
         # dataset_name = 'triplet',
-        dataset_name = 'pair-class'
+        dataset_name = 'default'
     )
     df = ds.get_data(
         dataset_key = "train",
