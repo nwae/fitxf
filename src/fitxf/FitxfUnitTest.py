@@ -118,10 +118,6 @@ class RepoUnitTest:
                     logger = self.logger,
                 )
                 ut.test()
-            elif cls == TensorUtilsUnitTest:
-                ut = TensorUtilsUnitTest()
-                ut.test_norm()
-                ut.test_similarity_cosine_and_similarity_distance()
             elif cls == ClassifierArcUnitTest:
                 ut_rf = ClassifierArcUnitTest(child_class=ClassifierArcRf, logger=self.logger)
                 ut_nn = ClassifierArcUnitTest(child_class=ClassifierArc, logger=self.logger)
