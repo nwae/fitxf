@@ -91,6 +91,9 @@ class TokenizerAuto(TokenizerInterface):
             token_ids_tmp = token_ids
         # Decode tokens back into text
         decoded_text = self.tokenizer.decode(token_ids_tmp)
+        # Invalid id will be mapped to empty string
+        if len(decoded_text) == 0:
+            self.logger.warning('Invalid ids probably ' + str(token_ids_tmp) + '. Id mapped to empty string')
         return decoded_text
 
 
@@ -108,6 +111,11 @@ if __name__ == '__main__':
         )
         lgr.info('Vocab size: ' + str(tknzr.get_vocab_size()))
         lgr.info('Special tokens: ' + str(tknzr.get_special_tokens()))
+
+        # id_tok = tknzr.get_id_token_map()
+        # lgr.info(id_tok)
+        # invalid_tok = tknzr.decode(token_ids=[tknzr.get_vocab_size()])
+        # lgr.info('oor: "' + str(invalid_tok) + '", length ' + str(len(invalid_tok)))
 
         tok_ut = TokenizerUnitTest(
             tokenizer = tknzr,

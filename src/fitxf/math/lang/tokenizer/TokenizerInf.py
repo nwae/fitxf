@@ -40,6 +40,18 @@ class TokenizerInterface:
             self.get_mask_token(): self.get_mask_token_id(),
         }
 
+    def get_id_token_map(self):
+        sz = self.get_vocab_size()
+        map_id_tok = {}
+        for i in range(sz):
+            tok = self.decode(token_ids=[i])
+            # Invalid id will be mapped to empty string usually
+            if len(tok) == 0:
+                self.logger.warning('Invalid id probably ' + str(i) + '. Id mapped to empty string')
+            map_id_tok[i] = tok
+            self.logger.debug("Map id " + str(i) + ' to "' + str(tok) + '"')
+        return map_id_tok
+
     def tokenize(
             self,
             text: str,
