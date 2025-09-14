@@ -6,7 +6,7 @@ from fitxf.math.lang.tokenizer.TokenizerAuto import TokenizerAuto
 from fitxf.utils import Logging, Env, Pandas
 
 
-# modified from:
+# Modified & optimized from:
 #    https://github.com/DolbyUUU/byte_pair_encoding_BPE_subword_tokenization_implementation_python/blob/main/BPE.py
 class TokenizerBpe(TokenizerInterface):
     """Byte-Pair Encoding: Subword-based tokenization algorithm."""
@@ -80,14 +80,15 @@ class TokenizerBpe(TokenizerInterface):
                 if letter not in alphabet:
                     alphabet.append(letter)
         alphabet.sort()
-        self.logger.debug('Alphabets: ' + str(alphabet) + ', total alphabets ' + str(len(alphabet)))
+        self.logger.info('Alphabets: ' + str(alphabet) + ', total alphabets ' + str(len(alphabet)))
 
         if target_vocab_size <= 0:
             target_vocab_size = len(alphabet) * 10
             self.logger.info('Estimating target vocab size as ' + str(target_vocab_size))
 
         # add the special token </w> at the beginning of the vocabulary
-        vocab = ["</w>"] + alphabet.copy()
+        # vocab = ["</w>"] + alphabet.copy()
+        vocab = alphabet.copy()
         self.logger.info('Initial vocab: ' + str(vocab) + ' (length ' + str(len(vocab)) + ')')
 
         # split each word into individual characters before training
@@ -97,10 +98,10 @@ class TokenizerBpe(TokenizerInterface):
             + ' of total splits ' + str(len(self.splits))
         )
 
-        iter = 0
+        iteration = 0
         # merge the most frequent pair iteratively until the vocabulary size is reached
         while len(vocab) < target_vocab_size:
-            iter += 1
+            iteration += 1
             # compute the frequency of each pair
             pair_freqs = self.compute_pair_freqs()
 
@@ -116,20 +117,26 @@ class TokenizerBpe(TokenizerInterface):
                 break
 
             self.logger.info(
-                'At iteration #' + str(iter) + ', best pair "' + str(best_pair) + '" at frequency ' + str(max_freq)
+                'At iteration #' + str(iteration) + ', best pair "' + str(best_pair) + '" at frequency ' + str(max_freq)
             )
 
             # merge the most frequent pair
             self.splits = self.merge_pair(*best_pair)
-            self.merges[best_pair] = best_pair[0] + best_pair[1]
-            vocab.append(best_pair[0] + best_pair[1])
+            best_pair_merge_str = best_pair[0] + best_pair[1]
+            self.merges[best_pair] = {'pair_string': best_pair_merge_str, 'freq': max_freq, 'iter': iteration}
+            vocab.append(best_pair_merge_str)
         df_merges = pd.DataFrame.from_records(data=[
-            {'chars': chars, 'merge_string': string} for chars, string in self.merges.items()
+            {
+                'chars': chars,
+                'pair_string': d['pair_string'],
+                'iter': d['iter'],
+                'freq': d['freq'],
+            } for chars, d in self.merges.items()
         ])
-        df_merges = df_merges.sort_values(by='merge_string', ascending=True)
+        df_merges = df_merges.sort_values(by='iter', ascending=True)
         df_merges = df_merges.reset_index(drop=True)
         # Vocab length = merges length + alphabets length
-        assert len(df_merges) + len(alphabet) + 1 == len(vocab)
+        assert len(df_merges) + len(alphabet) == len(vocab)
         self.logger.info('Final vocab length ' + str(len(vocab)) + ', merges ' + str(df_merges))
         return self.merges
 
@@ -171,12 +178,14 @@ class TokenizerBpe(TokenizerInterface):
     ) -> list:
         """Tokenize a given text with trained BPE tokenizer (including pre-tokenization, split, and merge)."""
 
+        # TODO Shouldn't this step be same with when we trained it?
         pre_tokenize_result = self.tokenizer_base.tokenizer._tokenizer.pre_tokenizer.pre_tokenize_str(text)
         self.logger.info('Pre tokenize result: ' + str(pre_tokenize_result))
         pre_tokenized_text = [word for word, offset in pre_tokenize_result]
         splits_text = [[l for l in word] for word in pre_tokenized_text]
 
-        for pair, merge in self.merges.items():
+        for pair, d_merge in self.merges.items():
+            merge = d_merge['pair_string']
             for idx, split in enumerate(splits_text):
                 i = 0
                 while i < len(split) - 1:
@@ -195,25 +204,69 @@ class TokenizerBpe(TokenizerInterface):
         return self.tokenizer_base.tokenize_into_words_and_offsets(text=text)
 
 
+class TokenizerBpeUnitTest:
+    def __init__(self, logger: logging.Logger | None = None):
+        self.logger = logger if logger is not None else logging.getLogger()
+        return
+
+    def test(self):
+        corpus = ['menya zovut ai', 'kak tebya zovut', 'kak on zovut', 'evo imya ia']
+        self.logger.info('Corpus length ' + str(len(corpus)))
+
+        tknzr = TokenizerBpe(
+            model_name = TokenizerAuto.SUPPORTED_MODELS[0],
+            logger = self.logger,
+        )
+        self.logger.info('Vocab size: ' + str(tknzr.get_vocab_size()))
+        self.logger.info('Special tokens: ' + str(tknzr.get_special_tokens()))
+
+        tknzr.train(
+            corpus = corpus,
+            target_vocab_size = 0,
+        )
+
+        for i, text in enumerate([
+            "tiktoken is a fast and efficient tokenizer.",
+            'on zovut imyanuel',
+        ]):
+            # Encode text into tokens
+            toks = tknzr.tokenize(
+                text = text,
+                disallowed_special = set(tknzr.get_special_tokens().keys()),
+            )
+            toks_unicode = tknzr.tokenize_unicode_chars(text=text)
+            words_offset = tknzr.tokenize_into_words_and_offsets(text=text)
+            # The count of character per token can be < 1 because a token can be as small as a byte, whereas
+            # a character can be 1 (ascii) to 4 (unicode) bytes
+            char_per_tok = round(len(text) / len(toks), 2)
+            unicode_per_tok = round(len(toks_unicode) / len(toks), 2)
+            self.logger.info(
+                '#' + str(i) + ' Tokens for "' + str(text) + '": ' + str(toks) + ' (unicode ' + str(toks_unicode)
+                + ', words/offset ' + str(words_offset) + ')'
+            )
+            self.logger.info(
+                '#' + str(i) + ' Word length ' + str(len(text.split(" "))) + ', char length ' + str(len(text))
+                + ', token length ' + str(len(toks)) + ', avg char per token ' + str(char_per_tok)
+                + ', unicode length to tokenized ratio ' + str(unicode_per_tok)
+            )
+            continue
+
+        return
+
+
 if __name__ == '__main__':
     Pandas.increase_display()
     lgr = Logging.get_default_logger(log_level=logging.INFO, propagate=False)
 
     # get some sample data
     ev = Env(logger=lgr)
-    corpus = ['menya zovut ai', 'kak tebya zovut', 'kak on zovut', 'evo imya ia']
-    lgr.info('Corpus length ' + str(len(corpus)))
+
+    TokenizerBpeUnitTest(logger=lgr).test()
+    exit(0)
 
     tknzr = TokenizerBpe(
         model_name = TokenizerAuto.SUPPORTED_MODELS[0],
         logger = lgr,
-    )
-    lgr.info('Vocab size: ' + str(tknzr.get_vocab_size()))
-    lgr.info('Special tokens: ' + str(tknzr.get_special_tokens()))
-
-    tknzr.train(
-        corpus = corpus,
-        target_vocab_size = 0,
     )
 
     for i, text in enumerate([
