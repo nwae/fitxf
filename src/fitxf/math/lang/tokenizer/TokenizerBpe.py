@@ -31,11 +31,12 @@ class TokenizerBpe(TokenizerInterface):
         self.splits = {}
         # Final BPE "vocabulary" will be contained here in merges.
         # e.g. {("a", "n"): "an", ("an", "d"): "and", ("l", "a"): "la"..}
-        self.merges = {}
+        self.map_pair_array_to_info = {}
+        self.map_str_pair_to_id = {}
         return
 
     def get_vocab_size(self) -> int:
-        return len(self.merges)
+        return len(self.map_pair_array_to_info)
         # return self.tokenizer_base.get_vocab_size()
 
     def get_cls_token(self) -> str: return self.tokenizer_base.get_cls_token()
@@ -152,7 +153,7 @@ class TokenizerBpe(TokenizerInterface):
             if not is_new_pair:
                 continue
 
-            self.merges[best_pair] = {
+            self.map_pair_array_to_info[best_pair] = {
                 'pair_string': best_pair_merge_str,
                 'iter': iteration,
                 'freq': max_freq,
@@ -160,6 +161,7 @@ class TokenizerBpe(TokenizerInterface):
                 'new_pair': is_new_pair,
                 'pair_id': pair_id,
             }
+            self.map_str_pair_to_id[best_pair_merge_str] = pair_id
 
             vocab.append(best_pair_merge_str)
         df_merges = pd.DataFrame.from_records(data=[
@@ -171,14 +173,14 @@ class TokenizerBpe(TokenizerInterface):
                 'ids': d['ids'],
                 'new_pair': d['new_pair'],
                 'pair_id': d['pair_id'],
-            } for chars, d in self.merges.items()
+            } for chars, d in self.map_pair_array_to_info.items()
         ])
         df_merges = df_merges.sort_values(by='iter', ascending=True)
         df_merges = df_merges.reset_index(drop=True)
         # Vocab length = merges length + alphabets length
         assert len(df_merges) + len(alphabet) == len(vocab)
         self.logger.info('Final vocab length ' + str(len(vocab)) + ', merges ' + str(df_merges))
-        return self.merges
+        return self.map_pair_array_to_info
 
     def compute_pair_freqs(self):
         """Compute the frequency of each pair."""
@@ -226,7 +228,7 @@ class TokenizerBpe(TokenizerInterface):
         pre_tokenized_text = [word for word, offset in pre_tokenize_result]
         splits_text = [[l for l in word] for word in pre_tokenized_text]
 
-        for pair, d_merge in self.merges.items():
+        for pair, d_merge in self.map_pair_array_to_info.items():
             merge = d_merge['pair_string']
             for idx, split in enumerate(splits_text):
                 i = 0
@@ -237,7 +239,22 @@ class TokenizerBpe(TokenizerInterface):
                         i += 1
                 splits_text[idx] = split
         result = sum(splits_text, [])
-        return result
+        self.logger.info('Result of tokenize "' + str(text) + '": ' + str(result))
+
+        # Finally we convert them to integer token IDs
+        ids = []
+        for part in result:
+            if part in self.map_str_pair_to_id.keys():
+                ids_part = [self.map_str_pair_to_id[part]]
+                self.logger.info('Part is from map "' + str(part) + '": ' + str(ids_part))
+            else:
+                ids_part = self.tokenizer_base.tokenize(
+                    text = part,
+                    disallowed_special = disallowed_special,
+                )
+            ids = ids + ids_part
+
+        return ids
 
     def tokenize_into_words_and_offsets(
             self,
