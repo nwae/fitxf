@@ -61,6 +61,8 @@ class TokenizerBpe(TokenizerInterface):
             corpus: list,
             target_vocab_size: int = 0,
     ):
+        base_vocab_size = self.tokenizer_base.get_vocab_size()
+
         # compute the frequencies of each word in the corpus
         for text in corpus:
             words_with_offsets = self.tokenizer_base.tokenize_into_words_and_offsets(text)
@@ -98,7 +100,14 @@ class TokenizerBpe(TokenizerInterface):
             + ' of total splits ' + str(len(self.splits))
         )
 
+        disallowed_specials_for_check_ids = set(self.tokenizer_base.get_special_tokens().keys())
+
         iteration = 0
+        new_id = int(base_vocab_size)
+
+        assert self.tokenizer_base.decode(token_ids=[new_id]) == "", \
+            'Before train, the start new id ' + str(base_vocab_size) + ' must be unused'
+
         # merge the most frequent pair iteratively until the vocabulary size is reached
         while len(vocab) < target_vocab_size:
             iteration += 1
@@ -123,7 +132,35 @@ class TokenizerBpe(TokenizerInterface):
             # merge the most frequent pair
             self.splits = self.merge_pair(*best_pair)
             best_pair_merge_str = best_pair[0] + best_pair[1]
-            self.merges[best_pair] = {'pair_string': best_pair_merge_str, 'freq': max_freq, 'iter': iteration}
+
+            # Check to see the decoded IDs
+            ids_pair = self.tokenizer_base.tokenize(
+                text = best_pair_merge_str,
+                disallowed_special = disallowed_specials_for_check_ids,
+            )
+            is_new_pair = len(ids_pair) > 1
+            if is_new_pair:
+                pair_id = new_id
+                new_id += 1
+            else:
+                pair_id = -1
+
+            self.logger.info(
+                'IDs for best pair ' + str(best_pair) + ' "' + str(best_pair_merge_str) + '": ' + str(ids_pair)
+                + ' Is new pair ' + str(is_new_pair) + ', pair ID ' + str(pair_id)
+            )
+            if not is_new_pair:
+                continue
+
+            self.merges[best_pair] = {
+                'pair_string': best_pair_merge_str,
+                'iter': iteration,
+                'freq': max_freq,
+                'ids': ids_pair,
+                'new_pair': is_new_pair,
+                'pair_id': pair_id,
+            }
+
             vocab.append(best_pair_merge_str)
         df_merges = pd.DataFrame.from_records(data=[
             {
@@ -131,6 +168,9 @@ class TokenizerBpe(TokenizerInterface):
                 'pair_string': d['pair_string'],
                 'iter': d['iter'],
                 'freq': d['freq'],
+                'ids': d['ids'],
+                'new_pair': d['new_pair'],
+                'pair_id': d['pair_id'],
             } for chars, d in self.merges.items()
         ])
         df_merges = df_merges.sort_values(by='iter', ascending=True)
@@ -179,8 +219,10 @@ class TokenizerBpe(TokenizerInterface):
         """Tokenize a given text with trained BPE tokenizer (including pre-tokenization, split, and merge)."""
 
         # TODO Shouldn't this step be same with when we trained it?
-        pre_tokenize_result = self.tokenizer_base.tokenizer._tokenizer.pre_tokenizer.pre_tokenize_str(text)
+        # pre_tokenize_result = self.tokenizer_base.tokenizer._tokenizer.pre_tokenizer.pre_tokenize_str(text)
+        pre_tokenize_result = self.tokenizer_base.tokenize_into_words_and_offsets(text=text)
         self.logger.info('Pre tokenize result: ' + str(pre_tokenize_result))
+
         pre_tokenized_text = [word for word, offset in pre_tokenize_result]
         splits_text = [[l for l in word] for word in pre_tokenized_text]
 
@@ -202,6 +244,24 @@ class TokenizerBpe(TokenizerInterface):
             text: str,
     ) -> list:
         return self.tokenizer_base.tokenize_into_words_and_offsets(text=text)
+
+    # TODO not yet ready
+    def decode(
+            self,
+            token_ids: list,
+            include_special_tokens: bool = True,
+    ) -> str:
+        if not include_special_tokens:
+            d_specials = {id: tok for tok, id in self.get_special_tokens().items()}
+            token_ids_tmp = [id for id in token_ids if id not in d_specials.keys()]
+        else:
+            token_ids_tmp = token_ids
+        # Decode tokens back into text
+        decoded_text = self.tokenizer.decode(token_ids_tmp)
+        # Invalid id will be mapped to empty string
+        if len(decoded_text) == 0:
+            self.logger.warning('Invalid ids probably ' + str(token_ids_tmp) + '. Id mapped to empty string')
+        return decoded_text
 
 
 class TokenizerBpeUnitTest:
@@ -303,7 +363,6 @@ if __name__ == '__main__':
             + ', token length ' + str(len(toks)) + ', avg char per token ' + str(char_per_tok)
             + ', unicode length to tokenized ratio ' + str(unicode_per_tok)
         )
-        continue
 
         # Decode tokens back into text
         decoded_text = tknzr.decode(token_ids=toks, include_special_tokens=False)
