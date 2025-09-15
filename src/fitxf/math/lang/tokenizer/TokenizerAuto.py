@@ -76,6 +76,9 @@ class TokenizerAuto(TokenizerInterface):
             token_ids = [tok for tok in ids if tok not in disallowed_special_ids]
         else:
             token_ids = ids
+        self.logger.info(
+            'Filtered tokenization from:\n' + str(ids) + '\nto:\n' + str(token_ids)
+        )
 
         return token_ids
 

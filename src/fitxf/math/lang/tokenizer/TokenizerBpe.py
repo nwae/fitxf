@@ -327,6 +327,7 @@ class TokenizerBpe(TokenizerInterface):
                 # The text before our trained BPE id
                 text_tmp = '' if len(part_token_ids) == 0 else self.tokenizer_base.decode(
                     token_ids = part_token_ids,
+                    include_special_tokens = False,
                 )
                 text_id = self.map_id_to_str_pair[id]
                 decoded_text = decoded_text + text_tmp + text_id
@@ -339,12 +340,14 @@ class TokenizerBpe(TokenizerInterface):
                 )
             else:
                 cur_end_pos = pos + 1
+        residue_ids = token_ids[cur_start_pos:cur_end_pos]
         txt_last_part = self.tokenizer_base.decode(
-            token_ids = token_ids[cur_start_pos:cur_end_pos],
+            token_ids = residue_ids,
+            include_special_tokens = False,
         )
         self.logger.info(
             'Add back final part of text start ' + str(cur_start_pos) + ', end ' + str(cur_end_pos)
-            + ' "' + str(txt_last_part) + '"'
+            + ' "' + str(txt_last_part) + '" from token ids: ' + str(residue_ids)
         )
         decoded_text = decoded_text + txt_last_part
         # Invalid id will be mapped to empty string
