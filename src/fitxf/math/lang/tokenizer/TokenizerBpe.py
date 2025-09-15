@@ -295,6 +295,7 @@ class TokenizerBpe(TokenizerInterface):
                 self.logger.info('Part IDs from map "' + str(part) + '": ' + str(ids_part))
 
             ids = ids + ids_part
+        self.logger.info('Final token ids for ' + str(result) + ': ' + str(ids))
 
         return ids
 
@@ -321,12 +322,21 @@ class TokenizerBpe(TokenizerInterface):
         cur_end_pos = 0
         for pos, id in enumerate(token_ids):
             if id in self.map_id_to_str_pair.keys():
-                text_tmp = self.tokenizer_base.decode(
-                    token_ids = token_ids[cur_start_pos:cur_end_pos],
+                self.logger.info('Found BPE id ' + str(id) + ' at position ' + str(pos))
+                part_token_ids = token_ids[cur_start_pos:cur_end_pos]
+                # The text before our trained BPE id
+                text_tmp = '' if len(part_token_ids) == 0 else self.tokenizer_base.decode(
+                    token_ids = part_token_ids,
                 )
-                decoded_text += text_tmp + self.map_id_to_str_pair[id]
+                text_id = self.map_id_to_str_pair[id]
+                decoded_text = decoded_text + text_tmp + text_id
                 cur_start_pos = pos + 1
                 cur_end_pos = pos + 1
+                self.logger.info(
+                    'Decode part token ids ' + str(part_token_ids) + ' as "' + str(text_tmp) + '", and BPE id '
+                    + str(id) + ' as "' + str(text_id) + '", decode text now "' + str(decoded_text)
+                    + '", new cur start pos ' + str(cur_start_pos) + ', end ' + str(cur_end_pos)
+                )
             else:
                 cur_end_pos = pos + 1
         txt_last_part = self.tokenizer_base.decode(
@@ -336,7 +346,7 @@ class TokenizerBpe(TokenizerInterface):
             'Add back final part of text start ' + str(cur_start_pos) + ', end ' + str(cur_end_pos)
             + ' "' + str(txt_last_part) + '"'
         )
-        decoded_text += txt_last_part
+        decoded_text = decoded_text + txt_last_part
         # Invalid id will be mapped to empty string
         if len(decoded_text) == 0:
             self.logger.warning('Invalid ids probably ' + str(token_ids_tmp) + '. Id mapped to empty string')
