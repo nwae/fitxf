@@ -177,7 +177,7 @@ class TokenizerBpe(TokenizerInterface):
                 'pair_string': d['pair_string'],
                 'iter': d['iter'],
                 'freq': d['freq'],
-                'ids': d['ids'],
+                'base_ids': d['base_ids'],
                 'new_pair': d['new_pair'],
                 'pair_id': d['pair_id'],
             } for chars, d in self.map_pair_array_to_info.items()
@@ -280,15 +280,19 @@ class TokenizerBpe(TokenizerInterface):
         # Finally we convert them to integer token IDs
         ids = []
         for part in result:
+            part_new_id = -1
             if part in self.map_str_pair_to_id.keys():
-                ids_part = [self.map_str_pair_to_id[part]]
-                self.logger.info('Part is from map "' + str(part) + '": ' + str(ids_part))
-            else:
+                if self.map_str_pair_to_id[part] > 0:
+                    part_new_id = self.map_str_pair_to_id[part]
+            if part_new_id == -1:
                 ids_part = self.tokenizer_base.tokenize(
                     text = part,
                     disallowed_special = disallowed_special,
                 )
-                self.logger.info('Not found part "' + str(part) + '": ' + str(ids_part))
+                self.logger.info('Part IDs from base tokenizer "' + str(part) + '": ' + str(ids_part))
+            else:
+                ids_part = [part_new_id]
+                self.logger.info('Part IDs from map "' + str(part) + '": ' + str(ids_part))
 
             ids = ids + ids_part
 
