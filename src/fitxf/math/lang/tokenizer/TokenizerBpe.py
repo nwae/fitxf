@@ -136,11 +136,11 @@ class TokenizerBpe(TokenizerInterface):
             best_pair_merge_str = best_pair[0] + best_pair[1]
 
             # Check to see the decoded IDs
-            ids_pair = self.tokenizer_base.tokenize(
+            base_ids_pair = self.tokenizer_base.tokenize(
                 text = best_pair_merge_str,
                 disallowed_special = disallowed_specials_for_check_ids,
             )
-            is_new_pair = len(ids_pair) > 1
+            is_new_pair = len(base_ids_pair) > 1
             if is_new_pair:
                 pair_id = new_id
                 new_id += 1
@@ -148,20 +148,25 @@ class TokenizerBpe(TokenizerInterface):
                 pair_id = -1
 
             self.logger.info(
-                'IDs for best pair ' + str(best_pair) + ' "' + str(best_pair_merge_str) + '": ' + str(ids_pair)
-                + ' Is new pair ' + str(is_new_pair) + ', pair ID ' + str(pair_id)
+                'Base IDs for best pair ' + str(best_pair) + ' "' + str(best_pair_merge_str)
+                + '": ' + str(base_ids_pair) + ' Is new pair ' + str(is_new_pair) + ', pair ID ' + str(pair_id)
             )
-            if not is_new_pair:
-                continue
+
+            # For purposes of tokenization later, we must record this pair also even if it is not a new pair.
+            # This is because the tokenization algorithm later finds the final pair by building up smaller pairs.
+            # if not is_new_pair:
+            #     continue
 
             self.map_pair_array_to_info[best_pair] = {
                 'pair_string': best_pair_merge_str,
                 'iter': iteration,
                 'freq': max_freq,
-                'ids': ids_pair,
+                'base_ids': base_ids_pair,
                 'new_pair': is_new_pair,
                 'pair_id': pair_id,
             }
+            # The order of this map is important such that the smaller pairs appear first,
+            # which is important during decoding. We must not reorder it.
             self.map_str_pair_to_id[best_pair_merge_str] = pair_id
             self.map_id_to_str_pair[pair_id] = best_pair_merge_str
 
@@ -228,7 +233,34 @@ class TokenizerBpe(TokenizerInterface):
 
         pre_tokenized_text = [word for word, offset in pre_tokenize_result]
         splits_text = [[l for l in word] for word in pre_tokenized_text]
+        self.logger.info('Pre tokenized as:\n' + str(pre_tokenized_text) + '\nsplit as:\n' + str(splits_text))
 
+        # sentence_ids = []
+        # for word in pre_tokenized_text:
+        #     word_ids = []
+        #     cur_start_pos = 0
+        #     cur_end_pos = 0
+        #     for pos, c in enumerate(word):
+        #         if pair_str in self.map_id_to_str_pair.keys():
+        #             text_tmp = self.tokenizer_base.decode(
+        #                 token_ids = token_ids[cur_start_pos:cur_end_pos],
+        #             )
+        #             decoded_text += text_tmp + self.map_id_to_str_pair[id]
+        #             cur_start_pos = pos + 1
+        #             cur_end_pos = pos + 1
+        #         else:
+        #             cur_end_pos = pos + 1
+        #     txt_last_part = self.tokenizer_base.decode(
+        #         token_ids = token_ids[cur_start_pos:cur_end_pos],
+        #     )
+        #     self.logger.info(
+        #         'Add back final part of text start ' + str(cur_start_pos) + ', end ' + str(cur_end_pos)
+        #         + ' "' + str(txt_last_part) + '"'
+        #     )
+        #     decoded_text += txt_last_part
+
+        # The order of this map is important such that the smaller pairs appear first,
+        # which is important during decoding. We must not reorder it.
         for pair, d_merge in self.map_pair_array_to_info.items():
             merge = d_merge['pair_string']
             for idx, split in enumerate(splits_text):
@@ -236,6 +268,9 @@ class TokenizerBpe(TokenizerInterface):
                 while i < len(split) - 1:
                     if split[i] == pair[0] and split[i + 1] == pair[1]:
                         split = split[:i] + [merge] + split[i + 2 :]
+                        self.logger.info(
+                            'Pair found ' + str(pair)
+                        )
                     else:
                         i += 1
                 splits_text[idx] = split
@@ -253,6 +288,8 @@ class TokenizerBpe(TokenizerInterface):
                     text = part,
                     disallowed_special = disallowed_special,
                 )
+                self.logger.info('Not found part "' + str(part) + '": ' + str(ids_part))
+
             ids = ids + ids_part
 
         return ids
