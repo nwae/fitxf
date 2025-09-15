@@ -33,6 +33,7 @@ class TokenizerBpe(TokenizerInterface):
         # e.g. {("a", "n"): "an", ("an", "d"): "and", ("l", "a"): "la"..}
         self.map_pair_array_to_info = {}
         self.map_str_pair_to_id = {}
+        self.map_id_to_str_pair = {}
         return
 
     def get_vocab_size(self) -> int:
@@ -162,6 +163,7 @@ class TokenizerBpe(TokenizerInterface):
                 'pair_id': pair_id,
             }
             self.map_str_pair_to_id[best_pair_merge_str] = pair_id
+            self.map_id_to_str_pair[pair_id] = best_pair_merge_str
 
             vocab.append(best_pair_merge_str)
         df_merges = pd.DataFrame.from_records(data=[
@@ -220,7 +222,6 @@ class TokenizerBpe(TokenizerInterface):
     ) -> list:
         """Tokenize a given text with trained BPE tokenizer (including pre-tokenization, split, and merge)."""
 
-        # TODO Shouldn't this step be same with when we trained it?
         # pre_tokenize_result = self.tokenizer_base.tokenizer._tokenizer.pre_tokenizer.pre_tokenize_str(text)
         pre_tokenize_result = self.tokenizer_base.tokenize_into_words_and_offsets(text=text)
         self.logger.info('Pre tokenize result: ' + str(pre_tokenize_result))
@@ -273,8 +274,28 @@ class TokenizerBpe(TokenizerInterface):
             token_ids_tmp = [id for id in token_ids if id not in d_specials.keys()]
         else:
             token_ids_tmp = token_ids
-        # Decode tokens back into text
-        decoded_text = self.tokenizer.decode(token_ids_tmp)
+
+        decoded_text = ''
+        cur_start_pos = 0
+        cur_end_pos = 0
+        for pos, id in enumerate(token_ids):
+            if id in self.map_id_to_str_pair.keys():
+                text_tmp = self.tokenizer_base.decode(
+                    token_ids = token_ids[cur_start_pos:cur_end_pos],
+                )
+                decoded_text += text_tmp + self.map_id_to_str_pair[id]
+                cur_start_pos = pos + 1
+                cur_end_pos = pos + 1
+            else:
+                cur_end_pos = pos + 1
+        txt_last_part = self.tokenizer_base.decode(
+            token_ids = token_ids[cur_start_pos:cur_end_pos],
+        )
+        self.logger.info(
+            'Add back final part of text start ' + str(cur_start_pos) + ', end ' + str(cur_end_pos)
+            + ' "' + str(txt_last_part) + '"'
+        )
+        decoded_text += txt_last_part
         # Invalid id will be mapped to empty string
         if len(decoded_text) == 0:
             self.logger.warning('Invalid ids probably ' + str(token_ids_tmp) + '. Id mapped to empty string')
@@ -325,6 +346,13 @@ class TokenizerBpeUnitTest:
                 '#' + str(i) + ' Word length ' + str(len(text.split(" "))) + ', char length ' + str(len(text))
                 + ', token length ' + str(len(toks)) + ', avg char per token ' + str(char_per_tok)
                 + ', unicode length to tokenized ratio ' + str(unicode_per_tok)
+            )
+
+            txt_inv = tknzr.decode(
+                token_ids = toks,
+            )
+            self.logger.info(
+                'Decoded text "' + str(txt_inv) + '"'
             )
             continue
 
