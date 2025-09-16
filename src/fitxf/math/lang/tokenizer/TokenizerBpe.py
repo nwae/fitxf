@@ -394,6 +394,7 @@ class TokenizerBpeUnitTest:
             )
             toks_unicode = tknzr.tokenize_unicode_chars(text=text)
             words_offset = tknzr.tokenize_into_words_and_offsets(text=text)
+            pre_tok_sentence = ''.join([w for w, _ in words_offset])
             # The count of character per token can be < 1 because a token can be as small as a byte, whereas
             # a character can be 1 (ascii) to 4 (unicode) bytes
             char_per_tok = round(len(text) / len(toks), 2)
@@ -411,9 +412,10 @@ class TokenizerBpeUnitTest:
             txt_inv = tknzr.decode(
                 token_ids = toks,
             )
-            self.logger.info(
-                'Decoded text "' + str(txt_inv) + '"'
-            )
+            self.logger.info('Decoded text "' + str(txt_inv) + '"')
+
+            assert txt_inv == pre_tok_sentence, \
+                'Inverted text "' + str(txt_inv) + '" not pre-tokenized sentence "' + str(pre_tok_sentence) + '"'
             continue
 
         return
