@@ -279,7 +279,9 @@ class TokenizerBpe(TokenizerInterface):
 
         # Finally we convert them to integer token IDs
         ids = []
-        for part in result:
+        # cur_start_pos = 0
+        # cur_end_pos = 0
+        for pos, part in enumerate(result):
             part_new_id = -1
             if part in self.map_str_pair_to_id.keys():
                 if self.map_str_pair_to_id[part] > 0:
@@ -325,10 +327,11 @@ class TokenizerBpe(TokenizerInterface):
                 self.logger.info('Found BPE id ' + str(id) + ' at position ' + str(pos))
                 part_token_ids = token_ids[cur_start_pos:cur_end_pos]
                 # The text before our trained BPE id
-                text_tmp = '' if len(part_token_ids) == 0 else self.tokenizer_base.decode(
-                    token_ids = part_token_ids,
-                    include_special_tokens = False,
-                )
+                # Decode 1 char by 1 char, and remove the stupid spaces at the end inserted by decoder
+                text_tmp = '' if len(part_token_ids) == 0 else ''.join([
+                    self.tokenizer_base.decode(token_ids=[__c_id], include_special_tokens=False).strip()
+                    for __c_id in part_token_ids
+                ])
                 text_id = self.map_id_to_str_pair[id]
                 decoded_text = decoded_text + text_tmp + text_id
                 cur_start_pos = pos + 1
@@ -341,9 +344,12 @@ class TokenizerBpe(TokenizerInterface):
             else:
                 cur_end_pos = pos + 1
         residue_ids = token_ids[cur_start_pos:cur_end_pos]
-        txt_last_part = self.tokenizer_base.decode(
-            token_ids = residue_ids,
-            include_special_tokens = False,
+        # Decode 1 char by 1 char, and remove the stupid spaces at the end inserted by decoder
+        txt_last_part = ''.join(
+            [
+                self.tokenizer_base.decode(token_ids=[__c_id], include_special_tokens=False).strip()
+                for __c_id in residue_ids
+            ]
         )
         self.logger.info(
             'Add back final part of text start ' + str(cur_start_pos) + ', end ' + str(cur_end_pos)
@@ -366,7 +372,7 @@ class TokenizerBpeUnitTest:
         self.logger.info('Corpus length ' + str(len(corpus)))
 
         tknzr = TokenizerBpe(
-            model_name = TokenizerAuto.SUPPORTED_MODELS[0],
+            model_name = TokenizerAuto.SUPPORTED_MODELS[1],
             logger = self.logger,
         )
         self.logger.info('Vocab size: ' + str(tknzr.get_vocab_size()))
