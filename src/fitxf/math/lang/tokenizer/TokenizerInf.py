@@ -31,6 +31,9 @@ class TokenizerInterface:
     def get_mask_token(self) -> str: raise Exception('Must be implemented in derived class')
     def get_mask_token_id(self) -> int: raise Exception('Must be implemented in derived class')
 
+    def get_wordsep_token(self) -> str: raise Exception('Must be implemented in derived class')
+    def get_wordsep_token_id(self) -> int: raise Exception('Must be implemented in derived class')
+
     def get_special_tokens(self) -> dict:
         return {
             self.get_cls_token(): self.get_cls_token_id(),
