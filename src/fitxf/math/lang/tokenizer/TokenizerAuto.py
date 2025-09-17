@@ -44,6 +44,12 @@ class TokenizerAuto(TokenizerInterface):
     def get_mask_token(self) -> str: return self.tokenizer.mask_token
     def get_mask_token_id(self) -> str: return self.tokenizer.mask_token_id
 
+    def get_wordsep_token(self) -> str:
+        if self.model_name in ['bert-base-uncased']:
+            return " "
+        else:
+            return ""
+
     def tokenize(
             self,
             text: str,
@@ -76,9 +82,7 @@ class TokenizerAuto(TokenizerInterface):
             token_ids = [tok for tok in ids if tok not in disallowed_special_ids]
         else:
             token_ids = ids
-        self.logger.info(
-            'Filtered tokenization from:\n' + str(ids) + '\nto:\n' + str(token_ids)
-        )
+        self.logger.debug('Filtered tokenization from:\n' + str(ids) + '\nto:\n' + str(token_ids))
 
         return token_ids
 
@@ -104,9 +108,11 @@ if __name__ == '__main__':
     from fitxf.math.lang.tokenizer.TokenizerUnitTest import TokenizerUnitTest
     lgr = Logging.get_default_logger(log_level=logging.INFO, propagate=False)
 
-    for model, langs_to_test in [
-        (TokenizerAuto.SUPPORTED_MODELS[0], ['en', 'ru',],),
-        (TokenizerAuto.SUPPORTED_MODELS[1], ['en', 'ru', 'zh',],),
+    for model, langs_to_test, include_special_toks in [
+        (TokenizerAuto.SUPPORTED_MODELS[0], ['en', 'ru',], False),
+        (TokenizerAuto.SUPPORTED_MODELS[0], ['en', 'ru',], True),
+        (TokenizerAuto.SUPPORTED_MODELS[1], ['en', 'ru', 'zh',], False),
+        (TokenizerAuto.SUPPORTED_MODELS[1], ['en', 'ru', 'zh', ], True),
     ]:
         tknzr = TokenizerAuto(
             model_name = model,
@@ -124,5 +130,8 @@ if __name__ == '__main__':
             tokenizer = tknzr,
             logger = lgr,
         )
-        tok_ut.test(test_langs=langs_to_test)
+        tok_ut.test(
+            test_langs = langs_to_test,
+            include_special_tokens = include_special_toks,
+        )
     exit(0)
