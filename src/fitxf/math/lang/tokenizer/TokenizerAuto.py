@@ -7,23 +7,23 @@ from fitxf.math.utils.Logging import Logging
 # See https://huggingface.co/docs/transformers/main/fast_tokenizers
 class TokenizerAuto(TokenizerInterface):
 
-    SUPPORTED_MODELS = (
+    DEMO_MODELS = (
         'bert-base-uncased', 'sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2',
     )
 
     def __init__(
             self,
-            model_name: str | None = "bert-base-uncased",
+            model_name_or_path: str | None = "bert-base-uncased",
             logger: logging.Logger | None = None,
     ):
         super().__init__(
-            model_name = model_name,
+            model_name_or_path = model_name_or_path,
             logger = logger,
         )
-        if self.model_name not in self.SUPPORTED_MODELS:
-            self.logger.warning('Unsupported (untested) model for tokenizer "' + str(self.model_name) + '"')
         # Load an encoding for a specific model
-        self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            pretrained_model_name_or_path = self.model_name_or_path,
+        )
         self.specials_token_to_id = self.get_special_tokens()
         return
 
@@ -45,7 +45,7 @@ class TokenizerAuto(TokenizerInterface):
     def get_mask_token_id(self) -> str: return self.tokenizer.mask_token_id
 
     def get_wordsep_token(self) -> str:
-        if self.model_name in ['bert-base-uncased']:
+        if self.model_name_or_path in ['bert-base-uncased']:
             return " "
         else:
             return ""
@@ -57,11 +57,7 @@ class TokenizerAuto(TokenizerInterface):
             disallowed_special: set = (),
     ) -> list:
         # tokens_and_idx_start_end = self.tokenizer.backend_tokenizer.pre_tokenizer.pre_tokenize_str(text)
-        ids = self.tokenizer.encode(text)
-        return self.__filter_disallowed_ids(
-            ids = ids,
-            disallowed_special = disallowed_special,
-        )
+        return self.tokenizer.tokenize(text)
 
     def tokenize_into_words_and_offsets(
             self,
@@ -86,6 +82,19 @@ class TokenizerAuto(TokenizerInterface):
 
         return token_ids
 
+    def encode(
+            self,
+            text: str,
+            allowed_special: set = (),
+            disallowed_special: set = (),
+    ) -> list:
+        # tokens_and_idx_start_end = self.tokenizer.backend_tokenizer.pre_tokenizer.pre_tokenize_str(text)
+        ids = self.tokenizer.encode(text)
+        return self.__filter_disallowed_ids(
+            ids = ids,
+            disallowed_special = disallowed_special,
+        )
+
     def decode(
             self,
             token_ids: list,
@@ -103,19 +112,45 @@ class TokenizerAuto(TokenizerInterface):
             self.logger.warning('Invalid ids probably ' + str(token_ids_tmp) + '. Id mapped to empty string')
         return decoded_text
 
+    def train(
+            self,
+            text_corpus: list,
+            batch_size: int = 64,
+            vocab_size: int | None = None,
+            save_path: str | None = None,
+    ):
+        train_iter = self.get_training_corpus(
+            text_list = text_corpus,
+            batch_size = batch_size,
+        )
+        vocab_sz = vocab_size if vocab_size is not None else self.get_vocab_size()
+        #
+        # This will train a totally new tokenizer and forget everything in old tokenizer!
+        #
+        tokenizer_new = self.tokenizer.train_new_from_iterator(
+            text_iterator = train_iter,
+            vocab_size = vocab_sz,
+        )
+        self.logger.info('Successfully trained tokenizer')
+        if save_path is not None:
+            tokenizer_new.save_pretrained(save_path)
+            self.logger.info('Trained tokenizer saved to "' + str(save_path) + '"')
+        self.tokenizer = tokenizer_new
+        return tokenizer_new
+
 
 if __name__ == '__main__':
     from fitxf.math.lang.tokenizer.TokenizerUnitTest import TokenizerUnitTest
     lgr = Logging.get_default_logger(log_level=logging.INFO, propagate=False)
 
     for model, langs_to_test, include_special_toks in [
-        (TokenizerAuto.SUPPORTED_MODELS[0], ['en', 'ru',], False),
-        (TokenizerAuto.SUPPORTED_MODELS[0], ['en', 'ru',], True),
-        (TokenizerAuto.SUPPORTED_MODELS[1], ['en', 'ru', 'zh',], False),
-        (TokenizerAuto.SUPPORTED_MODELS[1], ['en', 'ru', 'zh', ], True),
+        (TokenizerAuto.DEMO_MODELS[0], ['en', 'ru',], False),
+        (TokenizerAuto.DEMO_MODELS[0], ['en', 'ru',], True),
+        (TokenizerAuto.DEMO_MODELS[1], ['en', 'ru', 'zh',], False),
+        (TokenizerAuto.DEMO_MODELS[1], ['en', 'ru', 'zh', ], True),
     ]:
         tknzr = TokenizerAuto(
-            model_name = model,
+            model_name_or_path = model,
             logger = lgr,
         )
         lgr.info('Vocab size: ' + str(tknzr.get_vocab_size()))

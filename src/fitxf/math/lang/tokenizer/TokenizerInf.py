@@ -6,10 +6,11 @@ class TokenizerInterface:
 
     def __init__(
             self,
-            model_name: str | None = None,
+            # can also be path
+            model_name_or_path: str | None = None,
             logger: logging.Logger | None = None,
     ):
-        self.model_name = model_name
+        self.model_name_or_path = model_name_or_path
         self.logger = logger if logger is not None else logging.getLogger()
         self.tokenizer = None
         return
@@ -85,6 +86,15 @@ class TokenizerInterface:
         # else:
         #     raise Exception('Not supported return objects: ' + str(return_objects))
 
+    def encode(
+            self,
+            text: str,
+            allowed_special: set = (),
+            disallowed_special: set = (),
+            # return_objects: list | tuple = ('id',),
+    ) -> list:
+        raise Exception('Must be implemented in derived class')
+
     def decode(
             self,
             token_ids: list,
@@ -97,6 +107,27 @@ class TokenizerInterface:
             tokens_ids: list,
     ):
         return ''.join([chr(t) for t in tokens_ids])
+
+    # From https://huggingface.co/learn/llm-course/en/chapter6/2
+    def train(
+            self,
+            text_corpus: list[list],
+            save_path: str,
+    ):
+        raise Exception('Must be implemented in derived class')
+
+    def get_training_corpus(
+            self,
+            text_list: list,
+            batch_size: int = 64,
+    ) -> list:
+        corpus = []
+        i = 0
+        while i < len(text_list) - batch_size:
+            i_end = i + batch_size
+            corpus.append(text_list[i:i_end])
+            i += batch_size
+        return corpus
 
 
 if __name__ == '__main__':

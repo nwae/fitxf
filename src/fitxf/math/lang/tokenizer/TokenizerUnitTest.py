@@ -4,7 +4,7 @@ from fitxf.math.utils.Logging import Logging
 
 
 class TokenizerUnitTest:
-    
+
     def __init__(
             self,
             tokenizer: TokenizerInterface,
@@ -42,7 +42,21 @@ class TokenizerUnitTest:
             self,
             test_langs: list | None = None,
             include_special_tokens: bool = False,
+            test_texts: list | None = None,
     ):
+        test_data_default = [
+            ("en", "tiktoken is a fast and efficient tokenizer.", None),
+            ("en", "several command-line tools and graphical utilities are available", None),
+            ("ru", 'Китай модернизирует армию с упором на кибервойну', None),
+            ("ru", 'США вовлечены в космическую гонку с Китаем', None),
+            ("ru", 'рассматривает Пекин как «угрозу растущего влияния»', None),
+            ("zh", '港澳台同胞和海外侨胞：祖国强大是我们的自豪', '港澳台同胞和海外侨胞:祖国强大是我们的自豪'),
+            ("zh", '"다탄두 각개 목표 설정 재돌입체"(MIRV)를 탑재 가능하다고 설명했다.', None),
+            # Bengali (Sylheti)
+            ("syl", 'অইল ভাত', None),  # Cooked rice (পাক হয়েছে যে ভাত)
+            ("syl", 'অকতে জরুর', None),  # Absolutely necessary (নিতান্ত  প্রয়োজনীয়)
+            ("syl", 'আউয়া যাওয়া', None),  # Stupid, senseless (বোকা, অবোধ)
+        ]
         self.logger.info('Vocab size: ' + str(self.tokenizer.get_vocab_size()))
         self.logger.info('Special tokens: ' + str(self.tokenizer.get_special_tokens()))
 
@@ -55,22 +69,20 @@ class TokenizerUnitTest:
             + ', word separator token "' + str(wordsep) + '"'
         )
 
-        for i, (lang, text, _) in enumerate([
-            ("en", "tiktoken is a fast and efficient tokenizer.", None),
-            ("en", "several command-line tools and graphical utilities are available", None),
-            ("ru", 'Китай модернизирует армию с упором на кибервойну', None),
-            ("ru", 'США вовлечены в космическую гонку с Китаем', None),
-            ("ru", 'рассматривает Пекин как «угрозу растущего влияния»', None),
-            ("zh", '港澳台同胞和海外侨胞：祖国强大是我们的自豪', '港澳台同胞和海外侨胞:祖国强大是我们的自豪'),
-            ("zh", '"다탄두 각개 목표 설정 재돌입체"(MIRV)를 탑재 가능하다고 설명했다.', None),
-        ]):
+        if test_texts is None:
+            test_data = test_data_default
+        else:
+            test_data = ((None, txt, None) for txt in test_texts)
+
+        for i, (lang, text, _) in enumerate(test_data):
             if test_langs:
-                if lang not in test_langs:
-                    self.logger.info('Ignore lang "' + str(lang) + '"')
-                    continue
+                if lang is not None:
+                    if lang not in test_langs:
+                        self.logger.info('Ignore lang "' + str(lang) + '"')
+                        continue
 
             # Encode text into tokens
-            tok_ids = self.tokenizer.tokenize(
+            tok_ids = self.tokenizer.encode(
                 text = text,
                 disallowed_special = disallowed_specials,
             )
@@ -123,7 +135,7 @@ class TokenizerUnitTest:
             #
             ids_accum = []
             for w, _ in words_offset:
-                ids_word = self.tokenizer.tokenize(
+                ids_word = self.tokenizer.encode(
                     text = w,
                     disallowed_special = disallowed_specials,
                 )
@@ -144,19 +156,19 @@ class TokenizerUnitTest:
             # However they can be the same if we use the correct word separator to join the words.
             #
             pretok_words_joined = wordsep.join([w for w, _ in words_offset])
-            pretok_tok_ids = self.tokenizer.tokenize(
+            pretok_tok_ids = self.tokenizer.encode(
                 text = pretok_words_joined,
                 disallowed_special = disallowed_specials,
             )
             is_same = pretok_tok_ids == tok_ids
             self.logger.info(
-                'This model "' + str(self.tokenizer.model_name) + '" is consistent = ' + str(is_same)
+                'This model "' + str(self.tokenizer.model_name_or_path) + '" is consistent = ' + str(is_same)
                 + '. IDs of joined words "' + str(pretok_words_joined) + '" ' + str(pretok_tok_ids)
                 + ' ids of original text "' + str(text) + '" ' + str(tok_ids)
             )
             assert is_same
         self.logger.info(
-            'TESTS PASSED (model "' + str(self.tokenizer.model_name) + '", include special '
+            'TESTS PASSED (model "' + str(self.tokenizer.model_name_or_path) + '", include special '
             + str(include_special_tokens) + ')'
         )
         return
