@@ -711,8 +711,8 @@ if __name__ == '__main__':
     params = CmdLine.read_cmdline_params()
     logr.info('Cmdline params: ' + str(params))
 
-    lang_src = 'syl'
-    lang_tgt = 'bn'
+    lang_src = 'en'
+    lang_tgt = 'es'
     do_train = False # True if params.get('train', '1') in ['1', 'yes', 'y'] else False
     load_prev_state = True # True if params.get('prevstate', '0').strip().lower() in ('1', 'yes', 'y',) else False
     emb_size = int(params.get('emb', 16))
@@ -720,9 +720,9 @@ if __name__ == '__main__':
     #     load_prev_state = True
 
     # In the form
-    # [(   0, 'অ', 'ওহে'), (   1, 'অইছে', 'হয়েছে'), (   2, 'অইতল বইতল', 'মর্যাদাহীন') ... ]
+    # [(   0, 'hi', 'hola'), ... ]
     text_pairs = pd.read_csv(
-        filepath_or_buffer = er.REPO_DIR + '/data/datasets/latest/sylheti-bangla.csv',
+        filepath_or_buffer = '/tmp/pair.csv',
     ).to_records()
     text_pairs = [(rec[1], rec[2]) for rec in text_pairs]
     logr.info(text_pairs[:10])
@@ -747,7 +747,7 @@ if __name__ == '__main__':
         lang_tgt   = lang_tgt,
         input_token_max_len = 8,
         output_token_max_len = 8,
-        tokenizer_model_path = './syl-bgl.tokenizer',
+        tokenizer_model_path = './en-es.tokenizer',
         load_old_state = load_prev_state,
         cache_dir  = er.MODELS_TRAINING_DIR,
         embed_size = emb_size,
