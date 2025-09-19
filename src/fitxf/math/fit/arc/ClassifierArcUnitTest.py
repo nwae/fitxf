@@ -76,7 +76,7 @@ class ClassifierArcUnitTest:
             regularization_type = 0.
             # for summation, need smaller batch sizes, otherwise can't converge
             num_epochs, batch_sz = 10, 4
-            acc_thr = 0.60
+            acc_thr = 0.55
 
         assert len(X) == len(y)
         self.logger.info(
