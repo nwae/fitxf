@@ -1,4 +1,6 @@
 import logging
+import torch
+import numpy as np
 from fitxf.math.lang.tokenizer.TokenizerInf import TokenizerInterface
 from transformers import AutoTokenizer
 from fitxf.math.utils.Logging import Logging
@@ -72,13 +74,13 @@ class TokenizerAuto(TokenizerInterface):
             disallowed_special: set = (),
     ) -> list:
         disallowed_special_ids = [self.specials_token_to_id[tok] for tok in disallowed_special]
-        self.logger.debug('Disallowed special ids: ' + str(disallowed_special_ids))
+        # self.logger.debug('Disallowed special ids: ' + str(disallowed_special_ids))
 
         if disallowed_special:
             token_ids = [tok for tok in ids if tok not in disallowed_special_ids]
         else:
             token_ids = ids
-        self.logger.debug('Filtered tokenization from:\n' + str(ids) + '\nto:\n' + str(token_ids))
+        # self.logger.debug('Filtered tokenization from:\n' + str(ids) + '\nto:\n' + str(token_ids))
 
         return token_ids
 
@@ -87,13 +89,29 @@ class TokenizerAuto(TokenizerInterface):
             text: str,
             allowed_special: set = (),
             disallowed_special: set = (),
-    ) -> list:
+            return_len: int = 0,
+            # allowed values 'pt', 'np'
+            return_tensor: str | None = None
+    ) -> list | np.ndarray | torch.Tensor:
         # tokens_and_idx_start_end = self.tokenizer.backend_tokenizer.pre_tokenizer.pre_tokenize_str(text)
         ids = self.tokenizer.encode(text)
-        return self.__filter_disallowed_ids(
+        ids_filtered = self.__filter_disallowed_ids(
             ids = ids,
             disallowed_special = disallowed_special,
         )
+        if return_len > 0:
+            if len(ids_filtered) >= return_len:
+                ids_filtered = ids_filtered[:return_len]
+            else:
+                l_pad = return_len - len(ids_filtered)
+                ids_filtered = ids_filtered + l_pad * [self.get_pad_token_id()]
+
+        if return_tensor == 'pt':
+            return torch.LongTensor(ids_filtered)
+        elif return_tensor == 'np':
+            return np.array(ids_filtered, dtype=np.int64)
+        else:
+            return ids_filtered
 
     def decode(
             self,

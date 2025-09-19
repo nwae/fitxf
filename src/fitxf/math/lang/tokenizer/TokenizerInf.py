@@ -1,4 +1,6 @@
 import logging
+import torch
+import numpy as np
 from fitxf.math.utils.Logging import Logging
 
 
@@ -91,8 +93,10 @@ class TokenizerInterface:
             text: str,
             allowed_special: set = (),
             disallowed_special: set = (),
+            return_len: int = 0,
+            return_tensor: str | None = None
             # return_objects: list | tuple = ('id',),
-    ) -> list:
+    ) -> list | np.ndarray | torch.Tensor:
         raise Exception('Must be implemented in derived class')
 
     def decode(
