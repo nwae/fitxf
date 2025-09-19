@@ -1,6 +1,4 @@
 import logging
-from types import NoneType
-
 import numpy as np
 import torch
 import os
@@ -76,7 +74,7 @@ class ClassifierArcUnitTest:
             regularization_type = 0.
             # for summation, need smaller batch sizes, otherwise can't converge
             num_epochs, batch_sz = 10, 4
-            acc_thr = 0.55
+            acc_thr = 0.6
 
         assert len(X) == len(y)
         self.logger.info(
