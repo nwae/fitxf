@@ -6,3 +6,4 @@ from fitxf.math.utils.LockF import LockFile, LoadTestLockFile
 from fitxf.math.utils.ObjPers import ObjectPersistence
 from fitxf.math.utils.Profile import Profiling
 from fitxf.math.utils.Pandas import Pandas
+from fitxf.math.utils.CmdLine import CmdLine
