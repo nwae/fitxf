@@ -45,7 +45,7 @@ class TextSimilarityCache:
             # How much to remove from unproven cache when full, default is 50%
             rm_prop_when_full: float = 0.5,
             text_similarity_fixed_len: int = 100,
-            logger: Logging = None,
+            logger: logging.Logger = None,
     ):
         self.cache_name = cache_name
         self.cache_size = cache_size
@@ -337,12 +337,10 @@ class TextSimilarityCache:
                 self.__update_text_model()
 
             if key not in self.cache_dict.keys():
-                self.cache_dict[key] = {
-                    self.KEY_VALUE: result,
-                    self.KEY_OBJECT_ORI: object,
-                    self.KEY_REPEAT_COUNT: 0,
-                    self.KEY_DATETIME: datetime.now()
-                }
+                repeat_count = 0
+                #
+                # New keys will require us to update text models
+                #
                 self.ref_texts_keys.append(key)
                 self.ref_texts_chardiff_model.append(
                     self.textdiff.get_text_model(
@@ -350,6 +348,18 @@ class TextSimilarityCache:
                         model_params = self.textdiff_model_prms,
                     )
                 )
+            else:
+                repeat_count = self.cache_dict[key][self.KEY_REPEAT_COUNT]
+                self.logger.info('Key already in cache "' + str(key) + '", not adding object: ' + str(object))
+            #
+            # Will replace existing object if already in cache
+            #
+            self.cache_dict[key] = {
+                self.KEY_VALUE: result,
+                self.KEY_OBJECT_ORI: object,
+                self.KEY_REPEAT_COUNT: repeat_count,
+                self.KEY_DATETIME: datetime.now()
+            }
             return key
         except Exception as ex:
             self.logger.error(
